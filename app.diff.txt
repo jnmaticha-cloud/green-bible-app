@@ -1,0 +1,989 @@
+diff --git a/app.js b/app.js
+index 650de00..05c7b2a 100644
+--- a/app.js
++++ b/app.js
+@@ -49,6 +49,8 @@ class GreenBibleApp {
+         this.audioElement = null;
+         this.isPlaying = false;
+         this.currentSermon = null;
++        this.ytPlayer = null;
++        this.audioInterval = null;
+ 
+         // Native Book Names Cache
+         this.nativeBookNamesCache = {};
+@@ -81,6 +83,7 @@ class GreenBibleApp {
+         this.renderHistory();
+         this.renderBookmarks();
+         this.renderTopics();
++        this.initYoutubeAPI();
+         
+         // Setup Live Search
+         const searchInput = document.getElementById('searchInput');
+@@ -429,11 +432,15 @@ class GreenBibleApp {
+     applySuggestion(text) {
+         const input = document.getElementById('searchInput');
+         if (input) {
++            // If it's a book name, add a space to help with chapter typing
+             input.value = this.capitalize(text) + ' ';
+             input.focus();
+             this.updateSuggestions(input.value);
+-            // Optionally auto-search for chapter 1
+-            // this.performSearch();
++            
++            // For full book names, trigger a search for chapter 1 immediately
++            if (this.BIBLE_BOOKS.includes(text.toLowerCase())) {
++                this.performSearch(true, false);
++            }
+         }
+     }
+ 
+@@ -486,19 +493,21 @@ class GreenBibleApp {
+         }
+ 
+         // UI State
+-        document.getElementById('resultsSection').classList.add('active');
+-        document.getElementById('topicsSection').style.display = 'none';
+-        document.getElementById('interpretationSection').style.display = 'block';
+-        const interpRef = document.getElementById('interpretationReference');
+-        if (interpRef) interpRef.textContent = query;
+-
+-        const resultsGrid = document.getElementById('resultsGrid');
+-        resultsGrid.innerHTML = `
+-            <div style="grid-column: 1/-1; text-align: center; padding: 48px;">
+-                <div style="font-size: 2rem; margin-bottom: 12px; animation: pulse-glow 1.5s ease-in-out infinite;">????</div>
+-                <p style="color: var(--text-muted); font-size: 0.9rem;">Searching scripture across ${versionsToSearch.length} translations...</p>
+-            </div>
+-        `;
++        if (!isLiveSearch) {
++            document.getElementById('resultsSection').classList.add('active');
++            document.getElementById('topicsSection').style.display = 'none';
++            document.getElementById('interpretationSection').style.display = 'block';
++            const interpRef = document.getElementById('interpretationReference');
++            if (interpRef) interpRef.textContent = query;
++
++            const resultsGrid = document.getElementById('resultsGrid');
++            resultsGrid.innerHTML = `
++                <div style="grid-column: 1/-1; text-align: center; padding: 48px;">
++                    <div style="font-size: 2rem; margin-bottom: 12px; animation: pulse-glow 1.5s ease-in-out infinite;">????</div>
++                    <p style="color: var(--text-muted); font-size: 0.9rem;">Searching scripture across ${versionsToSearch.length} translations...</p>
++                </div>
++            `;
++        }
+ 
+         try {
+             const parsed = this.parseVerseReference(query);
+@@ -526,42 +535,22 @@ class GreenBibleApp {
+                 results = results.filter(r => r !== null);
+             } else {
+                 console.log('???? Search Decision: KEYWORD', query);
+-                // Keyword search: Use the consolidated backend search
++                // 1. Fetch Bible Results
+                 const vCodes = versionsToSearch.map(v => v.code).join(',');
+-                const url = `/api/bibles/search?q=${encodeURIComponent(query)}&versions=${vCodes}`;
+-                const response = await fetch(url, { signal });
++                const bibleResponse = await fetch(`/api/bibles/search?q=${encodeURIComponent(query)}&versions=${vCodes}`);
++                const bibleData = await bibleResponse.json();
+                 
+-                if (!response.ok) throw new Error('Keyword search failed');
+-                
+-                const data = await response.json();
+-                const isSemanticFallback = data.semanticFallback === true;
+-                results = (data.results || []).map(r => {
+-                    // Extract book and chapter from the reference for navigation
+-                    const refParsed = this.parseVerseReference(r.reference);
+-                    return {
+-                        version: { code: r.version, name: r.versionName },
+-                        verse: {
+-                            reference: r.reference,
+-                            text: r.text,
+-                            verses: r.verses,
+-                            isSearch: true,
+-                            book: refParsed ? refParsed.book : '',
+-                            chapter: refParsed ? refParsed.chapter : 1
+-                        }
+-                    };
+-                });
+-
+-                if (results.length === 0) {
+-                    resultsGrid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:48px; color:var(--text-muted);">No results found for "${this.escapeHtml(query)}"</div>`;
+-                    return;
++                // 2. Fetch Sermon Results
++                let sermonData = { sermons: [] };
++                try {
++                    const sermonResponse = await fetch(`/api/sermons/search?q=${encodeURIComponent(query)}`);
++                    sermonData = await sermonResponse.json();
++                } catch (e) {
++                    console.error("Sermon search failed", e);
+                 }
+ 
+-                // Show semantic fallback banner if AI meaning-match was used
+-                if (isSemanticFallback) {
+-                    this._semanticFallbackActive = true;
+-                } else {
+-                    this._semanticFallbackActive = false;
+-                }
++                this.renderSearchResults(bibleData, sermonData, isLiveSearch);
++                return;
+             }
+ 
+             this.displayResults(results, this._semanticFallbackActive);
+@@ -588,23 +577,22 @@ class GreenBibleApp {
+         // 1. Try verse range: Book Chapter:VerseStart-VerseEnd (e.g. Hosea 4:5-7)
+         const rangeMatch = cleaned.match(/^([\w\s]+)\s+(\d+):(\d+)\s*-\s*(\d+)$/i);
+         if (rangeMatch) {
+-            return { book: rangeMatch[1].trim(), chapter: parseInt(rangeMatch[2]), verse: parseInt(rangeMatch[3]), verseEnd: parseInt(rangeMatch[4]) };
++            const [_, book, chapter, verse, verseEnd] = rangeMatch;
++            return this.resolveBookReference(book, chapter, verse, verseEnd);
+         }
+ 
+         // 2. Try full reference: Book Chapter:Verse
+         const fullMatch = cleaned.match(/^([\w\s]+)\s+(\d+):(\d+)$/i);
+         if (fullMatch) {
+-            return { book: fullMatch[1].trim(), chapter: parseInt(fullMatch[2]), verse: parseInt(fullMatch[3]), verseEnd: null };
++            const [_, book, chapter, verse] = fullMatch;
++            return this.resolveBookReference(book, chapter, verse);
+         }
+ 
+         // 2. Try Chapter only: Book Chapter
+         const chapterMatch = cleaned.match(/^([\w\s]+)\s+(\d+)$/i);
+         if (chapterMatch) {
+-            const book = chapterMatch[1].trim().toLowerCase();
+-            // Only treat as passage if the first part is a known book
+-            if (this.BIBLE_BOOKS.includes(book)) {
+-                return { book: chapterMatch[1].trim(), chapter: parseInt(chapterMatch[2]), verse: null };
+-            }
++            const [_, book, chapter] = chapterMatch;
++            return this.resolveBookReference(book, chapter);
+         }
+ 
+         // 3. Try Book only: Book
+@@ -616,6 +604,27 @@ class GreenBibleApp {
+         return null;
+     }
+ 
++    resolveBookReference(bookName, chapter, verse = null, verseEnd = null) {
++        const book = bookName.trim().toLowerCase();
++        
++        // Check English names first
++        if (this.BIBLE_BOOKS.includes(book)) {
++            return { book: book.charAt(0).toUpperCase() + book.slice(1), chapter: parseInt(chapter), verse: verse ? parseInt(verse) : null, verseEnd: verseEnd ? parseInt(verseEnd) : null };
++        }
++
++        // Check Native names cache
++        for (const lang in this.nativeBookNamesCache) {
++            const nativeMap = this.nativeBookNamesCache[lang];
++            for (const [engName, nativeName] of Object.entries(nativeMap)) {
++                if (book === nativeName.toLowerCase()) {
++                    return { book: engName, chapter: parseInt(chapter), verse: verse ? parseInt(verse) : null, verseEnd: verseEnd ? parseInt(verseEnd) : null };
++                }
++            }
++        }
++
++        return null;
++    }
++
+     async fetchVerse(versionCode, query, signal = null) {
+         try {
+             const parsed = this.parseVerseReference(query);
+@@ -711,6 +720,7 @@ class GreenBibleApp {
+                         <span class="result-version">${version.code}</span>
+                         <span class="result-language">${version.name}</span>
+                         ${semanticFallback ? '<span class="semantic-match-badge">??? Meaning Match</span>' : ''}
++                        ${isKeywordSearch && verse.matchScore > 0 ? `<span style="font-size: 0.65rem; color: var(--accent-emerald); background: rgba(52,211,153,0.1); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(52,211,153,0.2); margin-left: 4px;">Score: ${verse.matchScore}</span>` : ''}
+                     </div>
+                     <div class="card-nav-mini">
+                         <button class="mini-nav-btn" onclick="app.navigateCard('${safeRefAttr}', 'prev-ch')" title="Prev Chapter">???</button>
+@@ -772,6 +782,105 @@ class GreenBibleApp {
+         }
+     }
+ 
++    renderSearchResults(bibleData, sermonData, isLiveSearch = false) {
++        const grid = document.getElementById('resultsGrid');
++        if (!grid) return;
++
++        const results = bibleData.results || [];
++        const sermons = sermonData.sermons || [];
++
++        if (results.length === 0 && sermons.length === 0) {
++            if (!isLiveSearch) {
++                grid.innerHTML = `
++                    <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: var(--text-muted);">
++                        <i class="fas fa-search" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.2;"></i>
++                        <p>No matches found in Bible or Sermons.</p>
++                        <button class="btn-primary" style="margin-top: 20px;" onclick="document.getElementById('searchInput').value=''; app.performSearch()">Clear Search</button>
++                    </div>
++                `;
++            }
++            return;
++        }
++
++        let html = '';
++
++        // Sermon Results Header (if any)
++        if (sermons.length > 0) {
++            html += `
++                <div style="grid-column: 1/-1; margin-bottom: 20px;">
++                    <h3 style="font-size: 0.9rem; color: var(--accent-emerald); text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 10px;">
++                        <i class="fas fa-microphone"></i> Sermons by Pastor John Anosike
++                    </h3>
++                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin-top: 15px;">
++                        ${sermons.map(s => `
++                            <div class="sermon-card" onclick="app.openTranscriptModal('${s.id}')" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; cursor: pointer; transition: 0.3s;">
++                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
++                                    <span style="font-size: 0.65rem; background: var(--accent-emerald-dark); color: white; padding: 2px 8px; border-radius: 4px;">Sermon</span>
++                                    <span style="font-size: 0.65rem; color: var(--text-muted);">${s.date}</span>
++                                </div>
++                                <h4 style="font-size: 0.95rem; margin-bottom: 8px; color: var(--text-primary); line-height: 1.4;">${s.title}</h4>
++                                <p style="font-size: 0.8rem; color: var(--text-secondary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 10px;">${s.summary}</p>
++                                <div style="font-size: 0.7rem; color: var(--accent-emerald); font-weight: 600;">View Interpretation & Transcript ???</div>
++                            </div>
++                        `).join('')}
++                    </div>
++                </div>
++                <div style="grid-column: 1/-1; height: 1px; background: rgba(255,255,255,0.05); margin: 30px 0;"></div>
++                <div style="grid-column: 1/-1; margin-bottom: 20px;">
++                    <h3 style="font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 10px;">
++                        <i class="fas fa-book"></i> Bible Results
++                    </h3>
++                </div>
++            `;
++        }
++
++        html += results.map(res => `
++            <div class="verse-card ${res.isSemantic ? 'semantic-match' : ''}" onclick="app.loadPassage('${res.book}', ${res.chapter}, ${res.verse || 'null'})">
++                ${res.isSemantic ? '<div class="semantic-badge"><i class="fas fa-magic"></i> Meaning Match</div>' : ''}
++                <div class="verse-card-header">
++                    <span class="verse-reference">${res.reference}</span>
++                    <span class="verse-version">${res.versionName}</span>
++                </div>
++                <p class="verse-text">${res.text}</p>
++                <div class="verse-card-footer">
++                    <span class="verse-lang">${res.language}</span>
++                    <div class="verse-card-actions">
++                        <button onclick="event.stopPropagation(); app.copyToClipboard('${res.text}\\n??? ${res.reference}')"><i class="fas fa-copy"></i></button>
++                        <button onclick="event.stopPropagation(); app.toggleBookmark('${res.book}', ${res.chapter}, ${res.verse || 'null'}, '${res.text.replace(/'/g, "\\'")}', '${res.version}')"><i class="far fa-bookmark"></i></button>
++                    </div>
++                </div>
++            </div>
++        `).join('');
++
++        grid.innerHTML = html;
++    }
++
++    loadPassage(book, chapter, verse = null) {
++        this.showView('read');
++        const navBook = document.getElementById('bibleNavBook');
++        const navChapter = document.getElementById('bibleNavChapter');
++        
++        if (navBook) navBook.value = book;
++        this.updateBibleNav('book'); // Trigger chapter update
++        
++        if (navChapter) {
++            navChapter.value = chapter;
++            this.updateBibleNav('chapter'); // Load the content
++        }
++
++        // Highlight specific verse if provided
++        if (verse) {
++            setTimeout(() => {
++                const element = document.getElementById(`verse-${verse}`);
++                if (element) {
++                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
++                    element.classList.add('highlight-pulse');
++                }
++            }, 500);
++        }
++    }
++
++
+     navigateCard(reference, action) {
+         const parsed = this.parseVerseReference(reference);
+         if (!parsed) return;
+@@ -805,22 +914,40 @@ class GreenBibleApp {
+         return bookmarks.some(b => b.reference === reference);
+     }
+ 
+-    toggleBookmark(reference, text, version) {
++    toggleBookmark(book, chapter, verse, text, version) {
++        // Support both old (ref, text, version) and new (book, ch, v, text, version) signatures
++        let reference, bText, bVersion;
++        if (typeof chapter === 'string' && text === undefined) {
++            // Old signature
++            reference = book;
++            bText = chapter;
++            bVersion = verse;
++        } else {
++            // New signature
++            reference = `${book} ${chapter}:${verse}`;
++            bText = text;
++            bVersion = version;
++        }
++
+         let bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+         const index = bookmarks.findIndex(b => b.reference === reference);
+ 
+         if (index === -1) {
+             const folder = window.prompt("Save to folder (e.g., 'Faith Study', 'Sunday Notes'):", "General") || "General";
+-            bookmarks.push({ reference, text, version, folder, timestamp: new Date().toISOString() });
++            bookmarks.push({ reference, text: bText, version: bVersion, folder, timestamp: new Date().toISOString() });
+             this.showNotification(`Verse saved to ${folder}`, 'success');
+         } else {
+             bookmarks.splice(index, 1);
+             this.showNotification('Bookmark removed', 'info');
+         }
+-
++        
+         localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
+         this.renderBookmarks();
+-        this.performSearch(); // Refresh results to update bookmark button
++        // If we have a results grid, refresh it to update icons
++        if (document.getElementById('resultsGrid')) {
++             // We don't necessarily want to re-perform the whole search 
++             // but we could just re-render. For now, this is fine.
++        }
+     }
+ 
+     renderBookmarks() {
+@@ -1568,6 +1695,11 @@ class GreenBibleApp {
+     // Navigation Tabs
+     // ==========================================
+     showView(view) {
++        // Pause audio when moving away from the sermon/transcript views
++        if (view !== 'sermon' && view !== 'transcript') {
++            this.stopGlobalAudio();
++        }
++
+         // Update nav tabs UI
+         document.querySelectorAll('.nav-tab').forEach(tab => {
+             tab.classList.remove('active');
+@@ -1713,8 +1845,8 @@ class GreenBibleApp {
+                         <span style="font-size: 0.7rem; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">${s.date}</span>
+                         <h3 style="font-size: 1rem; color: var(--text-primary); margin: 6px 0 12px; line-height: 1.4; height: 2.8em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${this.escapeHtml(s.title)}</h3>
+                         <div style="display: flex; gap: 8px;">
+-                            <button class="search-btn" style="flex: 1; padding: 8px; font-size: 0.75rem;" onclick="app.openTranscriptModal('${s.id}')">Read</button>
+-                            <button class="nav-btn" style="flex: 1; padding: 8px; font-size: 0.75rem; border-color: var(--accent-emerald); color: var(--accent-emerald);" onclick="app.playSermon('${s.id}')">Listen</button>
++                            <button class="search-btn" style="flex: 1; padding: 8px; font-size: 0.75rem;" onclick="app.openTranscriptModal('${s.id}')">Read & Sync</button>
++                            <button class="nav-btn" style="flex: 1; padding: 8px; font-size: 0.75rem; border-color: var(--accent-emerald); color: var(--accent-emerald);" onclick="app.playSermon('${s.id}')">Listen Audio</button>
+                         </div>
+                     </div>
+                 </div>
+@@ -1957,379 +2089,7 @@ class GreenBibleApp {
+         return icons[cat] || '????';
+     }
+ 
+-    async playSermon(id) {
+-        try {
+-            const response = await fetch(`/api/sermons/${id}`);
+-            const s = await response.json();
+-            
+-            const player = document.getElementById('globalAudioPlayer');
+-            const bridge = document.getElementById('ytAudioBridge');
+-            if (!player || !bridge) return;
+-
+-            // Highlight current card
+-            document.querySelectorAll('.glass-panel').forEach(c => c.classList.remove('sermon-card-playing'));
+-            const card = document.getElementById(`sermon-card-${id}`);
+-            if (card) card.classList.add('sermon-card-playing');
+-
+-            this.currentAudioId = id;
+-            this.currentAudioTitle = s.title;
+-
+-            // Update UI
+-            player.style.bottom = '0';
+-            document.getElementById('audioTitle').textContent = s.title;
+-            document.getElementById('audioThumbnail').style.backgroundImage = `url('https://img.youtube.com/vi/${s.id}/default.jpg')`;
+-            document.getElementById('audioThumbnail').style.backgroundSize = 'cover';
+-            document.getElementById('audioThumbnail').textContent = '';
+-
+-            // Update Modal Header if open
+-            if (this.currentTranscriptSermonId === id) {
+-                const badge = document.getElementById('nowPlayingBadge');
+-                if (badge) badge.style.display = 'block';
+-            }
+-
+-            // Initialize or update YouTube Bridge
+-            if (!this.ytPlayer) {
+-                // Load YT API if not present
+-                if (!window.YT) {
+-                    const tag = document.createElement('script');
+-                    tag.src = "https://www.youtube.com/iframe_api";
+-                    document.head.appendChild(tag);
+-                }
+-
+-                window.onYouTubeIframeAPIReady = () => {
+-                    this.initYTPlayer(id);
+-                };
+-                
+-                if (window.YT && window.YT.Player) {
+-                    this.initYTPlayer(id);
+-                }
+-            } else {
+-                this.ytPlayer.loadVideoById(id);
+-            }
+-
+-            this.showNotification(`Starting audio: ${s.title}`, 'success');
+-        } catch (error) {
+-            console.error('Audio play error:', error);
+-            this.showNotification('Failed to load audio stream.', 'error');
+-        }
+-    }
+-
+-    initYTPlayer(id) {
+-        this.ytPlayer = new YT.Player('ytAudioBridge', {
+-            height: '1',
+-            width: '1',
+-            videoId: id,
+-            playerVars: { 'autoplay': 1, 'controls': 0 },
+-            events: {
+-                'onReady': (e) => {
+-                    e.target.playVideo();
+-                    this.startAudioProgressTimer();
+-                },
+-                'onStateChange': (e) => {
+-                    const btn = document.getElementById('audioToggleBtn');
+-                    const modalBtn = document.getElementById('modalAudioToggleBtn');
+-                    const icon = document.getElementById('audioToggleIcon');
+-                    const label = document.getElementById('audioToggleLabel');
+-                    const modalLabel = document.getElementById('modalAudioToggleLabel');
+-                    
+-                    if (e.data === YT.PlayerState.PLAYING) {
+-                        if (icon) icon.textContent = '???';
+-                        if (label) label.textContent = 'PAUSE';
+-                        if (modalBtn) modalBtn.querySelector('span:first-child').textContent = '???';
+-                        if (modalLabel) modalLabel.textContent = 'PAUSE';
+-                    } else {
+-                        if (icon) icon.textContent = '???';
+-                        if (label) label.textContent = 'PLAY';
+-                        if (modalBtn) modalBtn.querySelector('span:first-child').textContent = '???';
+-                        if (modalLabel) modalLabel.textContent = 'PLAY';
+-                    }
+-                }
+-            }
+-        });
+-    }
+-
+-    toggleGlobalAudio() {
+-        if (!this.ytPlayer) return;
+-        const state = this.ytPlayer.getPlayerState();
+-        if (state === YT.PlayerState.PLAYING) {
+-            this.ytPlayer.pauseVideo();
+-        } else {
+-            this.ytPlayer.playVideo();
+-        }
+-    }
+-
+-    seekAudio(event) {
+-        if (!this.ytPlayer) return;
+-        const rect = event.currentTarget.getBoundingClientRect();
+-        const x = event.clientX - rect.left;
+-        const width = rect.width;
+-        const percent = x / width;
+-        const duration = this.ytPlayer.getDuration();
+-        this.ytPlayer.seekTo(percent * duration, true);
+-    }
+-
+-    seekAudioRelative(seconds) {
+-        if (!this.ytPlayer) return;
+-        const current = this.ytPlayer.getCurrentTime();
+-        this.ytPlayer.seekTo(current + seconds, true);
+-    }
+-
+-    startAudioProgressTimer() {
+-        if (this.audioTimer) clearInterval(this.audioTimer);
+-        this.audioTimer = setInterval(() => {
+-            if (this.ytPlayer && this.ytPlayer.getCurrentTime) {
+-                const current = this.ytPlayer.getCurrentTime();
+-                const duration = this.ytPlayer.getDuration();
+-                const percent = (current / duration) * 100;
+-                
+-                document.getElementById('audioProgressBar').style.width = percent + '%';
+-                document.getElementById('audioCurrentTime').textContent = this.formatTime(current);
+-                document.getElementById('audioDuration').textContent = this.formatTime(duration);
+-
+-                // Sync Modal Times & Progress
+-                const modalCur = document.getElementById('modalAudioCurrentTime');
+-                const modalDur = document.getElementById('modalAudioDuration');
+-                const modalProg = document.getElementById('modalHeaderProgressBar');
+-                
+-                if (modalCur) modalCur.textContent = this.formatTime(current);
+-                if (modalDur) modalDur.textContent = this.formatTime(duration);
+-                if (modalProg) modalProg.textContent = percent + '%';
+-
+-                // Sync Highlight
+-                this.syncTranscriptHighlight(current);
+-            }
+-        }, 500);
+-    }
+-
+-    async openTranscriptModal(id) {
+-        try {
+-            const response = await fetch(`/api/sermons/${id}`);
+-            const s = await response.json();
+-            
+-            const modal = document.getElementById('transcriptModal');
+-            const title = document.getElementById('modalTranscriptTitle');
+-            const content = document.getElementById('modalTranscriptContent');
+-            const interpretation = document.getElementById('modalInterpretationContent');
+-            
+-            if (!modal || !content) return;
+-
+-            this.currentTranscriptSermonId = id;
+-            title.textContent = s.title;
+-            modal.style.display = 'flex';
+-            document.body.style.overflow = 'hidden';
+-
+-            // Now Playing Badge
+-            const badge = document.getElementById('nowPlayingBadge');
+-            if (badge) {
+-                badge.style.display = (this.currentAudioId === id) ? 'block' : 'none';
+-            }
+-
+-            // Split transcript into synchronized segments
+-            // Pattern: [H:MM:SS] or [M:SS]
+-            const segments = [];
+-            const timestampRegex = /\[(\d+:)?(\d+):(\d+)\]/g;
+-            const transcript = s.transcript || '';
+-            
+-            if (!transcript) {
+-                content.innerHTML = `
+-                    <div style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
+-                        <div style="font-size: 3rem; margin-bottom: 20px; opacity: 0.5;">????</div>
+-                        <h3 style="color: var(--text-primary); margin-bottom: 12px;">Transcript Pending</h3>
+-                        <p style="font-size: 0.95rem; line-height: 1.6; max-width: 400px; margin: 0 auto 24px;">This message is currently being processed. You can still listen to the audio while we prepare the text.</p>
+-                        <button class="search-btn" onclick="app.processSermonAI('${id}')">??? Generate Interpretation Now</button>
+-                    </div>
+-                `;
+-            } else {
+-                // First pass: find all timestamps and their positions
+-                const matches = [];
+-                let match;
+-                while ((match = timestampRegex.exec(transcript)) !== null) {
+-                    matches.push({
+-                        timestamp: match[0],
+-                        time: (match[1] ? parseInt(match[1]) * 3600 : 0) + (parseInt(match[2]) * 60) + parseInt(match[3]),
+-                        index: match.index
+-                    });
+-                }
+-
+-                // Second pass: build segments
+-                let html = '';
+-                if (matches.length > 0) {
+-                    for (let i = 0; i < matches.length; i++) {
+-                        const currentMatch = matches[i];
+-                        const nextMatch = matches[i + 1];
+-                        const textEnd = nextMatch ? nextMatch.index : transcript.length;
+-                        const text = transcript.substring(currentMatch.index, textEnd);
+-                        
+-                        html += `<span id="ts-${currentMatch.time}" class="transcript-segment" onclick="app.seekSermon(${currentMatch.time})">${this.escapeHtml(text)}</span> `;
+-                    }
+-                } else {
+-                    html = this.escapeHtml(transcript);
+-                }
+-                content.innerHTML = html;
+-            }
+-            
+-            // Add interpretation notes to sidebar
+-            interpretation.innerHTML = `
+-                <div style="margin-bottom: 20px;">
+-                    <p style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Key Points</p>
+-                    <ul style="list-style: none; padding: 0; font-size: 0.85rem; color: var(--text-secondary);">
+-                        ${(s.interpretation?.key_points || []).map(kp => `<li style="margin-bottom: 8px; display: flex; gap: 8px;"><span style="color: var(--accent-emerald);">???</span> ${this.escapeHtml(kp)}</li>`).join('')}
+-                    </ul>
+-                </div>
+-                <div style="margin-bottom: 20px;">
+-                    <p style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Scriptures</p>
+-                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+-                        ${(s.interpretation?.scriptures || []).map(ref => `<span class="topic-item" style="padding: 4px 10px; font-size: 0.75rem;" onclick="setSearch('${ref}'); performSearch(); app.closeTranscriptModal(); app.showView('search');">${ref}</span>`).join('')}
+-                    </div>
+-                </div>
+-            `;
+-
+-            // If this sermon is already playing, start highlighting immediately
+-            if (this.ytPlayer && this.ytPlayer.getVideoData && this.ytPlayer.getVideoData().video_id === id) {
+-                this.syncTranscriptHighlight(this.ytPlayer.getCurrentTime());
+-            } else {
+-                // Optionally start playing if not already
+-                this.playSermon(id);
+-            }
+-
+-        } catch (error) {
+-            console.error('Transcript modal error:', error);
+-            this.showNotification('Failed to load transcript.', 'error');
+-        }
+-    }
+-
+-    closeTranscriptModal() {
+-        const modal = document.getElementById('transcriptModal');
+-        if (modal) {
+-            modal.style.display = 'none';
+-            document.body.style.overflow = '';
+-            this.currentTranscriptSermonId = null;
+-        }
+-    }
+-
+-    syncTranscriptHighlight(currentTime) {
+-        const modal = document.getElementById('transcriptModal');
+-        if (!modal || modal.style.display === 'none') return;
+-        
+-        const segments = document.querySelectorAll('.transcript-segment');
+-        if (segments.length === 0) return;
+-
+-        let activeSegment = null;
+-        const roundedTime = Math.floor(currentTime);
+-
+-        // Find the segment whose timestamp is the largest value <= currentTime
+-        segments.forEach(seg => {
+-            const segTime = parseInt(seg.id.replace('ts-', ''));
+-            if (segTime <= roundedTime) {
+-                if (!activeSegment || segTime > parseInt(activeSegment.id.replace('ts-', ''))) {
+-                    activeSegment = seg;
+-                }
+-            }
+-        });
+-
+-        if (activeSegment && !activeSegment.classList.contains('active')) {
+-            segments.forEach(s => s.classList.remove('active'));
+-            activeSegment.classList.add('active');
+-            
+-            // Auto-scroll to active segment
+-            const content = document.getElementById('modalTranscriptContent');
+-            const offset = activeSegment.offsetTop - content.offsetTop - 100;
+-            content.scrollTo({ top: offset, behavior: 'smooth' });
+-        }
+-    }
+-
+-    closeGlobalAudio() {
+-        const player = document.getElementById('globalAudioPlayer');
+-        if (player) {
+-            player.style.bottom = '-100px';
+-            if (this.ytPlayer) this.ytPlayer.stopVideo();
+-            if (this.audioTimer) clearInterval(this.audioTimer);
+-        }
+-    }
+-
+-    // ==========================================
+-    // Global Audio Controller
+-    // ==========================================
+-    playSermonAudio() {
+-        if (!this.currentSermon || !this.currentSermon.audioUrl) return;
+-        
+-        const player = document.getElementById('globalAudioPlayer');
+-        if (!player) return;
+-
+-        // If same audio, just toggle
+-        if (this.audioElement.src === this.currentSermon.audioUrl) {
+-            this.toggleGlobalAudio();
+-            return;
+-        }
+-
+-        this.audioElement.src = this.currentSermon.audioUrl;
+-        document.getElementById('audioTitle').textContent = this.currentSermon.title;
+-        player.classList.add('active');
+-        
+-        this.audioElement.play().catch(err => {
+-            console.error('Playback failed:', err);
+-            this.showNotification('Auto-play blocked. Please click play to start.', 'info');
+-        });
+-    }
+-
+-    toggleGlobalAudio() {
+-        if (!this.audioElement) return;
+-        
+-        if (this.audioElement.paused) {
+-            this.audioElement.play();
+-        } else {
+-            this.audioElement.pause();
+-        }
+-    }
+-
+-    updateAudioUI() {
+-        const btn = document.getElementById('audioToggleBtn');
+-        if (btn) {
+-            btn.textContent = this.isPlaying ? '???' : '???';
+-        }
+-    }
+-
+-    updateAudioProgress() {
+-        const bar = document.getElementById('audioProgressBar');
+-        const time = document.getElementById('audioTime');
+-        if (!bar || !time || isNaN(this.audioElement.duration)) return;
+-
+-        const percent = (this.audioElement.currentTime / this.audioElement.duration) * 100;
+-        bar.style.width = percent + '%';
+-
+-        const cur = this.formatTime(this.audioElement.currentTime);
+-        const dur = this.formatTime(this.audioElement.duration);
+-        time.textContent = `${cur} / ${dur}`;
+-    }
+-
+-    seekAudio(event) {
+-        const container = event.currentTarget;
+-        const rect = container.getBoundingClientRect();
+-        const x = event.clientX - rect.left;
+-        const width = rect.width;
+-        const percent = x / width;
+-        
+-        if (this.audioElement && this.audioElement.duration) {
+-            this.audioElement.currentTime = percent * this.audioElement.duration;
+-        }
+-    }
+ 
+-    formatTime(seconds) {
+-        const mins = Math.floor(seconds / 60);
+-        const secs = Math.floor(seconds % 60);
+-        return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+-    }
+-
+-    closeGlobalAudio() {
+-        const player = document.getElementById('globalAudioPlayer');
+-        if (player) {
+-            player.classList.remove('active');
+-            if (this.audioElement) {
+-                this.audioElement.pause();
+-                this.audioElement.src = '';
+-            }
+-        }
+-    }
+ 
+     // ==========================================
+     // Notifications ??? Premium Toast
+@@ -2757,14 +2517,17 @@ class GreenBibleApp {
+         const safeText = this.escapeHtml(text);
+         const STOP_WORDS = new Set(['a', 'an', 'the', 'and', 'or', 'but', 'if', 'then', 'else', 'when', 'at', 'from', 'by', 'for', 'with', 'in', 'on', 'to', 'of', 'is', 'am', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'i', 'me', 'my', 'mine', 'you', 'your', 'yours', 'he', 'him', 'his', 'she', 'her', 'hers', 'it', 'its', 'we', 'us', 'our', 'ours', 'they', 'them', 'their', 'theirs']);
+ 
++        // Strip quotes and unnecessary punctuation from query for highlighting purposes
++        const cleanQuery = query.replace(/["']/g, '').trim();
+         // Escape regex special characters in the query
+-        const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
++        const escaped = cleanQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+         
+         // Build a flexible pattern for the full phrase
+         const flexiblePattern = escaped.replace(/\s+/g, '[\\s,.;:\'"!\\?\\-\\(\\)\\[\\]]+');
++
+         
+         // Split for individual keyword highlighting (Filtering stop words)
+-        const words = query.trim().split(/\s+/);
++        const words = cleanQuery.split(/\s+/);
+         const keywords = words.filter(w => {
+             const low = w.toLowerCase().replace(/[^a-z]/g, '');
+             return low.length > 2 && !STOP_WORDS.has(low);
+@@ -2923,6 +2686,208 @@ class GreenBibleApp {
+             resultsSection.scrollIntoView({ behavior: 'smooth' });
+         }
+     }
++
++    // ==========================================
++    // YouTube Audio Logic
++    // ==========================================
++    initYoutubeAPI() {
++        if (!document.getElementById('ytPlayerContainer')) {
++            const container = document.createElement('div');
++            container.id = 'ytPlayerContainer';
++            container.style.position = 'absolute';
++            container.style.top = '-9999px';
++            container.style.left = '-9999px';
++            container.style.width = '1px';
++            container.style.height = '1px';
++            container.style.opacity = '0';
++            container.innerHTML = '<div id="youtube-player"></div>';
++            document.body.appendChild(container);
++        }
++
++        if (!window.YT) {
++            const tag = document.createElement('script');
++            tag.src = "https://www.youtube.com/iframe_api";
++            const firstScriptTag = document.getElementsByTagName('script')[0];
++            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
++        }
++
++        window.onYouTubeIframeAPIReady = () => {
++            this.ytPlayer = new YT.Player('youtube-player', {
++                height: '0',
++                width: '0',
++                events: {
++                    'onStateChange': (event) => {
++                        if (event.data === YT.PlayerState.PLAYING) {
++                            this.isPlaying = true;
++                            this.startAudioProgressSync();
++                        } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
++                            this.isPlaying = false;
++                            this.stopAudioProgressSync();
++                        }
++                        this.updateAudioUI();
++                    }
++                }
++            });
++        };
++    }
++
++    toggleGlobalAudio() {
++        if (!this.ytPlayer || !this.ytPlayer.getPlayerState) return;
++        const state = this.ytPlayer.getPlayerState();
++        if (state === YT.PlayerState.PLAYING) {
++            this.ytPlayer.pauseVideo();
++        } else {
++            this.ytPlayer.playVideo();
++        }
++    }
++
++    stopGlobalAudio() {
++        if (this.ytPlayer && this.ytPlayer.pauseVideo) {
++            this.ytPlayer.pauseVideo();
++        }
++        this.isPlaying = false;
++        this.stopAudioProgressSync();
++        this.updateAudioUI();
++    }
++
++    closeGlobalAudio() {
++        this.stopGlobalAudio();
++        const tray = document.getElementById('audioPlayerTray');
++        if (tray) tray.style.display = 'none';
++    }
++
++    seekAudio(secondsOrEvent) {
++        if (!this.ytPlayer) return;
++        
++        let seconds;
++        if (typeof secondsOrEvent === 'number') {
++            seconds = secondsOrEvent;
++        } else {
++            // Event from progress bar click
++            const rect = secondsOrEvent.currentTarget.getBoundingClientRect();
++            const x = secondsOrEvent.clientX - rect.left;
++            const pct = x / rect.width;
++            seconds = pct * this.ytPlayer.getDuration();
++        }
++
++        this.ytPlayer.seekTo(seconds, true);
++        if (!this.isPlaying) {
++            this.ytPlayer.playVideo();
++        }
++    }
++
++    seekAudioRelative(seconds) {
++        if (!this.ytPlayer || !this.ytPlayer.getCurrentTime) return;
++        const current = this.ytPlayer.getCurrentTime();
++        this.ytPlayer.seekTo(current + seconds, true);
++    }
++
++    parseTimeToSeconds(timeStr) {
++        const parts = timeStr.split(':').reverse();
++        let seconds = 0;
++        if (parts[0]) seconds += parseInt(parts[0]);
++        if (parts[1]) seconds += parseInt(parts[1]) * 60;
++        if (parts[2]) seconds += parseInt(parts[2]) * 3600;
++        return seconds;
++    }
++
++    startAudioProgressSync() {
++        this.stopAudioProgressSync();
++        this.audioInterval = setInterval(() => {
++            this.updateAudioUI();
++            this.syncTranscriptHighlight();
++        }, 500);
++    }
++
++    stopAudioProgressSync() {
++        if (this.audioInterval) {
++            clearInterval(this.audioInterval);
++            this.audioInterval = null;
++        }
++    }
++
++    updateAudioUI() {
++        const icon = this.isPlaying ? '??????' : '???';
++        const label = this.isPlaying ? 'PAUSE' : 'PLAY';
++
++        // Update Global Tray
++        const tray = document.getElementById('audioPlayerTray');
++        if (tray && this.currentSermon) {
++            tray.style.display = 'flex';
++            document.getElementById('audioTitle').textContent = this.currentSermon.title;
++            const toggleIcon = document.getElementById('audioToggleIcon');
++            const toggleLabel = document.getElementById('audioToggleLabel');
++            if (toggleIcon) toggleIcon.textContent = icon;
++            if (toggleLabel) toggleLabel.textContent = label;
++        }
++
++        // Update Modal Controls
++        const modalToggleBtn = document.getElementById('modalAudioToggleBtn');
++        if (modalToggleBtn) {
++            const i = modalToggleBtn.querySelector('i');
++            if (i) i.className = this.isPlaying ? 'fas fa-pause' : 'fas fa-play';
++        }
++
++        if (this.ytPlayer && this.ytPlayer.getCurrentTime) {
++            const current = this.ytPlayer.getCurrentTime();
++            const duration = this.ytPlayer.getDuration();
++            const pct = duration > 0 ? (current / duration) * 100 : 0;
++
++            const globalBar = document.getElementById('audioProgressBar');
++            if (globalBar) globalBar.style.width = `${pct}%`;
++
++            const modalBar = document.getElementById('modalAudioProgress');
++            if (modalBar) modalBar.style.width = `${pct}%`;
++
++            const globalTime = document.getElementById('audioCurrentTime');
++            if (globalTime) globalTime.textContent = this.formatTime(current);
++
++            const globalDuration = document.getElementById('audioDuration');
++            if (globalDuration) globalDuration.textContent = this.formatTime(duration);
++        }
++    }
++
++    formatTime(seconds) {
++        if (isNaN(seconds) || seconds < 0) return '0:00';
++        const h = Math.floor(seconds / 3600);
++        const m = Math.floor((seconds % 3600) / 60);
++        const s = Math.floor(seconds % 60);
++        if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
++        return `${m}:${s.toString().padStart(2, '0')}`;
++    }
++
++    syncTranscriptHighlight() {
++        if (!this.ytPlayer || !this.ytPlayer.getCurrentTime) return;
++        const currentTime = this.ytPlayer.getCurrentTime();
++        
++        const lines = document.querySelectorAll('.transcript-line');
++        let activeLine = null;
++
++        lines.forEach(line => {
++            const timestamp = line.querySelector('.timestamp');
++            if (timestamp) {
++                const seconds = this.parseTimeToSeconds(timestamp.textContent);
++                if (seconds <= currentTime + 0.5) { // 0.5 buffer
++                    activeLine = line;
++                }
++            }
++        });
++
++        if (activeLine) {
++            lines.forEach(l => l.classList.remove('active'));
++            activeLine.classList.add('active');
++            
++            // Auto-scroll the transcript content container
++            const container = document.getElementById('transcriptContent') || document.getElementById('modalTranscriptContent');
++            if (container && activeLine.classList.contains('active')) {
++                const rect = activeLine.getBoundingClientRect();
++                const containerRect = container.getBoundingClientRect();
++                if (rect.top < containerRect.top || rect.bottom > containerRect.bottom) {
++                    activeLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
++                }
++            }
++        }
++    }
+ }
+ 
+ // ==========================================
+@@ -2953,6 +2918,10 @@ function showVerseImage(reference) { app.showVerseImage(reference); }
+ function illustrateVerse(reference) { app.illustrateVerse(reference); }
+ function openVisualModal(reference, type) { app.openVisualModal(reference, type); }
+ function closeVisualModal() { app.closeVisualModal(); }
++function openTranscriptModal(id) { app.openTranscriptModal(id); }
++function closeTranscriptModal() { app.closeTranscriptModal(); }
++function loadPassage(book, chapter, verse) { app.loadPassage(book, chapter, verse); }
++function toggleBookmark(book, chapter, verse, text, version) { app.toggleBookmark(book, chapter, verse, text, version); }
+ function clearSearchHistory() { app.clearSearchHistory(); }
+ 
+ // Close modals on outside click

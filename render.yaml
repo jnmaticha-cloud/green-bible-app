@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: green-bible-app
+    env: docker
+    plan: free
+    region: oregon
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        value: sqlite:./data/bible.db
+    # Enable persistent storage for SQLite and Sermons
+    mountPath: /app/data
+    disk:
+      name: bible-data
+      mountPath: /app/data
+      sizeGB: 1

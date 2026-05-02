@@ -1,0 +1,3261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Green Bible — Scripture Study Companion</title>
+    <meta name="description" content="A world-class Bible study companion with multiple translations, verse comparison, bookmarks, AI art, and commentary features.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#10b981">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css">
+    <style>
+        /* ========================================
+           ROOT DESIGN TOKENS
+           ======================================== */
+        :root {
+            --bg-deep: #0a0f0d;
+            --bg-surface: #111916;
+            --bg-card: #161f1b;
+            --bg-card-hover: #1c2822;
+            --bg-elevated: #1e2a24;
+            --bg-input: #141c18;
+
+            --accent-emerald: #34d399;
+            --accent-emerald-dim: #10b981;
+            --accent-emerald-glow: rgba(52, 211, 153, 0.15);
+            --accent-gold: #f5c542;
+            --accent-gold-dim: #d4a012;
+            --accent-gold-glow: rgba(245, 197, 66, 0.12);
+
+            --text-primary: #e8ede9;
+            --text-secondary: #9ca8a0;
+            --text-muted: #5e6d63;
+            --text-inverse: #0a0f0d;
+
+            --border-subtle: rgba(255,255,255,0.06);
+            --border-default: rgba(255,255,255,0.1);
+            --border-accent: rgba(52, 211, 153, 0.25);
+
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+            --shadow-xl: 0 16px 48px rgba(0,0,0,0.6);
+            --shadow-glow: 0 0 30px rgba(52,211,153,0.08);
+
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --radius-2xl: 24px;
+            --radius-full: 9999px;
+
+            --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ========================================
+           RESET & BASE
+           ======================================== */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        * {
+            -webkit-user-select: text;
+            user-select: text;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Subtle background pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 20% 10%, rgba(52,211,153,0.04), transparent),
+                radial-gradient(ellipse 60% 50% at 80% 80%, rgba(245,197,66,0.03), transparent);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-weight: 600;
+        }
+
+        .serif-text {
+            font-family: 'Playfair Display', Georgia, serif;
+        }
+
+        .mono-text {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ========================================
+           SCROLLBAR
+           ======================================== */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-default);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-emerald-dim);
+        }
+
+        /* ========================================
+           HEADER
+           ======================================== */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(10, 15, 13, 0.85);
+            backdrop-filter: blur(20px) saturate(1.4);
+            -webkit-backdrop-filter: blur(20px) saturate(1.4);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .header-content {
+            max-width: 1320px;
+            margin: 0 auto;
+            padding: 14px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--accent-emerald), #059669);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(52,211,153,0.25);
+            position: relative;
+        }
+
+        .logo-icon::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: var(--radius-md);
+            background: linear-gradient(135deg, var(--accent-emerald), transparent);
+            opacity: 0.3;
+            z-index: -1;
+            filter: blur(6px);
+        }
+
+        .logo-text h1 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, var(--text-primary), var(--accent-emerald));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-text span {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            font-weight: 500;
+        }
+
+        /* Navigation */
+        .nav-tabs {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-card);
+            border-radius: var(--radius-full);
+            padding: 4px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .nav-tab {
+            padding: 10px 22px;
+            background: transparent;
+            border: none;
+            border-radius: var(--radius-full);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all var(--transition-base);
+            font-size: 0.85rem;
+            font-weight: 500;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .nav-tab:hover {
+            color: var(--text-secondary);
+            background: rgba(255,255,255,0.04);
+        }
+
+        .nav-tab.active {
+            background: var(--accent-emerald);
+            color: var(--text-inverse);
+            box-shadow: 0 2px 12px rgba(52,211,153,0.3);
+        }
+
+        .nav-tab .tab-icon {
+            font-size: 1rem;
+        }
+
+        /* ========================================
+           MAIN CONTAINER
+           ======================================== */
+        .main-container {
+            max-width: 1320px;
+            margin: 0 auto;
+            padding: 32px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ========================================
+           SECTION TITLES
+           ======================================== */
+        .section-title {
+            font-size: 1.3rem;
+            color: var(--text-primary);
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+        }
+
+        .section-title .title-accent {
+            width: 3px;
+            height: 22px;
+            background: linear-gradient(180deg, var(--accent-emerald), var(--accent-gold));
+            border-radius: 2px;
+        }
+
+        .section-title .title-badge {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 4px 12px;
+            background: var(--accent-emerald-glow);
+            color: var(--accent-emerald);
+            border-radius: var(--radius-full);
+            border: 1px solid var(--border-accent);
+        }
+
+        /* ========================================
+           GLASS PANEL (Reusable)
+           ======================================== */
+        .glass-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-xl);
+            padding: 28px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-md);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(52,211,153,0.2), transparent);
+        }
+
+        /* ========================================
+           STUDY TOPICS
+           ======================================== */
+        .topics-section {
+            composes: glass-panel;
+        }
+
+        .topics-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .topic-item {
+            padding: 10px 20px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-full);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all var(--transition-base);
+            font-size: 0.88rem;
+            font-weight: 500;
+        }
+
+        .topic-item:hover {
+            color: var(--accent-emerald);
+            border-color: var(--border-accent);
+            background: var(--accent-emerald-glow);
+            transform: translateY(-1px);
+        }
+
+        /* ========================================
+           SEARCH SECTION
+           ======================================== */
+        .search-section {
+            composes: glass-panel;
+        }
+
+        .search-container {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .search-input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 16px;
+            pointer-events: none;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 16px 18px 16px 50px;
+            border: 1.5px solid var(--border-default);
+            border-radius: var(--radius-lg);
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+            transition: all var(--transition-base);
+            background: var(--bg-input);
+            color: var(--text-primary);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-emerald);
+            box-shadow: 0 0 0 3px var(--accent-emerald-glow);
+            background: var(--bg-surface);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .search-btn {
+            padding: 16px 36px;
+            background: linear-gradient(135deg, var(--accent-emerald), #059669);
+            color: var(--text-inverse);
+            border: none;
+            border-radius: var(--radius-lg);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            box-shadow: 0 4px 16px rgba(52,211,153,0.25);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(52,211,153,0.35);
+        }
+
+        .search-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Search Suggestions Overlay */
+        .search-suggestions-overlay {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            background: rgba(22, 31, 27, 0.95);
+            backdrop-filter: blur(16px) saturate(1.8);
+            -webkit-backdrop-filter: blur(16px) saturate(1.8);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-lg);
+            z-index: 1000;
+            max-height: 400px;
+            overflow-y: auto;
+            box-shadow: var(--shadow-xl);
+            display: none;
+            animation: suggestFadeIn 0.2s ease-out;
+        }
+
+        @keyframes suggestFadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .suggestion-group {
+            padding: 8px 0;
+        }
+
+        .suggestion-header {
+            padding: 8px 20px;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 700;
+        }
+
+        .suggestion-item {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            border-left: 3px solid transparent;
+        }
+
+        .suggestion-item:hover {
+            background: rgba(52, 211, 153, 0.08);
+            border-left-color: var(--accent-emerald);
+            padding-left: 24px;
+        }
+
+        .suggestion-icon {
+            font-size: 0.9rem;
+            color: var(--accent-emerald);
+        }
+
+        .suggestion-text {
+            flex: 1;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        .suggestion-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .search-hints {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .search-hint {
+            padding: 7px 16px;
+            background: var(--bg-elevated);
+            border-radius: var(--radius-full);
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            border: 1px solid var(--border-subtle);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .search-hint:hover {
+            color: var(--accent-emerald);
+            border-color: var(--border-accent);
+            background: var(--accent-emerald-glow);
+        }
+
+        /* ========================================
+           RECENT SEARCH CHIPS
+           ======================================== */
+        .recent-chip {
+            padding: 6px 14px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-full);
+            color: var(--text-secondary);
+            font-size: 0.78rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            font-family: 'Inter', sans-serif;
+            white-space: nowrap;
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .recent-chip:hover {
+            color: var(--accent-emerald);
+            border-color: var(--border-accent);
+            background: var(--accent-emerald-glow);
+            transform: translateY(-1px);
+        }
+
+        /* ========================================
+           INTERLINEAR & CROSS-REFERENCE PANELS
+           ======================================== */
+        .interlinear-panel, .crossrefs-panel {
+            animation: fadeSlideUp 0.4s ease-out;
+        }
+
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ========================================
+           RESULTS SECTION
+           ======================================== */
+        .results-section {
+            display: none;
+            animation: fadeSlideIn 0.6s ease-out;
+        }
+
+        .results-section.active {
+            display: block;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+
+        /* ========================================
+           RESULT CARD — Premium Redesign
+           ======================================== */
+        .result-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            transition: all var(--transition-base);
+            position: relative;
+        }
+
+        .result-card:hover {
+            border-color: var(--border-accent);
+            box-shadow: var(--shadow-lg), var(--shadow-glow);
+            transform: translateY(-4px);
+        }
+
+        .result-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(52,211,153,0.3), transparent);
+        }
+
+        .result-header {
+            padding: 18px 22px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-subtle);
+            background: linear-gradient(135deg, rgba(52,211,153,0.06), transparent);
+        }
+
+        .result-version {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-emerald);
+            font-weight: 600;
+            font-size: 1.1rem;
+            letter-spacing: 0.5px;
+        }
+
+        .result-language {
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            font-weight: 400;
+        }
+
+        .result-body {
+            padding: 22px 22px 70px 22px;
+        }
+
+        .reference {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-gold);
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .version-badge-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .verse-text-container {
+            font-family: 'Playfair Display', Georgia, serif;
+            color: var(--text-primary);
+            font-size: 1.15rem;
+            line-height: 1.8;
+            margin-bottom: 50px; /* Space for tray */
+        }
+
+        .verse-text {
+            font-family: 'Playfair Display', Georgia, serif;
+            color: var(--text-primary);
+            font-size: 1.05rem;
+            line-height: 1.7;
+            margin-bottom: 0;
+        }
+
+        .verse-heading {
+            font-size: 1.1rem;
+            color: var(--accent-gold);
+            margin: 24px 0 12px;
+            font-weight: 700;
+            text-align: center;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Transcript Styles */
+        .transcript-line {
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+        }
+
+        .transcript-line:hover {
+            background: rgba(255,255,255,0.03);
+        }
+
+        .transcript-line.active {
+            background: var(--accent-emerald-glow);
+            border-left-color: var(--accent-emerald);
+            color: var(--text-primary);
+        }
+
+        .timestamp-link {
+            color: var(--accent-gold);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            margin-right: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .timestamp-link:hover {
+            text-decoration: underline;
+        }
+
+        .verse-item {
+            position: relative;
+        }
+
+        .verse-num {
+            color: var(--accent-emerald);
+            font-weight: 700;
+            font-size: 0.75rem;
+            margin-right: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            opacity: 0.7;
+        }
+
+        /* ========================================
+           SEARCH TERM HIGHLIGHT
+           ======================================== */
+        .search-highlight {
+            background: linear-gradient(135deg, rgba(245, 197, 66, 0.35), rgba(245, 197, 66, 0.2));
+            color: var(--accent-gold);
+            padding: 1px 4px;
+            border-radius: 4px;
+            font-weight: 600;
+            border-bottom: 2px solid var(--accent-gold);
+            text-shadow: 0 0 8px rgba(245, 197, 66, 0.3);
+            transition: all var(--transition-fast);
+        }
+
+        .search-highlight:hover {
+            background: rgba(245, 197, 66, 0.45);
+            box-shadow: 0 0 12px rgba(245, 197, 66, 0.2);
+        }
+
+        /* ========================================
+           SEMANTIC SEARCH FALLBACK — Meaning Match
+           ======================================== */
+        .semantic-fallback-banner {
+            background: linear-gradient(135deg, rgba(245, 197, 66, 0.08), rgba(251, 146, 60, 0.06));
+            border: 1px solid rgba(245, 197, 66, 0.25);
+            border-radius: var(--radius-xl);
+            padding: 20px 24px;
+            margin-bottom: 8px;
+            animation: semanticFadeIn 0.8s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .semantic-fallback-banner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-gold), rgba(251, 146, 60, 0.8), transparent);
+        }
+
+        .semantic-fallback-banner::after {
+            content: '';
+            position: absolute;
+            top: -40px;
+            right: -40px;
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, rgba(245, 197, 66, 0.12), transparent 70%);
+            pointer-events: none;
+        }
+
+        .semantic-banner-inner {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+        }
+
+        .semantic-banner-icon {
+            font-size: 1.6rem;
+            line-height: 1;
+            flex-shrink: 0;
+            filter: drop-shadow(0 0 8px rgba(245, 197, 66, 0.4));
+            animation: semanticPulse 2s ease-in-out infinite;
+        }
+
+        .semantic-banner-text {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .semantic-banner-text strong {
+            color: var(--accent-gold);
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .semantic-banner-text span {
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            line-height: 1.5;
+        }
+
+        .semantic-match-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            background: linear-gradient(135deg, rgba(245, 197, 66, 0.15), rgba(251, 146, 60, 0.1));
+            color: var(--accent-gold);
+            border: 1px solid rgba(245, 197, 66, 0.3);
+            border-radius: var(--radius-full);
+            font-size: 0.68rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            animation: semanticFadeIn 1s ease-out;
+        }
+
+        @keyframes semanticFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes semanticPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
+        /* ========================================
+           PREMIUM ACTION TRAY
+           ======================================== */
+        .action-tray {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 4px;
+            background: rgba(17, 25, 22, 0.7);
+            backdrop-filter: blur(12px) saturate(1.8);
+            -webkit-backdrop-filter: blur(12px) saturate(1.8);
+            padding: 5px;
+            border-radius: var(--radius-full);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            opacity: 0.4;
+            transition: all var(--transition-base);
+            z-index: 10;
+        }
+
+        .result-card:hover .action-tray {
+            opacity: 1;
+            bottom: 20px;
+        }
+
+        .tray-divider {
+            width: 1px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.15);
+            margin: auto 8px;
+            border-radius: 1px;
+        }
+
+        .tray-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-fast);
+            position: relative;
+        }
+
+        .tray-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--accent-emerald);
+            transform: scale(1.1);
+        }
+
+        .tray-btn.is-bookmarked {
+            color: var(--accent-gold);
+        }
+
+        .tray-icon {
+            font-size: 1.1rem;
+        }
+
+        /* Mini Nav in Header */
+        .card-nav-mini {
+            display: flex;
+            gap: 4px;
+        }
+
+        .mini-nav-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            border: 1px solid var(--border-subtle);
+            background: var(--bg-card);
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-fast);
+        }
+
+        .mini-nav-btn:hover {
+            border-color: var(--accent-emerald);
+            color: var(--accent-emerald);
+            background: var(--accent-emerald-glow);
+        }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-default);
+            border-top-color: var(--accent-emerald);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Generic secondary button */
+        .btn-secondary {
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-default);
+        }
+        .btn-secondary:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-accent);
+            color: var(--accent-emerald);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-emerald), #059669);
+            color: var(--text-inverse);
+            box-shadow: 0 2px 8px rgba(52,211,153,0.3);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 4px 16px rgba(52,211,153,0.45);
+        }
+
+        /* ========================================
+           VERSE NAVIGATION
+           ======================================== */
+        .verse-navigation {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            padding: 10px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all var(--transition-base);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .nav-btn:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-accent);
+            color: var(--accent-emerald);
+            transform: translateY(-1px);
+        }
+
+        /* ========================================
+           VERSION SELECTION
+           ======================================== */
+        .version-section {
+            composes: glass-panel;
+        }
+
+        .version-slots {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .version-slot {
+            background: var(--bg-elevated);
+            border: 2px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 18px;
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            position: relative;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .version-slot:hover {
+            border-color: var(--border-accent);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .version-slot.selected {
+            border-color: var(--accent-emerald);
+            background: var(--accent-emerald-glow);
+            box-shadow: 0 0 20px rgba(52,211,153,0.1);
+        }
+
+        .version-slot.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 22px;
+            height: 22px;
+            background: var(--accent-emerald);
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: var(--text-inverse);
+            font-weight: bold;
+        }
+
+        .version-slot.empty {
+            border-style: dashed;
+            opacity: 0.6;
+        }
+
+        .version-slot-number {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            width: 22px;
+            height: 22px;
+            background: var(--accent-emerald-dim);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .version-code {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent-emerald);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .version-name {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .version-slot.empty .version-code {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+        }
+
+        /* Lock Section */
+        .lock-section {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: var(--bg-elevated);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .lock-info {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .lock-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-emerald);
+            font-size: 18px;
+            border: 1px solid var(--border-default);
+        }
+
+        .lock-text h4 {
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .lock-text p {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .lock-btn {
+            padding: 10px 22px;
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all var(--transition-base);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .lock-btn:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-accent);
+        }
+
+        .lock-btn.locked {
+            background: linear-gradient(135deg, var(--accent-emerald), #059669);
+            color: var(--text-inverse);
+            border-color: var(--accent-emerald);
+        }
+
+        /* ========================================
+           COMPARISON SECTION
+           ======================================== */
+        .comparison-section {
+            composes: glass-panel;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .comparison-slot {
+            background: var(--bg-elevated);
+            border: 2px dashed var(--border-default);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .comparison-slot:hover, .comparison-slot:focus {
+            border-color: var(--border-accent);
+            background: var(--accent-emerald-glow);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.3);
+        }
+
+        .comparison-slot.filled {
+            border-style: solid;
+            border-color: var(--accent-gold-dim);
+            background: var(--accent-gold-glow);
+        }
+
+        .comparison-slot.active {
+            border-color: var(--accent-gold);
+            background: rgba(245, 197, 66, 0.1);
+            box-shadow: 0 0 20px rgba(245, 197, 66, 0.2);
+            transform: scale(1.01);
+        }
+
+        .comparison-slot.filled:hover, .comparison-slot.filled:focus, .comparison-slot.active {
+            transform: scale(1.02);
+            border-color: var(--accent-gold);
+            box-shadow: 0 8px 24px rgba(245, 197, 66, 0.15), 0 0 0 2px rgba(245, 197, 66, 0.4);
+            z-index: 2;
+        }
+
+        .comparison-slot.filled:hover p, .comparison-slot.filled:focus p, .comparison-slot.active p {
+            font-size: 1.05em; /* slightly magnify text */
+            transition: font-size 0.3s ease;
+        }
+
+        .slot-label {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
+            pointer-events: none;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .nav-arrow-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.7rem;
+            transition: all 0.2s ease;
+        }
+
+        .nav-arrow-btn:hover {
+            background: var(--accent-gold);
+            color: black;
+            border-color: var(--accent-gold);
+            transform: scale(1.1);
+        }
+
+        /* ========================================
+           BOOKMARKS
+           ======================================== */
+        .bookmarks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+        }
+
+        .bookmark-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 22px;
+            position: relative;
+            transition: all var(--transition-base);
+        }
+
+        .bookmark-card:hover {
+            border-color: var(--accent-gold-dim);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .bookmark-remove {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            border-radius: var(--radius-full);
+            width: 26px;
+            height: 26px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            transition: all var(--transition-fast);
+        }
+
+        .bookmark-remove:hover {
+            background: #ef4444;
+            color: #fff;
+        }
+
+        /* ========================================
+           INTERPRETATION
+           ======================================== */
+        .interpretation-section {
+            composes: glass-panel;
+        }
+
+        .interpretation-card {
+            background: var(--bg-elevated);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .interpretation-header {
+            background: linear-gradient(135deg, rgba(52,211,153,0.1), rgba(245,197,66,0.05));
+            padding: 18px 24px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .interpretation-icon {
+            font-size: 1.6rem;
+        }
+
+        .interpretation-header h3 {
+            flex: 1;
+            font-size: 1.15rem;
+            color: var(--text-primary);
+        }
+
+        .interpretation-badge {
+            background: var(--accent-gold-glow);
+            color: var(--accent-gold);
+            padding: 5px 14px;
+            border-radius: var(--radius-full);
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            border: 1px solid rgba(245,197,66,0.2);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .interpretation-content {
+            padding: 24px;
+        }
+
+        .interpretation-text {
+            font-size: 1.05rem;
+            line-height: 1.85;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            font-family: 'Playfair Display', serif;
+        }
+
+        .get-interpretation-btn {
+            padding: 12px 28px;
+            background: linear-gradient(135deg, var(--accent-emerald), #059669);
+            color: var(--text-inverse);
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all var(--transition-base);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .get-interpretation-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(52,211,153,0.3);
+        }
+
+        .interpretation-topics {
+            padding: 0 24px 24px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .interpretation-topics h4 {
+            color: var(--accent-emerald);
+            margin: 18px 0 14px;
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+        }
+
+        .topic-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .topic-tag {
+            padding: 6px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-full);
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .topic-tag:hover {
+            background: var(--accent-emerald-glow);
+            border-color: var(--border-accent);
+            color: var(--accent-emerald);
+        }
+
+        /* ========================================
+           RELATED VERSES
+           ======================================== */
+        .related-section {
+            composes: glass-panel;
+        }
+
+        .relevance-badge {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            padding: 4px 12px;
+            background: var(--accent-emerald-glow);
+            color: var(--accent-emerald);
+            border-radius: var(--radius-full);
+            border: 1px solid var(--border-accent);
+            margin-left: 12px;
+            vertical-align: middle;
+        }
+
+        .related-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 16px;
+        }
+
+        .related-card {
+            background: var(--bg-elevated);
+            border-radius: var(--radius-lg);
+            padding: 22px;
+            border: 1px solid var(--border-subtle);
+            transition: all var(--transition-base);
+            position: relative;
+            cursor: pointer;
+        }
+
+        .related-card:hover {
+            border-color: var(--border-accent);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .relevance-score {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-dim));
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-inverse);
+            font-weight: 800;
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .related-reference {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.88rem;
+            color: var(--accent-emerald);
+            font-weight: 600;
+            margin-bottom: 10px;
+            padding-right: 50px;
+        }
+
+        .related-text {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.05rem;
+            line-height: 1.7;
+            color: var(--text-secondary);
+            margin-bottom: 14px;
+        }
+
+        .related-reason {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            font-style: italic;
+            padding-top: 14px;
+            border-top: 1px dashed var(--border-default);
+        }
+
+        /* ========================================
+           HISTORY
+           ======================================== */
+        .history-trigger,
+        .library-trigger {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 16px 24px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-trigger:hover,
+        .library-trigger:hover {
+            border-color: var(--border-accent);
+            background: var(--bg-card-hover);
+            transform: translateY(-1px);
+        }
+
+        .history-trigger-content,
+        .library-trigger-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .history-trigger-icon,
+        .library-trigger-icon {
+            font-size: 1.3rem;
+        }
+
+        .history-trigger-text,
+        .library-trigger-text {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .history-trigger-hint,
+        .library-trigger-hint {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-left: 8px;
+        }
+
+        .history-trigger-arrow,
+        .library-trigger-arrow {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            transition: transform var(--transition-base);
+        }
+
+        .history-section {
+            composes: glass-panel;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .history-item {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 14px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .history-item:hover {
+            border-color: var(--border-accent);
+            background: var(--accent-emerald-glow);
+        }
+
+        .history-query {
+            color: var(--text-primary);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .history-time {
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .clear-history-btn {
+            padding: 10px 24px;
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all var(--transition-base);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .clear-history-btn:hover {
+            background: #ef4444;
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+        /* ========================================
+           LIBRARY
+           ======================================== */
+        .library-section {
+            composes: glass-panel;
+        }
+
+        .library-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 16px;
+        }
+
+        .library-item {
+            background: rgba(14, 25, 20, 0.4);
+            backdrop-filter: blur(12px);
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            border: 1px solid rgba(52, 211, 153, 0.15);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 4px 12px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .library-item::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(52, 211, 153, 0.1) 0%, transparent 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .library-item:hover {
+            border-color: rgba(52, 211, 153, 0.4);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 20px rgba(52, 211, 153, 0.1);
+            transform: translateY(-4px) scale(1.02);
+        }
+
+        .library-item:hover::before {
+            opacity: 1;
+        }
+
+        .library-item.material-item {
+            border-color: rgba(245, 197, 66, 0.15);
+        }
+        
+        .library-item.material-item:hover {
+            border-color: rgba(245, 197, 66, 0.4);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 20px rgba(245, 197, 66, 0.1);
+        }
+
+        .library-item.material-item::before {
+            background: linear-gradient(135deg, rgba(245, 197, 66, 0.1) 0%, transparent 100%);
+        }
+
+        .library-cover {
+            height: 140px;
+            background: linear-gradient(135deg, rgba(52, 211, 153, 0.08), rgba(15, 23, 42, 0.4));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            z-index: 1;
+        }
+
+        .library-item.material-item .library-cover {
+            background: linear-gradient(135deg, rgba(245, 197, 66, 0.08), rgba(15, 23, 42, 0.4));
+        }
+
+        .library-cover-icon {
+            font-size: 2.8rem;
+        }
+
+        .library-language-badge {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: var(--bg-card);
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--accent-emerald);
+            border: 1px solid var(--border-subtle);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .library-info {
+            padding: 18px;
+        }
+
+        .library-code {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--accent-emerald);
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 2px;
+        }
+
+        .library-name {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+            line-height: 1.4;
+        }
+
+        .library-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 14px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .library-status {
+            font-size: 0.78rem;
+            color: var(--accent-emerald);
+            font-weight: 500;
+        }
+
+        .library-status.offline {
+            color: #ef4444;
+        }
+
+        .library-action {
+            padding: 7px 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .library-action:hover {
+            background: var(--accent-emerald-glow);
+            border-color: var(--border-accent);
+            color: var(--accent-emerald);
+        }
+
+        .library-progress {
+            margin-top: 10px;
+            height: 4px;
+            background: var(--bg-card);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .library-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-emerald), var(--accent-gold));
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        .library-progress-text {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            text-align: right;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ========================================
+           VIEW MANAGEMENT — Hub Architecture
+           ======================================== */
+        .view-hub {
+            display: none;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        .view-hub.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .view-section {
+            margin-bottom: 24px;
+        }
+
+        /* ========================================
+           FOOTER
+           ======================================== */
+        .footer {
+            text-align: center;
+            padding: 40px 32px;
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            border-top: 1px solid var(--border-subtle);
+            margin-top: 40px;
+        }
+
+        .footer p {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .footer .footer-accent {
+            color: var(--accent-emerald);
+        }
+
+        /* ========================================
+           MODAL — Premium Redesign
+           ======================================== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: var(--radius-2xl);
+            padding: 28px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid var(--border-default);
+            box-shadow: var(--shadow-xl);
+            position: relative;
+        }
+
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-emerald), transparent);
+        }
+
+        .modal-title {
+            font-size: 1.3rem;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+        }
+
+        .modal-version-btn {
+            width: 100%;
+            padding: 14px 18px;
+            text-align: left;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .modal-version-btn:hover {
+            border-color: var(--border-accent);
+            background: var(--accent-emerald-glow);
+        }
+
+        .modal-version-btn strong {
+            color: var(--accent-emerald);
+            font-size: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .modal-version-btn .version-sub {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .modal-version-btn .version-lang {
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .modal-close-btn {
+            margin-top: 18px;
+            padding: 12px;
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all var(--transition-fast);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .modal-close-btn:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-accent);
+        }
+
+        /* Visual Modal */
+        .visual-modal-content {
+            max-width: 800px;
+        }
+
+        .visual-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 22px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .visual-modal-header h3 {
+            color: var(--text-primary);
+            font-size: 1.2rem;
+        }
+
+        .visual-close-btn {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-default);
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: var(--radius-sm);
+            transition: all var(--transition-fast);
+            line-height: 1;
+        }
+
+        .visual-close-btn:hover {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        /* ========================================
+           EMPTY STATE
+           ======================================== */
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state p {
+            max-width: 280px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* ========================================
+           ANIMATIONS
+           ======================================== */
+        @keyframes fadeSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(52,211,153,0.2); }
+            50% { box-shadow: 0 0 0 8px rgba(52,211,153,0); }
+        }
+
+        .glass-panel, .result-card, .library-item, .bookmark-card, .related-card {
+            animation: fadeSlideIn 0.5s ease-out;
+        }
+
+        /* Staggered cards */
+        .results-grid .result-card:nth-child(1) { animation-delay: 0s; }
+        .results-grid .result-card:nth-child(2) { animation-delay: 0.08s; }
+        .results-grid .result-card:nth-child(3) { animation-delay: 0.16s; }
+        .results-grid .result-card:nth-child(4) { animation-delay: 0.24s; }
+
+        /* ========================================
+           RESPONSIVE
+           ======================================== */
+        /* Premium Spinner for AI Art */
+        .premium-spinner {
+            position: relative;
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .spinner-ring {
+            position: absolute;
+            inset: 0;
+            border: 4px solid var(--accent-emerald-glow);
+            border-top-color: var(--accent-emerald);
+            border-radius: 50%;
+            animation: spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+        }
+
+        .spinner-core {
+            width: 30px;
+            height: 30px;
+            background: var(--accent-gold);
+            border-radius: 50%;
+            animation: pulse-glow 1.5s ease-in-out infinite;
+            filter: blur(8px);
+            opacity: 0.6;
+        }
+
+        @keyframes fadeSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .timestamp-link {
+            color: var(--accent-emerald);
+            cursor: pointer;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 2px 6px;
+            background: var(--accent-emerald-glow);
+            border-radius: 4px;
+            transition: all 0.2s;
+            margin: 0 2px;
+        }
+
+        .timestamp-link:hover {
+            background: var(--accent-emerald);
+            color: white;
+            box-shadow: 0 0 10px var(--accent-emerald);
+        }
+
+        .transcript-segment {
+            transition: all 0.3s;
+            padding: 2px 0;
+            border-radius: 4px;
+        }
+
+        .transcript-segment.active {
+            background: var(--accent-emerald-glow);
+            color: var(--text-primary);
+            font-weight: 500;
+            box-shadow: 0 0 15px rgba(52,211,153,0.1);
+            border-left: 3px solid var(--accent-emerald);
+            padding-left: 8px;
+        }
+        /* Word-by-Word Sync Styles */
+        .transcript-word {
+            display: inline-block;
+            transition: all 0.2s ease;
+            color: var(--text-secondary);
+            margin-right: 0.15em;
+            border-bottom: 2px solid transparent;
+        }
+        .transcript-word.active {
+            color: var(--accent-emerald);
+            font-weight: 700;
+            transform: scale(1.05);
+            text-shadow: 0 0 15px rgba(52, 211, 153, 0.4);
+            border-bottom-color: var(--accent-emerald);
+        }
+        .transcript-line.active {
+            background: rgba(52, 211, 153, 0.05);
+            border-left: 3px solid var(--accent-emerald);
+        }
+
+        .sermon-card-playing {
+            border-color: var(--accent-emerald) !important;
+            box-shadow: 0 0 20px var(--accent-emerald-glow) !important;
+            position: relative;
+            animation: pulse-emerald 3s infinite ease-in-out;
+        }
+
+        @keyframes pulse-emerald {
+            0% { box-shadow: 0 0 10px rgba(52, 211, 153, 0.2); }
+            50% { box-shadow: 0 0 25px rgba(52, 211, 153, 0.5); }
+            100% { box-shadow: 0 0 10px rgba(52, 211, 153, 0.2); }
+        }
+
+        .glass-panel:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .topic-item:hover {
+            background: rgba(52, 211, 153, 0.1);
+            border-color: var(--accent-emerald);
+        }
+
+        .modal-content {
+            animation: modal-slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes modal-slide-up {
+            from { transform: translateY(40px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Toggle Switch */
+        .switch input:checked + span {
+            background-color: var(--accent-emerald) !important;
+        }
+        .switch span:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        .switch input:checked + span:before {
+            transform: translateX(20px);
+        }
+
+        .sermon-card-playing::after {
+            content: 'NOW PLAYING';
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: var(--accent-emerald);
+            color: white;
+            font-size: 0.6rem;
+            font-weight: 800;
+            padding: 4px 8px;
+            border-radius: 4px;
+            z-index: 5;
+            letter-spacing: 1px;
+        }
+
+        .related-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .related-card:hover {
+            border-color: var(--border-accent);
+            background: var(--bg-card-hover);
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .relevance-score {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--accent-emerald);
+            background: var(--accent-emerald-glow);
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+            border: 1px solid var(--border-accent);
+        }
+
+        .related-reference {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-gold);
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .related-text {
+            font-size: 0.92rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+        }
+
+        /* Responsive refinements */
+        @media (max-width: 1024px) {
+            .version-slots { grid-template-columns: repeat(2, 1fr); }
+            .comparison-grid { grid-template-columns: 1fr; }
+            .main-container { padding: 20px; }
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 14px;
+                padding: 12px 20px;
+            }
+            .nav-tabs {
+                overflow-x: auto;
+                max-width: 100%;
+            }
+            .version-slots { grid-template-columns: 1fr; }
+            .search-container { flex-direction: column; }
+            .results-grid { grid-template-columns: 1fr; }
+            .related-grid { grid-template-columns: 1fr; }
+            .bookmarks-grid { grid-template-columns: 1fr; }
+            .result-actions { flex-wrap: wrap; }
+            .main-container { padding: 16px; }
+            .search-btn { width: 100%; justify-content: center; }
+            
+            #audioPlayerTray {
+                padding: 0 16px !important;
+                height: 100px !important;
+                gap: 12px !important;
+            }
+            .tray-controls { gap: 16px !important; }
+            .tray-info { display: none; } /* Hide info on very small screens if needed */
+
+            /* Hide Desktop Nav */
+            .header-nav { display: none; }
+
+            /* Show Mobile Nav */
+            .mobile-bottom-nav {
+                display: flex;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 64px;
+                background: rgba(15, 23, 42, 0.98);
+                backdrop-filter: blur(12px);
+                border-top: 1px solid var(--border-subtle);
+                z-index: 10001;
+                justify-content: space-around;
+                align-items: center;
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+
+            .bottom-nav-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 4px;
+                color: var(--text-muted);
+                font-size: 0.65rem;
+                padding: 8px;
+                transition: 0.3s;
+            }
+
+            .bottom-nav-item i { font-size: 1.2rem; }
+            .bottom-nav-item.active { color: var(--accent-emerald); }
+
+            /* FAB */
+            .mobile-fab {
+                display: flex;
+                position: fixed;
+                bottom: 80px;
+                right: 20px;
+                width: 56px;
+                height: 56px;
+                background: var(--accent-emerald);
+                color: white;
+                border-radius: 50%;
+                border: none;
+                box-shadow: 0 4px 15px rgba(52, 211, 153, 0.4);
+                z-index: 10000;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.2rem;
+                transition: 0.3s;
+            }
+
+            /* Adjust Content for Bottom Nav */
+            .main-container { padding-bottom: 100px !important; }
+            #audioPlayerTray { bottom: 64px !important; } /* Push audio tray above bottom nav */
+        }
+        
+        /* Default state for desktop */
+        .mobile-bottom-nav, .mobile-fab { display: none; }
+
+        /* Sermon Detail View */
+        .sermon-detail-container {
+            animation: fadeSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sermon-hero {
+            padding: 40px;
+            background: linear-gradient(135deg, rgba(52,211,153,0.1), rgba(5,150,105,0.02));
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-subtle);
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sermon-hero::after {
+            content: '📜';
+            position: absolute;
+            right: -20px;
+            bottom: -20px;
+            font-size: 120px;
+            opacity: 0.05;
+            transform: rotate(-15deg);
+        }
+
+        .sermon-meta-large {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .sermon-content-body {
+            font-size: 1.05rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            max-width: 800px;
+            margin: 0 auto;
+            white-space: pre-line;
+        }
+
+        /* Global Audio Player */
+        .global-audio-player {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%) translateY(150%);
+            opacity: 0;
+            pointer-events: none;
+            width: calc(100% - 64px);
+            max-width: 600px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(52, 211, 153, 0.2);
+            border-radius: var(--radius-full);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            z-index: 9999;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .global-audio-player.active {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .audio-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .audio-play-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--accent-emerald);
+            border: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.2s ease;
+        }
+
+        .audio-play-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(52, 211, 153, 0.4);
+        }
+
+        .audio-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .audio-title {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 4px;
+        }
+
+        .audio-progress-container {
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            width: 100%;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .audio-progress-bar {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background: var(--accent-emerald);
+            border-radius: 2px;
+            width: 0%;
+        }
+
+        .audio-time {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            min-width: 80px;
+            text-align: right;
+        }
+
+        .audio-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+            transition: color 0.2s ease;
+        }
+
+        .audio-close:hover {
+            color: #ef4444;
+        }
+        /* Topics Grid — Compact and Space-Efficient */
+        .topics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(115px, 1fr));
+            gap: 10px;
+        }
+
+        .topic-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+        }
+
+        .topic-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-emerald);
+            background: linear-gradient(135deg, var(--bg-card), rgba(52, 211, 153, 0.05));
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .topic-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+
+        .topic-count {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            background: var(--bg-elevated);
+            padding: 2px 8px;
+            border-radius: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Version Modal Refinements */
+        .modal-version-btn {
+            width: 100%;
+            padding: 14px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-version-btn:hover:not(:disabled) {
+            background: var(--bg-card-hover);
+            border-color: var(--accent-emerald);
+            transform: translateX(4px);
+        }
+
+        .modal-version-btn.active {
+            border-color: var(--accent-emerald-dim);
+            background: var(--accent-emerald-glow);
+            cursor: default;
+        }
+
+        .modal-version-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            filter: grayscale(0.5);
+        }
+    </style>
+
+</head>
+<body>
+    <!-- ==========================================
+         HEADER
+         ========================================== -->
+    <header class="header" id="appHeader">
+        <div class="header-content">
+            <a class="logo" href="#" onclick="app.showView('search'); return false;">
+                <div class="logo-icon">✝</div>
+                <div class="logo-text">
+                    <h1>Green Bible</h1>
+                    <span>Scripture Study Companion</span>
+                </div>
+            </a>
+            <div id="connectionStatus" style="display: none; align-items: center; gap: 6px; padding: 4px 10px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 20px; color: #ef4444; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                <i class="fas fa-plane-slash"></i> Offline Mode
+            </div>
+            <nav class="nav-tabs" id="mainNav" aria-label="Main navigation">
+                <button class="nav-tab active" id="navSearch" onclick="app.showView('search')">
+                    <span class="tab-icon">🔍</span> Search
+                </button>
+                <button class="nav-tab" id="navRead" onclick="app.showView('read')">
+                    <span class="tab-icon">📖</span> Read
+                </button>
+                <button class="nav-tab" id="navCompare" onclick="app.showView('compare')">
+                    <span class="tab-icon">⚖️</span> Compare
+                </button>
+                <button class="nav-tab" id="navBookmarks" onclick="app.showView('bookmarks')">
+                    <span class="tab-icon">🔖</span> Saved
+                </button>
+                <button class="nav-tab" id="navSermons" onclick="app.showView('sermons')">
+                    <span class="tab-icon">🎙️</span> Sermons
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- ==========================================
+         MAIN CONTENT
+         ========================================== -->
+    <main class="main-container">
+        <!-- SEARCH HUB -->
+        <div id="hub-search" class="view-hub active">
+            <!-- Study Topics -->
+            <section class="glass-panel view-section" id="topicsSection">
+            <h2 class="section-title">
+                <span class="title-accent"></span>
+                Study by Topic
+                <span class="title-badge">Topical Guide</span>
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Explore the Bible's wisdom organized by common themes and human experiences.</p>
+            
+            <div class="topics-grid" id="topicsGrid">
+                <!-- Topics will be rendered here via JS for better management -->
+            </div>
+        </section>
+
+        <!-- History Trigger -->
+        <div class="history-trigger" id="historyTrigger" onclick="toggleHistory()" style="display: none;">
+            <div class="history-trigger-content">
+                <span class="history-trigger-icon">🕐</span>
+                <span class="history-trigger-text">Recent Searches</span>
+                <span class="history-trigger-hint" id="historyCountHint">Click to expand</span>
+            </div>
+            <span class="history-trigger-arrow" id="historyArrow">▾</span>
+        </div>
+
+        <!-- Search History -->
+        <section class="glass-panel view-section" id="historySection" style="display: none;">
+            <h2 class="section-title">
+                <span class="title-accent"></span>
+                Recent Searches
+            </h2>
+            <div class="history-list" id="historyList"></div>
+            <button class="clear-history-btn" onclick="clearSearchHistory()">✕ Clear History</button>
+        </section>
+
+        <!-- Bible Version Selection -->
+        <section class="glass-panel view-section" id="versionSection">
+            <h2 class="section-title">
+                <span class="title-accent"></span>
+                Select Bible Versions
+                <span class="title-badge">Up to 4</span>
+            </h2>
+            <div class="version-slots">
+                <div class="version-slot empty" data-slot="1" onclick="selectVersion(1)">
+                    <span class="version-slot-number">1</span>
+                    <span class="version-code">+</span>
+                    <span class="version-name">Click to select</span>
+                </div>
+                <div class="version-slot empty" data-slot="2" onclick="selectVersion(2)">
+                    <span class="version-slot-number">2</span>
+                    <span class="version-code">+</span>
+                    <span class="version-name">Click to select</span>
+                </div>
+                <div class="version-slot empty" data-slot="3" onclick="selectVersion(3)">
+                    <span class="version-slot-number">3</span>
+                    <span class="version-code">+</span>
+                    <span class="version-name">Click to select</span>
+                </div>
+                <div class="version-slot empty" data-slot="4" onclick="selectVersion(4)">
+                    <span class="version-slot-number">4</span>
+                    <span class="version-code">+</span>
+                    <span class="version-name">Click to select</span>
+                </div>
+            </div>
+            <div class="lock-section">
+                <div class="lock-info">
+                    <div class="lock-icon">🔒</div>
+                    <div class="lock-text">
+                        <h4>Lock Selection</h4>
+                        <p>Prevent accidental changes to your selected versions</p>
+                    </div>
+                </div>
+                <button class="lock-btn" id="lockBtn" onclick="toggleLock()">
+                    <span>🔓</span> Lock Versions
+                </button>
+            </div>
+        </section>
+
+        <!-- Search Section -->
+        <section class="glass-panel view-section active" id="searchSection">
+            <h2 class="section-title">
+                <span class="title-accent"></span>
+                Search Scripture
+            </h2>
+            <div class="search-container">
+                <div class="search-input-wrapper">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" id="searchInput"
+                           placeholder="Enter verse (e.g., John 3:16), word, phrase, or sentence..."
+                           onkeypress="if(event.key==='Enter') performSearch()"
+                           onfocus="app.updateSuggestions(this.value)"
+                           autocomplete="off">
+                    <div id="searchSuggestions" class="search-suggestions-overlay"></div>
+                </div>
+                <button class="search-btn" id="searchBtn" onclick="performSearch()">
+                    Search
+                </button>
+            </div>
+            <div class="search-hints">
+                <span class="search-hint" onclick="setSearch('John 3:16')">John 3:16</span>
+                <span class="search-hint" onclick="setSearch('Genesis 1:1')">Genesis 1:1</span>
+                <span class="search-hint" onclick="setSearch('Psalm 23')">Psalm 23</span>
+                <span class="search-hint" onclick="setSearch('Romans 8:28')">Romans 8:28</span>
+                <span class="search-hint" onclick="setSearch('love')">love</span>
+                <span class="search-hint" onclick="setSearch('faith')">faith</span>
+                <span class="search-hint" onclick="setSearch('hope')">hope</span>
+            </div>
+            <div id="recentSearchChips" style="margin-top: 14px; display: none;"></div>
+        </section>
+
+        <!-- Results Section -->
+        <section class="results-section view-section" id="resultsSection">
+            <div class="results-grid" id="resultsGrid"></div>
+        </section>
+
+        <!-- Interpretation Section -->
+        <section class="glass-panel view-section" id="interpretationSection" style="display: none;">
+            <h2 class="section-title">
+                <span class="title-accent"></span>
+                Verse Interpretation
+            </h2>
+            <div class="interpretation-card">
+                <div class="interpretation-header">
+                    <div class="interpretation-icon">📜</div>
+                    <h3>Matthew Henry Commentary — <span id="interpretationReference" style="color: var(--accent-gold); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;"></span></h3>
+                    <div class="interpretation-badge">Classic Edition</div>
+                </div>
+                <div class="interpretation-content" id="interpretationContent">
+                    <p class="interpretation-text" style="color: var(--text-muted); text-align: center; padding: 20px;">Click the 💡 Interpret button on any verse to view its commentary here.</p>
+                </div>
+                <div class="interpretation-topics" id="interpretationTopics" style="display: none;">
+                    <h4>Key Topics</h4>
+                    <div class="topic-tags" id="topicTags"></div>
+                </div>
+            </div>
+        </section>
+
+            <!-- Related Verses Section -->
+            <section class="glass-panel view-section" id="relatedSection" style="display: none;">
+                <h2 class="section-title">
+                    <span class="title-accent"></span>
+                    Related Verses
+                    <span class="relevance-badge">Ordered by Relevance</span>
+                </h2>
+                <div class="related-grid" id="relatedGrid"></div>
+            </section>
+        </div>
+
+        <!-- COMPARE HUB -->
+        <div id="hub-compare" class="view-hub">
+            <!-- Comparison Section -->
+            <section class="glass-panel view-section" id="comparisonSection">
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 8px;">
+                <button class="nav-btn" style="padding: 8px 16px; font-size: 0.8rem; background: rgba(255,255,255,0.05); border-color: var(--border-subtle); color: var(--text-muted);" onclick="app.showView('search')">
+                    <i class="fas fa-arrow-left" style="margin-right: 8px;"></i> Back to Dashboard
+                </button>
+                <h2 class="section-title" style="margin: 0;">
+                    <span class="title-accent"></span>
+                    Compare Verses
+                    <span class="title-badge">Up to 4</span>
+                </h2>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.6; margin: 0; max-width: 80%;">Search for a verse below and click <strong style="color: var(--accent-emerald);">+ Add</strong> to place it in a comparison slot. You can also use the ⚖️ button on any result card.</p>
+                <button onclick="app.clearAllCompareSlots()" style="background: none; border: 1px solid rgba(239,68,68,0.3); color: #ef4444; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; transition: 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.05)'" onmouseout="this.style.background='none'">Clear All</button>
+            </div>
+            
+            <!-- Inline Compare Search -->
+            <div style="display: flex; gap: 12px; margin-bottom: 24px;">
+                <div class="search-input-wrapper" style="flex: 1;">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" id="compareSearchInput"
+                           placeholder="Search a verse to compare (e.g., John 3:16)..."
+                           onkeypress="if(event.key==='Enter') app.compareSearch()"
+                           autocomplete="off">
+                </div>
+                <button class="search-btn" onclick="app.compareSearch()" style="padding: 12px 24px;">
+                    Find Versions
+                </button>
+            </div>
+            <div id="compareSearchResults" style="display: none; margin-bottom: 24px; display: flex; flex-direction: column; gap: 8px; max-height: 400px; overflow-y: auto; padding: 4px;"></div>
+            
+            <div class="comparison-grid">
+                <div class="comparison-slot" data-compare="1" tabindex="0" onclick="addToCompare(1)" onkeydown="app.handleCompareNav(event, 1)">
+                    <span class="slot-label">Slot 1</span>
+                    <span>Click to add verse</span>
+                </div>
+                <div class="comparison-slot" data-compare="2" tabindex="0" onclick="addToCompare(2)" onkeydown="app.handleCompareNav(event, 2)">
+                    <span class="slot-label">Slot 2</span>
+                    <span>Click to add verse</span>
+                </div>
+                <div class="comparison-slot" data-compare="3" tabindex="0" onclick="addToCompare(3)" onkeydown="app.handleCompareNav(event, 3)">
+                    <span class="slot-label">Slot 3</span>
+                    <span>Click to add verse</span>
+                </div>
+                <div class="comparison-slot" data-compare="4" tabindex="0" onclick="addToCompare(4)" onkeydown="app.handleCompareNav(event, 4)">
+                    <span class="slot-label">Slot 4</span>
+                    <span>Click to add verse</span>
+                </div>
+            </div>
+        </section>
+        </div>
+
+        <!-- SERMONS HUB -->
+        <div id="hub-sermons" class="view-hub">
+            <!-- Sermons Section -->
+            <section class="view-section" id="sermonsSection">
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 8px;">
+                <button class="nav-btn" style="padding: 8px 16px; font-size: 0.8rem; background: rgba(255,255,255,0.05); border-color: var(--border-subtle); color: var(--text-muted);" onclick="app.showView('home')">
+                    <i class="fas fa-arrow-left" style="margin-right: 8px;"></i> Back to Dashboard
+                </button>
+                <h2 class="section-title" style="margin: 0;">
+                    <span class="title-accent"></span>
+                    Sermons & Messages
+                </h2>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px;">
+                <div>
+                    <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.6; margin: 0;">Curated sermons and teachings to deepen your understanding of Scripture.</p>
+                </div>
+                <button class="search-btn" style="padding: 10px 20px; font-size: 0.85rem; background: var(--bg-card); border-color: var(--accent-gold); color: var(--accent-gold);" onclick="app.openIngester()">
+                    <span>➕</span> Process Message
+                </button>
+            </div>
+
+            <!-- Sermon Details and Reading (Consolidated into transcriptModal) -->
+            <div style="display: grid; grid-template-columns: 1fr 320px; gap: 32px;">
+                <div>
+                    <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 20px;">
+                        <span class="title-accent" style="width: 4px; background: var(--accent-emerald);"></span>
+                        All Messages
+                    </h3>
+                    <div style="margin-bottom: 24px; display: flex; gap: 12px; align-items: center;">
+                        <div class="search-input-wrapper" style="flex: 1;">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" class="search-input" id="sermonSearchInput" placeholder="Search sermons by keyword, topic, or author..." oninput="app.performSermonSearch(this.value)">
+                        </div>
+                        <select id="sermonSortSelect" class="search-input" style="width: 140px; padding: 10px; font-size: 0.85rem;" onchange="app.sortSermons(this.value)">
+                            <option value="newest">Newest First</option>
+                            <option value="oldest">Oldest First</option>
+                            <option value="alphabetical">Alphabetical</option>
+                        </select>
+                        <select id="sermonYearFilter" class="search-input" style="width: 120px; padding: 10px; font-size: 0.85rem;" onchange="app.renderSermons(app.allSermons, app.currentSermonFilter)">
+                            <option value="">All Years</option>
+                        </select>
+                    </div>
+                    <div id="featuredSermon"></div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;" id="sermonsGrid">
+                        <!-- Populated by app.js -->
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 20px;">
+                        <span class="title-accent" style="width: 4px; background: var(--accent-gold);"></span>
+                        Series & Categories
+                    </h3>
+                    <div class="glass-panel" style="padding: 20px;">
+                        <div id="sermonCategories" style="display: flex; flex-direction: column; gap: 12px;">
+                            <!-- Populated by app.js -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+
+        <div id="hub-bookmarks" class="view-hub">
+            <!-- Sub-navigation for Saved hub -->
+            <div class="glass-panel" style="padding: 12px 20px; margin-bottom: 24px;">
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    <button class="nav-btn saved-sub-tab active" data-subtab="savedVerses" onclick="app.showSavedSubTab('savedVerses')" style="font-size: 0.82rem; padding: 8px 18px;">
+                        <span>🔖</span> Saved Verses
+                    </button>
+                    <button class="nav-btn saved-sub-tab" data-subtab="folders" onclick="app.showSavedSubTab('folders')" style="font-size: 0.82rem; padding: 8px 18px;">
+                        <span>📁</span> My Folders
+                    </button>
+                    <button class="nav-btn saved-sub-tab" data-subtab="timeline" onclick="app.showSavedSubTab('timeline')" style="font-size: 0.82rem; padding: 8px 18px;">
+                        <span>📅</span> Learning Timeline
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sub-tab: Saved Verses -->
+            <section class="view-section saved-subtab-content" id="savedVersesContent">
+                <h2 class="section-title" style="margin-bottom: 20px;">
+                    <span class="title-accent"></span>
+                    Your Saved Verses
+                </h2>
+                <div class="bookmarks-grid" id="bookmarksGrid">
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <div class="empty-state-icon">🔖</div>
+                        <p>No saved verses yet. Click the save icon on any verse to keep it here.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sub-tab: Virtual Folders -->
+            <section class="view-section saved-subtab-content" id="foldersContent" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 class="section-title" style="margin-bottom: 0;">
+                        <span class="title-accent"></span>
+                        My Folders
+                        <span class="title-badge">Work in Progress</span>
+                    </h2>
+                    <button class="search-btn" style="padding: 10px 20px; font-size: 0.82rem;" onclick="app.showCreateFolderModal()">
+                        <i class="fas fa-plus"></i> New Folder
+                    </button>
+                </div>
+                <div id="foldersGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <div class="empty-state-icon">📁</div>
+                        <p>Create folders to organize your study materials and verses by topic.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sub-tab: Learning Timeline -->
+            <section class="view-section saved-subtab-content" id="timelineContent" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 class="section-title" style="margin-bottom: 0;">
+                        <span class="title-accent"></span>
+                        Learning Timeline
+                        <span class="title-badge">History</span>
+                    </h2>
+                    <button class="nav-btn" style="padding: 10px 20px; font-size: 0.82rem; border-color: var(--accent-gold); color: var(--accent-gold);" onclick="app.exportTimelineToPDF()">
+                        <span>📄</span> Export Study Report
+                    </button>
+                </div>
+                <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <button class="topic-item" style="border-color: var(--accent-emerald); color: var(--accent-emerald);" onclick="app.filterTimeline('all')">All Activity</button>
+                    <button class="topic-item" onclick="app.filterTimeline('material')">📄 Materials Opened</button>
+                    <button class="topic-item" onclick="app.filterTimeline('topic')">🏷️ Topics Studied</button>
+                    <button class="topic-item" onclick="app.filterTimeline('search')">🔍 Searches</button>
+                </div>
+                <div id="timelineList" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📅</div>
+                        <p>Your learning activity will appear here as you study.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- READ HUB -->
+        <div id="hub-read" class="view-hub">
+            <!-- Library / Read Section -->
+            <section class="glass-panel view-section" id="readSection">
+            <h2 class="section-title">
+                <span class="title-accent"></span>
+                Library
+                <span class="title-badge">Read & Study</span>
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Click on a section below to expand and browse available content.</p>
+
+            <!-- Bible Navigator -->
+            <div class="glass-panel" style="padding: 20px; margin-bottom: 24px; background: linear-gradient(135deg, rgba(52,211,153,0.04), transparent);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; cursor: pointer;" onclick="app.toggleBibleNavigator()">
+                    <h3 style="font-size: 1rem; color: var(--text-primary); display: flex; align-items: center; gap: 10px; margin: 0;">
+                        <span style="font-size: 1.2rem;">📖</span> Bible Navigator
+                        <span class="title-badge">Quick Access</span>
+                    </h3>
+                    <span id="bibleNavArrow" style="color: var(--text-muted); transition: transform 0.3s;">▾</span>
+                </div>
+                <div id="bibleNavigatorPanel" style="display: none;">
+                    <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+                        <select id="bibleNavVersion" class="search-input" style="flex: 1; min-width: 180px; padding: 10px 14px; font-size: 0.85rem;" onchange="app.updateBibleNav()">
+                            <option value="">Select Version...</option>
+                        </select>
+                        <button class="nav-btn" style="padding: 8px 16px; font-size: 0.82rem; border-color: var(--accent-emerald); color: var(--accent-emerald);" onclick="app.showTestament('OT')">Old Testament</button>
+                        <button class="nav-btn" style="padding: 8px 16px; font-size: 0.82rem;" onclick="app.showTestament('NT')">New Testament</button>
+                    </div>
+                    <div id="bibleNavBooks" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; max-height: 320px; overflow-y: auto;"></div>
+                </div>
+            </div>
+
+            <div id="libraryContainer">
+                <!-- Bible Translations — Collapsible List -->
+                <div class="glass-panel" style="padding: 0; margin-bottom: 20px; overflow: hidden;">
+                    <div style="padding: 16px 22px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); background: linear-gradient(135deg, rgba(52,211,153,0.04), transparent);" onclick="app.toggleLibrarySection('bibles')">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-bible" style="color: var(--accent-emerald); font-size: 1rem;"></i>
+                            <span style="font-size: 0.95rem; font-weight: 600; color: var(--text-primary);">Bible Versions</span>
+                            <span class="title-badge" id="biblesCount">0</span>
+                        </div>
+                        <span id="biblesArrow" style="color: var(--text-muted); transition: transform 0.3s; font-size: 0.8rem;">▾</span>
+                    </div>
+                    <div id="libraryBiblesGrid" style="display: none; padding: 8px 12px; max-height: 420px; overflow-y: auto;"></div>
+                </div>
+
+                <!-- Other Materials — Collapsible List -->
+                <div class="glass-panel" style="padding: 0; margin-bottom: 20px; overflow: hidden;">
+                    <div style="padding: 16px 22px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); background: linear-gradient(135deg, rgba(245,197,66,0.04), transparent);" onclick="app.toggleLibrarySection('materials')">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-book-open" style="color: var(--accent-gold); font-size: 1rem;"></i>
+                            <span style="font-size: 0.95rem; font-weight: 600; color: var(--text-primary);">Study Materials</span>
+                            <span class="title-badge" style="border-color: rgba(245,197,66,0.3); color: var(--accent-gold);" id="materialsCount">0</span>
+                        </div>
+                        <span id="materialsArrow" style="color: var(--text-muted); transition: transform 0.3s; font-size: 0.8rem;">▾</span>
+                    </div>
+                    <div id="libraryMaterialsGrid" style="display: none; padding: 8px 12px; max-height: 420px; overflow-y: auto;"></div>
+                </div>
+            </div>
+
+            <!-- Material Viewer with Sidebar -->
+            <div id="materialViewerContainer" style="display: none; height: 100%; min-height: 80vh; flex-direction: column; position: relative;">
+                <div id="materialLoadingOverlay" style="position: absolute; inset: 0; background: var(--bg-deep); z-index: 10; display: none; flex-direction: column; align-items: center; justify-content: center; border-radius: var(--radius-md);">
+                    <div class="premium-spinner" style="margin-bottom: 20px;">
+                        <div class="spinner-ring"></div>
+                        <div class="spinner-core"></div>
+                    </div>
+                    <p style="color: var(--accent-emerald); font-family: 'Playfair Display', serif;">Securing Document...</p>
+                </div>
+                <!-- Toolbar -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border-subtle);">
+                    <button class="action-btn" onclick="app.closeMaterialViewer()" style="background: rgba(255,255,255,0.05); color: var(--text-primary);">
+                        <i class="fas fa-arrow-left"></i> Back to Library
+                    </button>
+                    <h3 id="materialViewerTitle" style="color: var(--accent-gold); margin: 0; font-family: 'Playfair Display', serif; font-size: 1.1rem; flex: 1; text-align: center; padding: 0 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Document</h3>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button class="nav-btn" onclick="app.toggleMaterialSidebar()" title="Toggle Materials List" style="padding: 8px 12px;"><i class="fas fa-list"></i></button>
+                        <button class="nav-btn" onclick="app.changeMaterialPage(-1)"><i class="fas fa-chevron-left"></i></button>
+                        <span id="materialPageNum" style="color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;">1 / ?</span>
+                        <button class="nav-btn" onclick="app.changeMaterialPage(1)"><i class="fas fa-chevron-right"></i></button>
+                        <button class="nav-btn" onclick="app.zoomMaterial(0.2)" title="Zoom In"><i class="fas fa-search-plus"></i></button>
+                        <button class="nav-btn" onclick="app.zoomMaterial(-0.2)" title="Zoom Out"><i class="fas fa-search-minus"></i></button>
+                    </div>
+                </div>
+                <!-- Viewer Body with Sidebar -->
+                <div style="display: flex; flex: 1; gap: 16px; min-height: 0;">
+                    <!-- Material Sidebar -->
+                    <div id="materialSidebar" style="display: none; width: 260px; flex-shrink: 0; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); overflow-y: auto; padding: 16px;">
+                        <h4 style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">All Materials</h4>
+                        <div id="materialSidebarList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                    </div>
+                    <!-- Canvas Area -->
+                    <div id="materialCanvasWrapper" style="position: relative; flex: 1; overflow: auto; background: #000; border-radius: var(--radius-md); display: flex; justify-content: center; padding: 20px;" oncontextmenu="return false;">
+                        <canvas id="materialCanvas" style="box-shadow: 0 4px 12px rgba(0,0,0,0.5);"></canvas>
+                        <div id="materialTextLayer" class="textLayer" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: hidden; opacity: 0.2; color: transparent; cursor: text;"></div>
+                    </div>
+                </div>
+
+                <!-- Highlight popup button (hidden by default) -->
+                <button id="highlightBtn" style="position: absolute; display: none; background: var(--accent-gold); color: #000; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 100;">
+                    <i class="fas fa-highlighter"></i> Highlight
+                </button>
+            </div>
+        </section>
+        </div>
+    </main>
+
+    <!-- ==========================================
+         FOOTER
+         ========================================== -->
+    <footer class="footer">
+        <p>
+            <span class="footer-accent">✝</span>
+            © 2024 Green Bible App — A World-Class Scripture Study Companion
+        </p>
+    </footer>
+
+    <!-- ==========================================
+         VERSION SELECTION MODAL
+         ========================================== -->
+    <div class="modal-overlay" id="versionModal">
+        <div class="modal-content">
+            <h3 class="modal-title">Select Bible Version</h3>
+            <div id="versionList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            <button class="modal-close-btn" onclick="closeVersionModal()">Close</button>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         VISUAL / IMAGE MODAL
+         ========================================== -->
+    <div class="modal-overlay" id="visualModal">
+        <div class="modal-content visual-modal-content">
+            <div class="visual-modal-header">
+                <h3 id="visualModalTitle">Visual Study</h3>
+                <button class="visual-close-btn" onclick="closeVisualModal()">✕</button>
+            </div>
+            <div id="visualModalContent" style="min-height: 280px;"></div>
+        </div>
+    </div>
+
+    <!-- Global Audio Player (Floating) -->
+    <div class="global-audio-player" id="globalAudioPlayer">
+        <div class="audio-controls">
+            <button class="audio-play-btn" id="audioToggleBtn" onclick="app.toggleGlobalAudio()">▶</button>
+        </div>
+        <div class="audio-info">
+            <div class="audio-title" id="audioTitle">Sermon Title</div>
+            <div class="audio-progress-container" onclick="app.seekAudio(event)">
+                <div class="audio-progress-bar" id="audioProgressBar"></div>
+            </div>
+        </div>
+        <div class="audio-time" id="audioTime">00:00 / 00:00</div>
+        <button class="audio-close" onclick="app.closeGlobalAudio()">✕</button>
+    </div>
+
+    <!-- Hidden Audio Core -->
+    <audio id="mainAudioCore" style="display: none;"></audio>
+
+    <!-- PDF Generation Libraries -->
+    <!-- ==========================================
+         MODALS (Global Root)
+         ========================================== -->
+
+    <!-- Sermon Ingester Modal -->
+    <div id="ingesterModal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95); z-index: 11000; backdrop-filter: blur(20px); align-items: center; justify-content: center; padding: 20px;">
+        <div class="glass-panel" style="width: 100%; max-width: 600px; padding: 32px; border-color: var(--accent-gold); position: relative; animation: fadeSlideUp 0.4s ease-out; box-shadow: 0 30px 60px rgba(0,0,0,0.6);">
+            <button onclick="app.closeIngester()" style="position: absolute; top: 20px; right: 20px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.5rem;">&times;</button>
+            <h2 class="section-title" style="margin-bottom: 12px;">
+                <span class="title-accent" style="background: var(--accent-gold);"></span>
+                Process New Sermon
+            </h2>
+            <div style="display: flex; flex-direction: column; gap: 20px; margin-top: 24px;">
+                <div class="search-input-wrapper">
+                    <input type="text" id="ingestUrl" class="search-input" placeholder="YouTube URL">
+                </div>
+                <div class="search-input-wrapper">
+                    <input type="text" id="ingestTitle" class="search-input" placeholder="Message Title">
+                </div>
+                <textarea id="ingestTranscript" class="search-input" style="min-height: 200px; padding: 15px;" placeholder="Paste transcript..."></textarea>
+                <button class="search-btn" id="processSubmitBtn" style="width: 100%; padding: 14px;" onclick="app.submitIngestion()">Start AI Interpretation</button>
+                <div id="ingestStatus" style="display: none; text-align: center; padding: 10px; border-radius: 8px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sermon Transcript Modal (Synchronized Reading) -->
+    <div id="transcriptModal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95); z-index: 11001; backdrop-filter: blur(25px); align-items: center; justify-content: center; padding: 30px;">
+        <div class="glass-panel" style="width: 100%; height: 85vh; max-width: 1200px; padding: 0; overflow: hidden; display: flex; flex-direction: column; animation: fadeSlideUp 0.3s ease-out; border-radius: 24px; border-color: var(--accent-emerald); box-shadow: 0 40px 100px rgba(0,0,0,0.7);">
+            <!-- Modal Header -->
+            <div style="padding: 32px 40px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, rgba(52,211,153,0.1), rgba(15,23,42,0.9)); flex-shrink: 0;">
+                <div style="display: flex; align-items: center; gap: 24px;">
+                    <button id="modalAudioToggleBtn" onclick="app.toggleGlobalAudio()" style="width: 64px; height: 64px; border-radius: 50%; background: #ff0000; border: none; color: white; cursor: pointer; box-shadow: 0 0 30px rgba(255,0,0,0.4);">
+                        <span id="modalAudioToggleIcon" style="font-size: 1.6rem;">▶</span>
+                    </button>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span class="title-badge" id="nowPlayingBadge" style="display: none; background: var(--accent-emerald);">NOW PLAYING</span>
+                            <h2 id="modalTranscriptTitle" style="font-size: 1.8rem; color: var(--text-primary); margin: 0; font-family: 'Playfair Display', serif;">Message Transcript</h2>
+                        </div>
+                        <p id="modalTranscriptSubtitle" style="font-size: 1rem; color: var(--accent-gold); margin: 4px 0 0;">Pastor John Anosike</p>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 32px;">
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                        <div style="font-family: 'JetBrains Mono', monospace; font-size: 1rem; color: var(--accent-emerald); font-weight: 700;">
+                            <span id="modalAudioCurrentTime">0:00</span> / <span id="modalAudioDuration" style="color: var(--text-muted);">0:00</span>
+                        </div>
+                        <div style="width: 150px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px;">
+                            <div id="modalHeaderProgressBar" style="width: 0%; height: 100%; background: var(--accent-emerald); border-radius: 2px;"></div>
+                        </div>
+                    </div>
+                    <button onclick="app.closeTranscriptModal()" style="background: rgba(255,255,255,0.1); border: 1px solid var(--border-subtle); color: white; width: 48px; height: 48px; border-radius: 50%; cursor: pointer; font-size: 1.5rem;">&times;</button>
+                </div>
+            </div>
+            
+            <!-- Modal Body -->
+            <div style="display: grid; grid-template-columns: 1fr 300px; flex: 1; overflow: hidden;">
+                <div id="modalTranscriptContent" style="padding: 40px 40px 140px; overflow-y: auto; line-height: 1.9; color: var(--text-secondary); font-size: 1.1rem; white-space: pre-wrap; scroll-behavior: smooth;"></div>
+                <div style="padding: 30px; background: rgba(255,255,255,0.02); border-left: 1px solid var(--border-subtle); overflow-y: auto;">
+                    <h4 style="font-size: 0.8rem; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 20px;">AI INSIGHTS</h4>
+                    <div id="modalInterpretationContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+
+    <script src="app.js?v=21"></script>
+    <!-- GLOBAL AUDIO PLAYER (Fixed Bottom Bar) -->
+    <!-- MOBILE BOTTOM NAVIGATION -->
+    <nav class="mobile-bottom-nav">
+        <div class="bottom-nav-item active" onclick="app.switchTab('search')">
+            <i class="fas fa-search"></i>
+            <span>Bible</span>
+        </div>
+        <div class="bottom-nav-item" onclick="app.switchTab('sermons')">
+            <i class="fas fa-microphone-alt"></i>
+            <span>Sermons</span>
+        </div>
+        <div class="bottom-nav-item" onclick="app.switchTab('saved')">
+            <i class="fas fa-bookmark"></i>
+            <span>Saved</span>
+        </div>
+        <div class="bottom-nav-item" onclick="app.switchTab('timeline')">
+            <i class="fas fa-history"></i>
+            <span>Activity</span>
+        </div>
+    </nav>
+
+    <!-- FLOATING ACTION BUTTON (MOBILE) -->
+    <button class="mobile-fab" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+        <i class="fas fa-chevron-up"></i>
+    </button>
+
+    <div id="audioPlayerTray" style="position: fixed; bottom: -100px; left: 0; right: 0; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px); border-top: 1px solid var(--border-accent); z-index: 10000; height: 80px; transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; padding: 0 40px; gap: 32px; box-shadow: 0 -10px 40px rgba(0,0,0,0.5);">
+        <!-- Hidden YouTube Bridge -->
+        <div id="ytAudioBridge" style="position: absolute; visibility: hidden; pointer-events: none; width: 1px; height: 1px;"></div>
+        
+        <div style="display: flex; align-items: center; gap: 16px; min-width: 300px; max-width: 400px;">
+            <div id="audioThumbnail" style="width: 48px; height: 48px; border-radius: 8px; background: var(--bg-elevated); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; border: 1px solid var(--border-subtle);">🎙️</div>
+            <div style="flex: 1; overflow: hidden;">
+                <h4 id="audioTitle" style="font-size: 0.92rem; color: var(--text-primary); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Playfair Display', serif;">Message Title</h4>
+                <p style="font-size: 0.72rem; color: var(--accent-gold); margin: 2px 0 0; text-transform: uppercase; letter-spacing: 1px;">Pastor John Anosike</p>
+            </div>
+        </div>
+
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 8px; max-width: 600px;">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 24px;">
+                <button class="nav-btn" onclick="app.seekAudioRelative(-15)" style="background: none; border: none; font-size: 1rem; color: var(--text-muted);">↺ 15</button>
+                <button id="audioToggleBtn" onclick="app.toggleGlobalAudio()" style="width: 56px; height: 56px; border-radius: 50%; background: #ff0000; border: none; color: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(255,0,0,0.3); transition: transform 0.2s;" onmousedown="this.style.transform='scale(0.9)'" onmouseup="this.style.transform='scale(1)'">
+                    <span id="audioToggleIcon" style="font-size: 1.4rem; line-height: 1;">▶</span>
+                    <span id="audioToggleLabel" style="font-size: 0.6rem; font-weight: 800; letter-spacing: 1px;">PLAY</span>
+                </button>
+                <button class="nav-btn" onclick="app.seekAudioRelative(15)" style="background: none; border: none; font-size: 1rem; color: var(--text-muted);">15 ↻</button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span id="audioCurrentTime" style="font-size: 0.72rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; width: 45px;">0:00</span>
+                <div style="flex: 1; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; cursor: pointer; position: relative;" onclick="app.seekAudio(event)">
+                    <div id="audioProgressBar" style="position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: var(--accent-emerald); border-radius: 2px; transition: width 0.1s linear;">
+                        <div style="position: absolute; right: -6px; top: -4px; width: 12px; height: 12px; background: white; border-radius: 50%; box-shadow: 0 0 10px rgba(0,0,0,0.5);"></div>
+                    </div>
+                </div>
+                <span id="audioDuration" style="font-size: 0.72rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; width: 45px;">0:00</span>
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 16px; min-width: 150px; justify-content: flex-end;">
+            <button class="nav-btn" onclick="app.closeGlobalAudio()" style="background: none; border: none; font-size: 1rem; color: var(--text-muted); opacity: 0.5;">✕</button>
+        </div>
+    </div>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').then(registration => {
+                    console.log('SW registered: ', registration);
+                }).catch(registrationError => {
+                    console.log('SW registration failed: ', registrationError);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
