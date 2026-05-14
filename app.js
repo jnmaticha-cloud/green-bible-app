@@ -938,8 +938,8 @@ class GreenBibleApp {
         // Reduced threshold to 3 characters to avoid excessive requests on very short queries
         if (q.length < 3) return;
 
-        // Dynamic debounce: longer for short queries, standard for longer ones
-        const debounceTime = q.length < 5 ? 800 : 500;
+        // Dynamic debounce: much faster to feel "automated as you type"
+        const debounceTime = q.length < 5 ? 500 : 300;
 
         this.searchTimeout = setTimeout(() => {
             this.performSearch(false, true);
@@ -1083,22 +1083,29 @@ class GreenBibleApp {
             this.addToHistory(query);
         }
 
-        // UI State
-        if (!isLiveSearch) {
-            document.getElementById('resultsSection').classList.add('active');
-            document.getElementById('topicsSection').style.display = 'none';
-            document.getElementById('interpretationSection').style.display = 'block';
-            const interpRef = document.getElementById('interpretationReference');
-            const parsedForInterp = this.parseVerseReference(query);
-            if (interpRef) {
-                interpRef.textContent = parsedForInterp ? this.formatPassageRef(parsedForInterp) : '— select a verse from results';
-            }
+        // UI State: Always activate results immediately for truly automated live search
+        document.getElementById('resultsSection').classList.add('active');
+        document.getElementById('topicsSection').style.display = 'none';
+        document.getElementById('interpretationSection').style.display = 'block';
+        const interpRef = document.getElementById('interpretationReference');
+        const parsedForInterp = this.parseVerseReference(query);
+        if (interpRef) {
+            interpRef.textContent = parsedForInterp ? this.formatPassageRef(parsedForInterp) : '— select a verse from results';
+        }
 
-            const resultsGrid = document.getElementById('resultsGrid');
+        const resultsGrid = document.getElementById('resultsGrid');
+        if (!isLiveSearch) {
             resultsGrid.innerHTML = `
                 <div style="grid-column: 1/-1; text-align: center; padding: 48px;">
                     <div style="font-size: 2rem; margin-bottom: 12px; animation: pulse-glow 1.5s ease-in-out infinite;">📖</div>
                     <p style="color: var(--text-muted); font-size: 0.9rem;">Searching scripture across ${versionsToSearch.length} translations...</p>
+                </div>
+            `;
+        } else {
+            resultsGrid.innerHTML = `
+                <div style="grid-column: 1/-1; text-align: center; padding: 48px;">
+                    <div class="premium-spinner" style="margin: 0 auto 12px; border-top-color: var(--accent-emerald);"></div>
+                    <p style="color: var(--text-muted); font-size: 0.85rem; font-style: italic;">Seeking in the Word...</p>
                 </div>
             `;
         }
