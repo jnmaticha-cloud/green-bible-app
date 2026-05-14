@@ -1736,8 +1736,9 @@ router.get('/search', async (req: Request, res: Response) => {
         const uniqueLocalResults = localResultsArrays.flat().filter(r => !existingRefs.has(`${r.version}-${r.reference}`));
         allResults.push(...uniqueLocalResults);
 
-        // Phase 2: Semantic Search (Run if results are sparse — covers queries that BibleSuperSearch misses)
-        if (!clientController.signal.aborted && allResults.length < 5) {
+        // Phase 2: Semantic Search (Run if results are sparse or lack diversity)
+        const uniqueRefsCount = new Set(allResults.map(r => r.reference)).size;
+        if (!clientController.signal.aborted && uniqueRefsCount < 3) {
             const semanticGroups = await performSemanticSearch(q);
             if (semanticGroups.length > 0) {
                 const semanticPromises = versionList.map(async (vCode) => {
