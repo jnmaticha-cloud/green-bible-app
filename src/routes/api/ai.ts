@@ -16,22 +16,22 @@ router.get('/interpret', async (req: Request, res: Response) => {
         
         Format your response with these EXACT sections:
         
-        ### 📖 Executive Summary
+        ### Executive Summary
         (One sentence capturing the essence)
         
-        ### 🏛️ Historical & Literary Context
+        ### Historical & Literary Context
         (Explain the background, authorship, and setting)
         
-        ### 🛡️ Theological Classification
+        ### Theological Classification
         (Categorize the primary themes e.g. Covenant, Grace, Justice)
         
-        ### 💎 Spiritual Significance
+        ### Spiritual Significance
         (Explain the core eternal truths)
         
-        ### 🕊️ Devotional Application
+        ### Devotional Application
         (Practical steps for today's believer)
         
-        Use markdown for formatting. Keep it under 400 words.`;
+        Use clean markdown. No emojis. Keep it under 400 words.`;
 
         const systemPrompt = 'You are a wise and encouraging Bible scholar. Provide structured, accurate, and faith-building interpretations.';
         

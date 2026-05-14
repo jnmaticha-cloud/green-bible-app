@@ -2238,12 +2238,23 @@ class GreenBibleApp {
             if (!res.ok) throw new Error('Failed to fetch interpretation');
             const data = await res.json();
             
-            // Format the interpretation with improved typography and sectioning
+            // Robust Markdown-to-HTML conversion with proper paragraph wrapping
             let formattedText = data.interpretation
+                // 1. Headers (### Header)
+                .replace(/^### (.*?)$/gm, '<h4 style="color: var(--accent-gold); margin: 24px 0 12px 0; font-size: 1.2rem; font-family: \'Playfair Display\', serif; border-left: 3px solid var(--accent-gold); padding-left: 16px;">$1</h4>')
+                // 2. Bold (**text**)
                 .replace(/\*\*(.*?)\*\*/g, '<strong style="color: var(--accent-gold);">$1</strong>')
-                .replace(/### (.*?)\n/g, '<h4 style="color: var(--accent-gold); margin: 24px 0 12px 0; font-size: 1.2rem; font-family: \'Playfair Display\', serif; border-left: 3px solid var(--accent-gold); padding-left: 16px;">$1</h4>')
-                .replace(/\n\n/g, '<p style="margin-bottom: 24px;"></p>')
-                .replace(/\n/g, '<br>');
+                // 3. Italics (*text*)
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                // 4. List Items (- or * bullet)
+                .replace(/^\s*[\-\*]\s+(.*?)$/gm, '<li style="margin-bottom: 8px; margin-left: 20px; color: var(--text-secondary);">$1</li>')
+                // 5. Paragraphs (split by double newlines and wrap)
+                .split(/\n\n+/).map(p => {
+                    const trimmed = p.trim();
+                    if (!trimmed) return '';
+                    if (trimmed.startsWith('<h4') || trimmed.startsWith('<li')) return trimmed;
+                    return `<p style="margin-bottom: 16px;">${trimmed.replace(/\n/g, '<br>')}</p>`;
+                }).join('');
 
             // Automatically highlight Bible references mentioned in the text
             formattedText = this.highlightBibleRefs(formattedText);
