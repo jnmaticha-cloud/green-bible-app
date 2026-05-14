@@ -5670,10 +5670,12 @@ class GreenBibleApp {
             if (!patterns.includes(ew)) patterns.push(ew);
         });
 
-        const regex = new RegExp(`(${patterns.join('|')})`, 'gi');
+        const patternsStr = patterns.join('|');
+        // Build the regex dynamically to include timestamps OR search terms
+        const regex = new RegExp(`\\[((?:\\d+:)?\\d{1,2}:\\d{2})\\]|(${patternsStr})`, 'gi');
         
         // Use a smarter replacement to avoid highlighting inside bracketed timestamps
-        return safeText.replace(/\[((?:\d+:)?\d{1,2}:\d{2})\]|(${patterns.join('|')})/gi, (match, p1, p2) => {
+        return safeText.replace(regex, (match, p1, p2) => {
             if (p1) return `[${p1}]`; // Return timestamp untouched
             
             const lowMatch = match.toLowerCase().trim();
