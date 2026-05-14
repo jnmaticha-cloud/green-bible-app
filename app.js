@@ -5881,7 +5881,18 @@ class GreenBibleApp {
                     },
                     'onError': (e) => {
                         console.error('YT Player Error:', e);
-                        this.showNotification('Audio playback error.', 'error');
+                        if (e.data === 150 || e.data === 101) {
+                            this.showNotification(`
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    <span>Playback restricted by owner.</span>
+                                    <button onclick="window.open('https://youtube.com/watch?v=${this.currentAudioId}', '_blank')" class="action-btn" style="background: var(--accent-gold); color: #000; padding: 4px 12px; font-size: 0.7rem; width: fit-content;">
+                                        <i class="fab fa-youtube"></i> Watch on YouTube
+                                    </button>
+                                </div>
+                            `, 'warning');
+                        } else {
+                            this.showNotification('Audio playback error.', 'error');
+                        }
                     }
                 }
             });

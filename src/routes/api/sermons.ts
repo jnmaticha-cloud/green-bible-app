@@ -11,6 +11,37 @@ function formatTime(ms: number) {
     return `[${minutes}:${seconds.toString().padStart(2, '0')}]`;
 }
 
+function processVerbatimTranscript(transcriptData: any[]) {
+    if (!transcriptData || transcriptData.length === 0) return null;
+
+    // Calculate total duration
+    const lastSegment = transcriptData[transcriptData.length - 1];
+    const totalDuration = (lastSegment.offset + lastSegment.duration) / 1000;
+
+    if (totalDuration < 300) {
+        throw new Error('This message is too short (< 5 mins) to be considered a full sermon. Library quality requires longer teachings.');
+    }
+
+    let currentBlock = [];
+    let lastTimestamp = -1;
+    let finalLines = [];
+
+    for (let i = 0; i < transcriptData.length; i++) {
+        const item = transcriptData[i];
+        const currentSecs = Math.floor(item.offset / 1000);
+        if (lastTimestamp === -1 || currentSecs - lastTimestamp >= 20 || i === transcriptData.length - 1) {
+            if (currentBlock.length > 0) {
+                finalLines.push(`${formatTime(lastTimestamp * 1000)} ${currentBlock.join(' ')}`);
+            }
+            currentBlock = [item.text];
+            lastTimestamp = currentSecs;
+        } else {
+            currentBlock.push(item.text);
+        }
+    }
+    return finalLines.join('\n\n');
+}
+
 const router = Router();
 console.log('📂 Sermons Router Loaded');
 const SERMONS_DATA_DIR = path.join(process.cwd(), 'data', 'sermons');
@@ -88,9 +119,9 @@ router.post('/:id/refresh', async (req: Request, res: Response) => {
         let newTranscript = "";
         try {
             const transcriptData = await YoutubeTranscript.fetchTranscript(id);
-            newTranscript = transcriptData.map(t => t.text).join(' ');
-        } catch (e) {
-            return res.status(400).json({ error: 'Verbatim transcript not yet available from YouTube. Please try again after the live stream concludes.' });
+            newTranscript = processVerbatimTranscript(transcriptData) || "";
+        } catch (e: any) {
+            return res.status(400).json({ error: e.message || 'Verbatim transcript not yet available from YouTube. Please try again after the live stream concludes.' });
         }
 
         if (!newTranscript || newTranscript.length < 100) {
@@ -204,27 +235,13 @@ router.post('/ingest', async (req: Request, res: Response) => {
         if (!transcript) {
             console.log(`[Ingest] Fetching verbatim transcript for ${youtubeId}...`);
             try {
-                const rawTranscript = await YoutubeTranscript.fetchTranscript(youtubeId);
-                let currentBlock = [];
-                let lastTimestamp = -1;
-                let finalLines = [];
-
-                for (let i = 0; i < rawTranscript.length; i++) {
-                    const item = rawTranscript[i];
-                    const currentSecs = Math.floor(item.offset / 1000);
-                    if (lastTimestamp === -1 || currentSecs - lastTimestamp >= 20 || i === rawTranscript.length - 1) {
-                        if (currentBlock.length > 0) {
-                            finalLines.push(`${formatTime(lastTimestamp * 1000)} ${currentBlock.join(' ')}`);
-                        }
-                        currentBlock = [item.text];
-                        lastTimestamp = currentSecs;
-                    } else {
-                        currentBlock.push(item.text);
-                    }
+                const transcriptData = await YoutubeTranscript.fetchTranscript(youtubeId);
+                transcript = processVerbatimTranscript(transcriptData);
+            } catch (err: any) {
+                console.error('Verbatim fetch failed:', err.message);
+                if (err.message.includes('too short') || err.message.includes('150') || err.message.includes('101')) {
+                    return res.status(400).json({ error: err.message });
                 }
-                transcript = finalLines.join('\n\n');
-            } catch (err) {
-                console.error('Verbatim fetch failed, falling back to manual or summary:', err);
             }
         }
 
