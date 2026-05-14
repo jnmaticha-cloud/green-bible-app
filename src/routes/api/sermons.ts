@@ -56,6 +56,25 @@ router.get('/', async (req: Request, res: Response) => {
     }
 });
 
+// GET /sermons/:id - Fetch individual sermon details
+router.get('/:id', async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const detailPath = path.join(SERMONS_DATA_DIR, `${id}.json`);
+        
+        try {
+            const detailRaw = await fs.readFile(detailPath, 'utf-8');
+            const detail = JSON.parse(detailRaw);
+            return res.json(detail);
+        } catch (e) {
+            return res.status(404).json({ error: 'Sermon not found' });
+        }
+    } catch (error: any) {
+        console.error(`Sermon detail fetch error for ${req.params.id}:`, error.message);
+        return res.status(500).json({ error: 'Failed to fetch sermon details' });
+    }
+});
+
 // POST /sermons/sync
 // Sync user progress, bookmarks, and notes
 router.post('/sync', async (req: Request, res: Response) => {
