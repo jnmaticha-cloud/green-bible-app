@@ -1,0 +1,12 @@
+[
+  { "word": "ἡ", "transliteration": "hē", "translation": "the", "strongs": "G3588", "parsing": "Article" },
+  { "word": "ἐπιστολὴ", "transliteration": "epistolē", "translation": "letter", "strongs": "G1992", "parsing": "Noun, Fem Sing Nom" },
+  { "word": "ἡμῶν", "transliteration": "hēmōn", "translation": "of us", "strongs": "G2257", "parsing": "Pron, Gen Plur" },
+  { "word": "ὑμεῖς", "transliteration": "hymeis", "translation": "you", "strongs": "G5210", "parsing": "Pron, Nom Plur" },
+  { "word": "ἐστε", "transliteration": "este", "translation": "are", "strongs": "G2075", "parsing": "Verb, Pres" },
+  { "word": "ἐγγεγραμμένη", "transliteration": "engegrammenē", "translation": "having been written", "strongs": "G1449", "parsing": "Verb, Perf Part" },
+  { "word": "ἐν", "transliteration": "en", "translation": "in", "strongs": "G1722", "parsing": "Prep" },
+  { "word": "ταῖς", "transliteration": "tais", "translation": "the", "strongs": "G3588", "parsing": "Article" },
+  { "word": "καρδίαις", "transliteration": "kardiais", "translation": "hearts", "strongs": "G2588", "parsing": "Noun, Fem Plur Dat" },
+  { "word": "ἡμῶν", "transliteration": "hēmōn", "translation": "of us", "strongs": "G2257", "parsing": "Pron, Gen Plur" }
+]

@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#10b981">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -46,7 +46,6 @@
             --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
             --shadow-xl: 0 16px 48px rgba(0,0,0,0.6);
             --shadow-glow: 0 0 30px rgba(52,211,153,0.08);
-
             --radius-sm: 8px;
             --radius-md: 12px;
             --radius-lg: 16px;
@@ -54,9 +53,52 @@
             --radius-2xl: 24px;
             --radius-full: 9999px;
 
-            --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-            --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            --accent-purple: #a855f7;
+            --accent-blue: #3b82f6;
+            --accent-orange: #f59e0b;
+            --accent-error: #ef4444;
+
+            --gradient-emerald: linear-gradient(135deg, #0a2f1a, #1a4d30);
+            --gradient-gold: linear-gradient(135deg, #1e1b10, #2c2510);
+
+            --glass-bg: rgba(10, 15, 13, 0.85);
+        }
+
+        [data-theme="light"] {
+            --bg-deep: #f0f4f2;
+            --bg-surface: #ffffff;
+            --bg-card: #f8faf9;
+            --bg-card-hover: #eef2f0;
+            --bg-elevated: #ffffff;
+            --bg-input: #f4f7f5;
+
+            --accent-emerald: #10b981;
+            --accent-emerald-dim: #059669;
+            --accent-emerald-glow: rgba(16, 185, 129, 0.15);
+            --accent-gold: #d97706;
+            --accent-gold-dim: #b45309;
+            --accent-gold-glow: rgba(217, 119, 6, 0.12);
+
+            --text-primary: #111827;
+            --text-secondary: #4b5563;
+            --text-muted: #6b7280;
+            --text-inverse: #ffffff;
+
+            --border-subtle: rgba(0,0,0,0.06);
+            --border-default: rgba(0,0,0,0.1);
+            --border-accent: rgba(16, 185, 129, 0.25);
+            --accent-purple: #7c3aed;
+            --accent-blue: #2563eb;
+            --accent-orange: #d97706;
+            --accent-error: #dc2626;
+
+            --gradient-emerald: linear-gradient(135deg, #d1fae5, #ecfdf5);
+            --gradient-gold: linear-gradient(135deg, #fef3c7, #fffbeb);
+
+            --glass-bg: rgba(255, 255, 255, 0.85);
         }
 
         /* ========================================
@@ -92,8 +134,8 @@
             position: fixed;
             inset: 0;
             background:
-                radial-gradient(ellipse 80% 60% at 20% 10%, rgba(52,211,153,0.04), transparent),
-                radial-gradient(ellipse 60% 50% at 80% 80%, rgba(245,197,66,0.03), transparent);
+                radial-gradient(ellipse 80% 60% at 20% 10%, var(--accent-emerald-glow), transparent),
+                radial-gradient(ellipse 60% 50% at 80% 80%, var(--accent-gold-glow), transparent);
             pointer-events: none;
             z-index: 0;
         }
@@ -135,7 +177,7 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            background: rgba(10, 15, 13, 0.85);
+            background: var(--glass-bg, rgba(10, 15, 13, 0.85));
             backdrop-filter: blur(20px) saturate(1.4);
             -webkit-backdrop-filter: blur(20px) saturate(1.4);
             border-bottom: 1px solid var(--border-subtle);
@@ -160,7 +202,7 @@
         .logo-icon {
             width: 42px;
             height: 42px;
-            background: linear-gradient(135deg, var(--accent-emerald), #059669);
+            background: linear-gradient(135deg, var(--accent-emerald), var(--accent-emerald-dim));
             border-radius: var(--radius-md);
             display: flex;
             align-items: center;
@@ -229,7 +271,7 @@
 
         .nav-tab:hover {
             color: var(--text-secondary);
-            background: rgba(255,255,255,0.04);
+            background: var(--bg-card);
         }
 
         .nav-tab.active {
@@ -307,7 +349,7 @@
             left: 0;
             right: 0;
             height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(52,211,153,0.2), transparent);
+            background: linear-gradient(90deg, transparent, var(--accent-emerald), transparent);
         }
 
         /* ========================================
@@ -395,7 +437,7 @@
 
         .search-btn {
             padding: 16px 36px;
-            background: linear-gradient(135deg, var(--accent-emerald), #059669);
+            background: linear-gradient(135deg, var(--accent-emerald), var(--accent-emerald-dim));
             color: var(--text-inverse);
             border: none;
             border-radius: var(--radius-lg);
@@ -426,7 +468,7 @@
             top: calc(100% + 8px);
             left: 0;
             right: 0;
-            background: rgba(22, 31, 27, 0.95);
+            background: var(--glass-bg, rgba(22, 31, 27, 0.95));
             backdrop-filter: blur(16px) saturate(1.8);
             -webkit-backdrop-filter: blur(16px) saturate(1.8);
             border: 1px solid var(--border-default);
@@ -606,7 +648,7 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid var(--border-subtle);
-            background: linear-gradient(135deg, rgba(52,211,153,0.06), transparent);
+            background: linear-gradient(135deg, var(--accent-emerald-glow), transparent);
         }
 
         .result-version {
@@ -680,7 +722,7 @@
         }
 
         .transcript-line:hover {
-            background: rgba(255,255,255,0.03);
+            background: var(--bg-card);
         }
 
         .transcript-line.active {
@@ -866,7 +908,7 @@
         .tray-divider {
             width: 1px;
             height: 24px;
-            background: rgba(255, 255, 255, 0.15);
+            background: var(--border-default);
             margin: auto 8px;
             border-radius: 1px;
         }
@@ -954,7 +996,7 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, var(--accent-emerald), #059669);
+            background: linear-gradient(135deg, var(--accent-emerald), var(--accent-emerald-dim));
             color: var(--text-inverse);
             box-shadow: 0 2px 8px rgba(52,211,153,0.3);
         }
@@ -972,6 +1014,84 @@
             gap: 10px;
             margin-bottom: 32px;
             flex-wrap: wrap;
+        }
+
+        /* Bible reader / library — version · book · chapter row */
+        .bible-picker-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 12px 16px;
+        }
+        .bible-picker-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 10px 14px;
+        }
+        .bible-picker-row--grow {
+            flex: 1 1 280px;
+            min-width: 0;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            overflow-y: visible;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            padding-bottom: 2px;
+            gap: 10px 12px;
+        }
+        .bible-picker-row--grow > .bible-picker-field--version {
+            min-width: 140px;
+            flex: 0 1 200px;
+        }
+        .bible-picker-row--grow > .bible-picker-field:not(.bible-picker-field--narrow):not(.bible-picker-field--version) {
+            min-width: 120px;
+            flex: 1 1 140px;
+        }
+        .bible-picker-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1 1 120px;
+            min-width: 0;
+        }
+        .bible-picker-field--narrow {
+            flex: 0 1 96px;
+            min-width: 72px;
+        }
+        .bible-picker-field--version {
+            flex: 1 1 180px;
+            max-width: 420px;
+        }
+        .bible-picker-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+        }
+        .bible-picker-field .search-input {
+            width: 100%;
+            min-width: 0;
+        }
+        .bible-picker-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            flex: 0 0 auto;
+        }
+        .bible-book-split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            width: 100%;
+        }
+        @media (max-width: 640px) {
+            .bible-book-split {
+                grid-template-columns: 1fr;
+            }
         }
 
         .nav-btn {
@@ -1160,7 +1280,7 @@
         }
 
         .lock-btn.locked {
-            background: linear-gradient(135deg, var(--accent-emerald), #059669);
+            background: linear-gradient(135deg, var(--accent-emerald), var(--accent-emerald-dim));
             color: var(--text-inverse);
             border-color: var(--accent-emerald);
         }
@@ -1174,8 +1294,16 @@
 
         .comparison-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            width: 100%;
+        }
+
+        .comparison-grid.comparison-grid--two-only {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            max-width: 920px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .comparison-slot {
@@ -1253,7 +1381,7 @@
 
         .nav-arrow-btn:hover {
             background: var(--accent-gold);
-            color: black;
+            color: var(--text-inverse);
             border-color: var(--accent-gold);
             transform: scale(1.1);
         }
@@ -1365,7 +1493,7 @@
 
         .get-interpretation-btn {
             padding: 12px 28px;
-            background: linear-gradient(135deg, var(--accent-emerald), #059669);
+            background: linear-gradient(135deg, var(--accent-emerald), var(--accent-emerald-dim));
             color: var(--text-inverse);
             border: none;
             border-radius: var(--radius-md);
@@ -1843,9 +1971,10 @@
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(8px);
-            z-index: 1000;
+            background: var(--glass-bg, rgba(10, 15, 13, 0.85));
+            backdrop-filter: blur(15px) saturate(1.5);
+            -webkit-backdrop-filter: blur(15px) saturate(1.5);
+            z-index: 10000;
             justify-content: center;
             align-items: center;
         }
@@ -2072,6 +2201,18 @@
             }
         }
 
+        .sacred-focus:focus {
+            outline: none;
+            border-color: var(--accent-emerald) !important;
+            box-shadow: 0 0 25px var(--accent-emerald-glow), 0 0 50px rgba(52, 211, 153, 0.05) !important;
+            background: var(--bg-card-hover) !important;
+        }
+
+        .sacred-glow-container:focus-within {
+            transform: scale(1.01);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
         .timestamp-link {
             color: var(--accent-emerald);
             cursor: pointer;
@@ -2122,6 +2263,25 @@
         .transcript-line.active {
             background: rgba(52, 211, 153, 0.05);
             border-left: 3px solid var(--accent-emerald);
+        }
+
+        .transcript-line:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .transcript-line:hover .transcript-action-icon {
+            opacity: 0.6 !important;
+        }
+
+        .transcript-action-icon:hover {
+            opacity: 1 !important;
+            color: var(--accent-emerald) !important;
+            transform: scale(1.2);
+        }
+
+        .transcript-action-icon {
+            transition: all 0.2s;
+            padding: 4px;
         }
 
         .sermon-card-playing {
@@ -2255,6 +2415,27 @@
                 overflow-x: auto;
                 max-width: 100%;
             }
+            /* Transcript Modal Mobile Overrides */
+            #transcriptModal { padding: 0 !important; }
+            #transcriptModal > .glass-panel {
+                height: 100vh !important;
+                max-height: 100vh !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                border-radius: 0 !important;
+            }
+            #transcriptModalBodyGrid {
+                grid-template-columns: 1fr !important;
+                display: flex !important;
+                flex-direction: column !important;
+            }
+            #modalTranscriptContent {
+                padding: 20px 24px 120px !important;
+                font-size: 1rem !important;
+                flex: 1 !important;
+                white-space: pre-wrap !important;
+            }
+            #transcriptModalBodyGrid > div:nth-child(2) { display: none; }
             .version-slots { grid-template-columns: 1fr; }
             .search-container { flex-direction: column; }
             .results-grid { grid-template-columns: 1fr; }
@@ -2264,13 +2445,14 @@
             .main-container { padding: 16px; }
             .search-btn { width: 100%; justify-content: center; }
             
-            #audioPlayerTray {
+            #audioPlayerTray.active {
+                bottom: 70px !important; /* Above mobile nav */
+                height: 80px !important;
+                border-radius: 0;
                 padding: 0 16px !important;
-                height: 100px !important;
-                gap: 12px !important;
             }
-            .tray-controls { gap: 16px !important; }
-            .tray-info { display: none; } /* Hide info on very small screens if needed */
+            .tray-info { display: none; }
+            .tray-controls { width: 100%; justify-content: space-between; }
 
             /* Hide Desktop Nav */
             .header-nav { display: none; }
@@ -2282,29 +2464,33 @@
                 bottom: 0;
                 left: 0;
                 right: 0;
-                height: 64px;
-                background: rgba(15, 23, 42, 0.98);
-                backdrop-filter: blur(12px);
+                height: 70px;
+                background: var(--bg-card);
+                backdrop-filter: blur(20px);
                 border-top: 1px solid var(--border-subtle);
                 z-index: 10001;
                 justify-content: space-around;
                 align-items: center;
                 padding-bottom: env(safe-area-inset-bottom);
+                box-shadow: 0 -10px 30px rgba(0,0,0,0.3);
             }
 
             .bottom-nav-item {
                 display: flex;
                 flex-direction: column;
                 align-items: center;
-                gap: 4px;
+                gap: 6px;
                 color: var(--text-muted);
-                font-size: 0.65rem;
-                padding: 8px;
+                font-size: 0.7rem;
+                padding: 10px;
                 transition: 0.3s;
+                flex: 1;
+                cursor: pointer;
             }
 
-            .bottom-nav-item i { font-size: 1.2rem; }
+            .bottom-nav-item i { font-size: 1.3rem; margin-bottom: 2px; }
             .bottom-nav-item.active { color: var(--accent-emerald); }
+            .bottom-nav-item.active i { transform: translateY(-4px); transition: 0.3s; }
 
             /* FAB */
             .mobile-fab {
@@ -2328,7 +2514,7 @@
 
             /* Adjust Content for Bottom Nav */
             .main-container { padding-bottom: 100px !important; }
-            #audioPlayerTray { bottom: 64px !important; } /* Push audio tray above bottom nav */
+            #audioPlayerTray.active { bottom: 64px !important; } /* Push audio tray above bottom nav */
         }
         
         /* Default state for desktop */
@@ -2375,115 +2561,6 @@
             white-space: pre-line;
         }
 
-        /* Global Audio Player */
-        .global-audio-player {
-            position: fixed;
-            bottom: 32px;
-            left: 50%;
-            transform: translateX(-50%) translateY(150%);
-            opacity: 0;
-            pointer-events: none;
-            width: calc(100% - 64px);
-            max-width: 600px;
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(52, 211, 153, 0.2);
-            border-radius: var(--radius-full);
-            padding: 12px 24px;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            z-index: 9999;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        .global-audio-player.active {
-            transform: translateX(-50%) translateY(0);
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .audio-controls {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .audio-play-btn {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: var(--accent-emerald);
-            border: none;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 1.2rem;
-            transition: all 0.2s ease;
-        }
-
-        .audio-play-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 15px rgba(52, 211, 153, 0.4);
-        }
-
-        .audio-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .audio-title {
-            font-size: 0.88rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin-bottom: 4px;
-        }
-
-        .audio-progress-container {
-            height: 4px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 2px;
-            width: 100%;
-            position: relative;
-            cursor: pointer;
-        }
-
-        .audio-progress-bar {
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            background: var(--accent-emerald);
-            border-radius: 2px;
-            width: 0%;
-        }
-
-        .audio-time {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            min-width: 80px;
-            text-align: right;
-        }
-
-        .audio-close {
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            padding: 4px;
-            transition: color 0.2s ease;
-        }
-
-        .audio-close:hover {
-            color: #ef4444;
-        }
         /* Topics Grid — Compact and Space-Efficient */
         .topics-grid {
             display: grid;
@@ -2565,6 +2642,52 @@
             cursor: not-allowed;
             filter: grayscale(0.5);
         }
+        /* Sacred Sepia Theme */
+        [data-theme="sepia"] {
+            --bg-deep: #f4ecd8;
+            --bg-surface: #fdf6e3;
+            --bg-card: #fdf6e3;
+            --bg-card-hover: #eee8d5;
+            --bg-elevated: #eee8d5;
+            --bg-input: #eee8d5;
+            --text-primary: #586e75;
+            --text-secondary: #657b83;
+            --text-muted: #93a1a1;
+            --border-subtle: rgba(101, 123, 131, 0.15);
+            --accent-emerald: #859900;
+            --accent-emerald-dim: #2aa198;
+            --accent-gold: #b58900;
+            --accent-crimson: #dc322f;
+            --glass-bg: rgba(253, 246, 227, 0.85);
+
+            --accent-purple: #6b21a8;
+            --accent-blue: #1e40af;
+            --accent-orange: #92400e;
+            --accent-error: #b91c1c;
+
+            --gradient-emerald: linear-gradient(135deg, #e7f5e7, #f0fdf4);
+            --gradient-gold: linear-gradient(135deg, #fef9c3, #fffbeb);
+        }
+        [data-theme="sepia"] .glass-panel { box-shadow: 0 10px 30px rgba(0,0,0,0.05); background: var(--glass-bg); }
+        [data-theme="sepia"] .logo-icon { color: #859900; }
+        [data-theme="sepia"] .nav-tab.active { background: #859900; color: white; }
+
+        /* Skeleton Loading */
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-elevated) 50%, var(--bg-card) 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+        }
+
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 
 </head>
@@ -2581,24 +2704,29 @@
                     <span>Scripture Study Companion</span>
                 </div>
             </a>
-            <div id="connectionStatus" style="display: none; align-items: center; gap: 6px; padding: 4px 10px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 20px; color: #ef4444; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
-                <i class="fas fa-plane-slash"></i> Offline Mode
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <button onclick="app.toggleTheme()" style="background: none; border: none; color: var(--text-primary); cursor: pointer; font-size: 1.2rem; padding: 8px; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                    <i id="themeToggleIcon" class="fas fa-sun"></i>
+                </button>
+                <div id="connectionStatus" style="display: none; align-items: center; gap: 6px; padding: 4px 10px; background: var(--accent-emerald-glow); border: 1px solid var(--border-accent); border-radius: 20px; color: var(--accent-error); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <i class="fas fa-plane-slash"></i> Offline Mode
+                </div>
             </div>
             <nav class="nav-tabs" id="mainNav" aria-label="Main navigation">
                 <button class="nav-tab active" id="navSearch" onclick="app.showView('search')">
-                    <span class="tab-icon">🔍</span> Search
+                    <span class="tab-icon"><i class="fas fa-search"></i></span> Search
                 </button>
                 <button class="nav-tab" id="navRead" onclick="app.showView('read')">
-                    <span class="tab-icon">📖</span> Read
+                    <span class="tab-icon"><i class="fas fa-book"></i></span> Read
                 </button>
                 <button class="nav-tab" id="navCompare" onclick="app.showView('compare')">
-                    <span class="tab-icon">⚖️</span> Compare
+                    <span class="tab-icon"><i class="fas fa-balance-scale"></i></span> Compare
                 </button>
                 <button class="nav-tab" id="navBookmarks" onclick="app.showView('bookmarks')">
-                    <span class="tab-icon">🔖</span> Saved
+                    <span class="tab-icon"><i class="fas fa-bookmark"></i></span> Saved
                 </button>
                 <button class="nav-tab" id="navSermons" onclick="app.showView('sermons')">
-                    <span class="tab-icon">🎙️</span> Sermons
+                    <span class="tab-icon"><i class="fas fa-microphone"></i></span> Sermons
                 </button>
             </nav>
         </div>
@@ -2610,8 +2738,30 @@
     <main class="main-container">
         <!-- SEARCH HUB -->
         <div id="hub-search" class="view-hub active">
+            <!-- Daily Bread / Verse of the Day -->
+            <section class="glass-panel view-section" id="dailyVerseSection" style="margin-bottom: 24px; padding: 0; overflow: hidden; border: 1px solid var(--border-accent); background: var(--gradient-emerald);">
+                <div style="padding: 24px; position: relative; z-index: 1;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                        <span style="font-size: 0.7rem; color: var(--accent-gold); font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-sun"></i> Daily Manna
+                        </span>
+                        <span id="dailyDate" style="font-size: 0.65rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;"></span>
+                    </div>
+                    <div id="dailyVerseContainer" style="display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap;">
+                        <div id="dailyVerseContent" style="flex: 1; min-width: 300px;">
+                            <div class="loading-spinner" style="margin: 20px auto; width: 24px; height: 24px;"></div>
+                        </div>
+                        <div id="dailyIllustration" style="width: 280px; height: 160px; border-radius: 12px; overflow: hidden; background: rgba(0,0,0,0.3); border: 1px solid rgba(245,197,66,0.1); position: relative; flex-shrink: 0; display: none;">
+                            <!-- Daily art will be injected here -->
+                        </div>
+                    </div>
+                </div>
+                <!-- Background Decorative Element -->
+                <div style="position: absolute; bottom: -20px; right: -20px; font-size: 8rem; color: rgba(245,197,66,0.05); transform: rotate(-15deg); pointer-events: none; font-family: 'Playfair Display', serif;">M</div>
+            </section>
+
             <!-- Study Topics -->
-            <section class="glass-panel view-section" id="topicsSection">
+            <section class="glass-panel view-section" id="topicsSection" style="display: none;">
             <h2 class="section-title">
                 <span class="title-accent"></span>
                 Study by Topic
@@ -2646,44 +2796,50 @@
 
         <!-- Bible Version Selection -->
         <section class="glass-panel view-section" id="versionSection">
-            <h2 class="section-title">
-                <span class="title-accent"></span>
-                Select Bible Versions
-                <span class="title-badge">Up to 4</span>
-            </h2>
-            <div class="version-slots">
-                <div class="version-slot empty" data-slot="1" onclick="selectVersion(1)">
-                    <span class="version-slot-number">1</span>
-                    <span class="version-code">+</span>
-                    <span class="version-name">Click to select</span>
-                </div>
-                <div class="version-slot empty" data-slot="2" onclick="selectVersion(2)">
-                    <span class="version-slot-number">2</span>
-                    <span class="version-code">+</span>
-                    <span class="version-name">Click to select</span>
-                </div>
-                <div class="version-slot empty" data-slot="3" onclick="selectVersion(3)">
-                    <span class="version-slot-number">3</span>
-                    <span class="version-code">+</span>
-                    <span class="version-name">Click to select</span>
-                </div>
-                <div class="version-slot empty" data-slot="4" onclick="selectVersion(4)">
-                    <span class="version-slot-number">4</span>
-                    <span class="version-code">+</span>
-                    <span class="version-name">Click to select</span>
-                </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 16px;" onclick="app.toggleVersions()">
+                <h2 class="section-title" style="margin: 0;">
+                    <span class="title-accent"></span>
+                    Select Bible Versions
+                    <span class="title-badge" id="selectedCountBadge">0 Selected</span>
+                </h2>
+                <i id="versionsToggleArrow" class="fas fa-chevron-up" style="color: var(--text-muted); transition: transform 0.3s;"></i>
             </div>
-            <div class="lock-section">
-                <div class="lock-info">
-                    <div class="lock-icon">🔒</div>
-                    <div class="lock-text">
-                        <h4>Lock Selection</h4>
-                        <p>Prevent accidental changes to your selected versions</p>
+            
+            <div id="versionSlotsContainer" style="transition: all 0.3s ease;">
+                <div class="version-slots">
+                    <div class="version-slot empty" data-slot="1" onclick="selectVersion(1)">
+                        <span class="version-slot-number">1</span>
+                        <span class="version-code">+</span>
+                        <span class="version-name">Click to select</span>
+                    </div>
+                    <div class="version-slot empty" data-slot="2" onclick="selectVersion(2)">
+                        <span class="version-slot-number">2</span>
+                        <span class="version-code">+</span>
+                        <span class="version-name">Click to select</span>
+                    </div>
+                    <div class="version-slot empty" data-slot="3" onclick="selectVersion(3)">
+                        <span class="version-slot-number">3</span>
+                        <span class="version-code">+</span>
+                        <span class="version-name">Click to select</span>
+                    </div>
+                    <div class="version-slot empty" data-slot="4" onclick="selectVersion(4)">
+                        <span class="version-slot-number">4</span>
+                        <span class="version-code">+</span>
+                        <span class="version-name">Click to select</span>
                     </div>
                 </div>
-                <button class="lock-btn" id="lockBtn" onclick="toggleLock()">
-                    <span>🔓</span> Lock Versions
-                </button>
+                <div class="lock-section">
+                    <div class="lock-info">
+                        <div class="lock-icon">🔒</div>
+                        <div class="lock-text">
+                            <h4>Lock Selection</h4>
+                            <p>Prevent accidental changes to your selected versions</p>
+                        </div>
+                    </div>
+                    <button class="lock-btn" id="lockBtn" onclick="toggleLock()">
+                        <span>🔓</span> Lock Versions
+                    </button>
+                </div>
             </div>
         </section>
 
@@ -2693,11 +2849,11 @@
                 <span class="title-accent"></span>
                 Search Scripture
             </h2>
-            <div class="search-container">
+            <div class="search-container sacred-glow-container">
                 <div class="search-input-wrapper">
                     <span class="search-icon">🔍</span>
-                    <input type="text" class="search-input" id="searchInput"
-                           placeholder="Enter verse (e.g., John 3:16), word, phrase, or sentence..."
+                    <input type="text" class="search-input sacred-focus" id="searchInput"
+                           placeholder="Enter verse, phrase, or ask a spiritual question (e.g., 'What does Jesus say about peace?')..."
                            onkeypress="if(event.key==='Enter') performSearch()"
                            onfocus="app.updateSuggestions(this.value)"
                            autocomplete="off">
@@ -2708,6 +2864,9 @@
                 </button>
             </div>
             <div class="search-hints">
+                <span class="search-hint" onclick="app.toggleTopics()" style="background: var(--accent-emerald-glow); color: var(--accent-emerald); border-color: var(--border-accent); font-weight: 600;">
+                    <i class="fas fa-tags" style="margin-right: 6px;"></i> Study by Topic
+                </span>
                 <span class="search-hint" onclick="setSearch('John 3:16')">John 3:16</span>
                 <span class="search-hint" onclick="setSearch('Genesis 1:1')">Genesis 1:1</span>
                 <span class="search-hint" onclick="setSearch('Psalm 23')">Psalm 23</span>
@@ -2762,7 +2921,7 @@
             <!-- Comparison Section -->
             <section class="glass-panel view-section" id="comparisonSection">
             <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 8px;">
-                <button class="nav-btn" style="padding: 8px 16px; font-size: 0.8rem; background: rgba(255,255,255,0.05); border-color: var(--border-subtle); color: var(--text-muted);" onclick="app.showView('search')">
+                <button class="nav-btn" style="padding: 8px 16px; font-size: 0.8rem; background: var(--bg-elevated); border-color: var(--border-subtle); color: var(--text-muted);" onclick="app.showView('search')">
                     <i class="fas fa-arrow-left" style="margin-right: 8px;"></i> Back to Dashboard
                 </button>
                 <h2 class="section-title" style="margin: 0;">
@@ -2817,7 +2976,7 @@
             <!-- Sermons Section -->
             <section class="view-section" id="sermonsSection">
             <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 8px;">
-                <button class="nav-btn" style="padding: 8px 16px; font-size: 0.8rem; background: rgba(255,255,255,0.05); border-color: var(--border-subtle); color: var(--text-muted);" onclick="app.showView('home')">
+                <button class="nav-btn" style="padding: 8px 16px; font-size: 0.8rem; background: var(--bg-elevated); border-color: var(--border-subtle); color: var(--text-muted);" onclick="app.showView('search')">
                     <i class="fas fa-arrow-left" style="margin-right: 8px;"></i> Back to Dashboard
                 </button>
                 <h2 class="section-title" style="margin: 0;">
@@ -2874,6 +3033,7 @@
                 </div>
             </div>
         </section>
+    </div>
         
 
         <div id="hub-bookmarks" class="view-hub">
@@ -2959,29 +3119,132 @@
             <section class="glass-panel view-section" id="readSection">
             <h2 class="section-title">
                 <span class="title-accent"></span>
-                Library
-                <span class="title-badge">Read & Study</span>
+                Read the Bible
+                <span class="title-badge">Read &amp; Study</span>
             </h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Click on a section below to expand and browse available content.</p>
 
-            <!-- Bible Navigator -->
+            <!-- ===== BIBLE READER PANE ===== -->
+            <div id="bibleReaderPane" class="glass-panel" style="padding: 0; margin-bottom: 24px; overflow: hidden; border-color: var(--border-accent);">
+                <!-- Reader Toolbar -->
+                <div style="padding: 16px 24px; border-bottom: 1px solid var(--border-subtle); background: linear-gradient(135deg, rgba(52,211,153,0.08), transparent);">
+                    <div class="bible-picker-toolbar">
+                        <div class="bible-picker-row bible-picker-row--grow" role="group" aria-label="Passage selection">
+                            <div class="bible-picker-field bible-picker-field--version">
+                                <label for="readerVersionSelect" class="bible-picker-label">Version</label>
+                                <select id="readerVersionSelect" class="search-input" style="padding: 8px 14px; font-size: 0.85rem;" onchange="app.loadReaderChapter()">
+                                    <option value="KJV">KJV</option>
+                                </select>
+                            </div>
+                            <div class="bible-picker-field">
+                                <label for="readerBookSelect" class="bible-picker-label">Book</label>
+                                <select id="readerBookSelect" class="search-input" style="padding: 8px 14px; font-size: 0.85rem;" onchange="app.onReaderBookChange()">
+                                </select>
+                            </div>
+                            <div class="bible-picker-field bible-picker-field--narrow">
+                                <label for="readerChapterSelect" class="bible-picker-label">Chapter</label>
+                                <select id="readerChapterSelect" class="search-input" style="padding: 8px 14px; font-size: 0.85rem;" onchange="app.onReaderChapterChange()">
+                                </select>
+                            </div>
+                            <div class="bible-picker-field bible-picker-field--narrow">
+                                <label for="readerVerseSelect" class="bible-picker-label">Verse</label>
+                                <select id="readerVerseSelect" class="search-input" style="padding: 8px 14px; font-size: 0.85rem;" onchange="app.onReaderVerseChange()">
+                                </select>
+                            </div>
+                        </div>
+                        <div class="bible-picker-actions">
+                            <button class="nav-btn" onclick="app.readerPrevChapter()" style="padding: 6px 14px; font-size: 0.82rem;" title="Previous Chapter">
+                                <i class="fas fa-arrow-left"></i> Prev
+                            </button>
+                            <button class="nav-btn" onclick="app.readerNextChapter()" style="padding: 6px 14px; font-size: 0.82rem;" title="Next Chapter">
+                                Next <i class="fas fa-arrow-right"></i>
+                            </button>
+                            <button class="nav-btn" onclick="app.toggleReaderNavigator()" style="padding: 6px 14px; font-size: 0.82rem;" title="Toggle Book List">
+                                <i class="fas fa-list"></i>
+                            </button>
+                            <button class="nav-btn" onclick="app.loadStudyGuide()" style="padding: 6px 14px; font-size: 0.82rem; background: var(--accent-gold-glow); color: var(--accent-gold); border-color: rgba(245,197,66,0.3);" title="AI Study Guide">
+                                <i class="fas fa-wand-magic-sparkles"></i> Guide
+                            </button>
+                            <button class="nav-btn" id="parallelModeBtn" onclick="app.toggleParallelMode()" style="padding: 6px 14px; font-size: 0.82rem; border-color: var(--accent-emerald);" title="Compare Chapters Side-by-Side">
+                                <i class="fas fa-columns"></i> Parallel
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Book List (shown by default now!) -->
+                    <div id="readerNavigatorPanel" style="margin-top: 16px;">
+                        <div id="readerBookGrid" style="max-height: 350px; overflow-y: auto;"></div>
+                    </div>
+                </div>
+
+                <!-- Parallel Controls (Hidden by default) -->
+                <div id="parallelControls" style="display: none; padding: 12px 24px; border-bottom: 1px solid var(--border-subtle); background: rgba(52,211,153,0.05); align-items: center; gap: 12px; flex-wrap: wrap;">
+                    <span style="font-size: 0.75rem; color: var(--accent-emerald); font-weight: 700; text-transform: uppercase;">Parallel Version:</span>
+                    <select id="parallelVersionSelect" class="search-input" style="min-width: 160px; padding: 6px 12px; font-size: 0.8rem;" onchange="app.loadReaderChapter()">
+                        <option value="WEB">WEB</option>
+                    </select>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+                        <input type="checkbox" id="syncScrolling" checked onchange="app.toggleSyncScrolling()">
+                        <label for="syncScrolling" style="font-size: 0.75rem; color: var(--text-muted); cursor: pointer;">Sync Scrolling</label>
+                    </div>
+                </div>
+
+                <!-- AI Study Guide Panel (collapsible) -->
+                <div id="studyGuidePanel" style="display: none; padding: 24px; border-bottom: 1px solid var(--border-subtle); background: linear-gradient(135deg, rgba(245,197,66,0.05), transparent);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h4 style="margin: 0; color: var(--accent-gold); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">
+                            <i class="fas fa-brain" style="margin-right: 8px;"></i> Divine Insight — AI Study Guide
+                        </h4>
+                        <button onclick="document.getElementById('studyGuidePanel').style.display='none'" style="background: none; border: none; color: var(--text-muted); cursor: pointer;">✕</button>
+                    </div>
+                    <div id="studyGuideContent" style="font-size: 0.92rem; line-height: 1.6; color: var(--text-primary);">
+                        <!-- Guide content will be injected here -->
+                    </div>
+                </div>
+
+                <!-- Reader Reference Header -->
+                <div style="padding: 20px 28px 8px; display: flex; align-items: center; gap: 10px;">
+                    <span id="readerReference" style="font-family: 'JetBrains Mono', monospace; font-size: 1rem; color: var(--accent-gold); font-weight: 700; letter-spacing: 0.5px;">Genesis 1</span>
+                    <span id="readerVersionBadge" style="font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent-emerald); background: var(--accent-emerald-glow); padding: 3px 10px; border-radius: 20px; border: 1px solid var(--border-accent);">KJV</span>
+                </div>
+
+                <!-- Reader Content Area -->
+                <div id="readerContent" style="padding: 12px 28px 32px; min-height: 300px; max-height: 70vh; overflow-y: auto; scroll-behavior: smooth;">
+                    <div style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
+                        <div style="font-size: 2.5rem; margin-bottom: 16px; opacity: 0.4;">📖</div>
+                        <p style="font-size: 0.95rem;">Loading Bible text...</p>
+                    </div>
+                </div>
+
+                <!-- Reader Footer Nav -->
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 24px; border-top: 1px solid var(--border-subtle); background: var(--bg-elevated);">
+                    <button class="nav-btn" onclick="app.readerPrevChapter()" style="padding: 8px 20px;">
+                        <i class="fas fa-arrow-left"></i> Previous Chapter
+                    </button>
+                    <span id="readerProgress" style="font-size: 0.75rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">Chapter 1</span>
+                    <button class="nav-btn" onclick="app.readerNextChapter()" style="padding: 8px 20px;">
+                        Next Chapter <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Library Browser (collapsible below reader) -->
             <div class="glass-panel" style="padding: 20px; margin-bottom: 24px; background: linear-gradient(135deg, rgba(52,211,153,0.04), transparent);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; cursor: pointer;" onclick="app.toggleBibleNavigator()">
+                <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="app.toggleBibleNavigator()">
                     <h3 style="font-size: 1rem; color: var(--text-primary); display: flex; align-items: center; gap: 10px; margin: 0;">
-                        <span style="font-size: 1.2rem;">📖</span> Bible Navigator
-                        <span class="title-badge">Quick Access</span>
+                        <span style="font-size: 1.2rem;">📚</span> Library Browser
+                        <span class="title-badge">All Versions &amp; Materials</span>
                     </h3>
                     <span id="bibleNavArrow" style="color: var(--text-muted); transition: transform 0.3s;">▾</span>
                 </div>
-                <div id="bibleNavigatorPanel" style="display: none;">
-                    <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
-                        <select id="bibleNavVersion" class="search-input" style="flex: 1; min-width: 180px; padding: 10px 14px; font-size: 0.85rem;" onchange="app.updateBibleNav()">
-                            <option value="">Select Version...</option>
-                        </select>
-                        <button class="nav-btn" style="padding: 8px 16px; font-size: 0.82rem; border-color: var(--accent-emerald); color: var(--accent-emerald);" onclick="app.showTestament('OT')">Old Testament</button>
-                        <button class="nav-btn" style="padding: 8px 16px; font-size: 0.82rem;" onclick="app.showTestament('NT')">New Testament</button>
+                <div id="bibleNavigatorPanel" style="display: none; margin-top: 16px;">
+                    <div class="bible-picker-row" style="margin-bottom: 16px;" role="group" aria-label="Library browser version">
+                        <div class="bible-picker-field bible-picker-field--version">
+                            <label for="bibleNavVersion" class="bible-picker-label">Version</label>
+                            <select id="bibleNavVersion" class="search-input" style="padding: 10px 14px; font-size: 0.85rem;" onchange="app.updateBibleNav()">
+                                <option value="">Select Version...</option>
+                            </select>
+                        </div>
                     </div>
-                    <div id="bibleNavBooks" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; max-height: 320px; overflow-y: auto;"></div>
+                    <div id="bibleNavBooks" style="max-height: 420px; overflow-y: auto;"></div>
                 </div>
             </div>
 
@@ -3024,7 +3287,7 @@
                 </div>
                 <!-- Toolbar -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border-subtle);">
-                    <button class="action-btn" onclick="app.closeMaterialViewer()" style="background: rgba(255,255,255,0.05); color: var(--text-primary);">
+                    <button class="action-btn" onclick="app.closeMaterialViewer()" style="background: var(--bg-elevated); color: var(--text-primary);">
                         <i class="fas fa-arrow-left"></i> Back to Library
                     </button>
                     <h3 id="materialViewerTitle" style="color: var(--accent-gold); margin: 0; font-family: 'Playfair Display', serif; font-size: 1.1rem; flex: 1; text-align: center; padding: 0 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Document</h3>
@@ -3045,19 +3308,19 @@
                         <div id="materialSidebarList" style="display: flex; flex-direction: column; gap: 8px;"></div>
                     </div>
                     <!-- Canvas Area -->
-                    <div id="materialCanvasWrapper" style="position: relative; flex: 1; overflow: auto; background: #000; border-radius: var(--radius-md); display: flex; justify-content: center; padding: 20px;" oncontextmenu="return false;">
+                    <div id="materialCanvasWrapper" style="position: relative; flex: 1; overflow: auto; background: var(--bg-deep); border-radius: var(--radius-md); display: flex; justify-content: center; padding: 20px;" oncontextmenu="return false;">
                         <canvas id="materialCanvas" style="box-shadow: 0 4px 12px rgba(0,0,0,0.5);"></canvas>
                         <div id="materialTextLayer" class="textLayer" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: hidden; opacity: 0.2; color: transparent; cursor: text;"></div>
                     </div>
                 </div>
 
                 <!-- Highlight popup button (hidden by default) -->
-                <button id="highlightBtn" style="position: absolute; display: none; background: var(--accent-gold); color: #000; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 100;">
+                <button id="highlightBtn" style="position: absolute; display: none; background: var(--accent-gold); color: var(--text-inverse); border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 100;">
                     <i class="fas fa-highlighter"></i> Highlight
                 </button>
             </div>
         </section>
-        </div>
+    </div>
     </main>
 
     <!-- ==========================================
@@ -3094,21 +3357,6 @@
         </div>
     </div>
 
-    <!-- Global Audio Player (Floating) -->
-    <div class="global-audio-player" id="globalAudioPlayer">
-        <div class="audio-controls">
-            <button class="audio-play-btn" id="audioToggleBtn" onclick="app.toggleGlobalAudio()">▶</button>
-        </div>
-        <div class="audio-info">
-            <div class="audio-title" id="audioTitle">Sermon Title</div>
-            <div class="audio-progress-container" onclick="app.seekAudio(event)">
-                <div class="audio-progress-bar" id="audioProgressBar"></div>
-            </div>
-        </div>
-        <div class="audio-time" id="audioTime">00:00 / 00:00</div>
-        <button class="audio-close" onclick="app.closeGlobalAudio()">✕</button>
-    </div>
-
     <!-- Hidden Audio Core -->
     <audio id="mainAudioCore" style="display: none;"></audio>
 
@@ -3117,8 +3365,74 @@
          MODALS (Global Root)
          ========================================== -->
 
+    <!-- Chapter Reading Modal (Floating Pop-up) -->
+    <div id="chapterModal" class="modal-overlay">
+        <div class="glass-panel" style="width: 100%; max-width: 1200px; height: 95vh; padding: 0; display: flex; flex-direction: column; animation: fadeSlideUp 0.3s ease-out; border-radius: 28px; border: 1px solid var(--accent-emerald); box-shadow: 0 50px 120px rgba(0,0,0,0.9); overflow: hidden;">
+            <!-- Modal Header -->
+            <div style="padding: 24px 32px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: rgba(52,211,153,0.05); flex-shrink: 0;">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <div style="width: 48px; height: 48px; background: var(--accent-emerald-glow); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--accent-emerald); font-size: 1.4rem; border: 1px solid rgba(52,211,153,0.2);">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                    <div>
+                        <h2 id="chapterModalTitle" style="font-size: 1.5rem; color: var(--text-primary); margin: 0; font-family: 'Playfair Display', serif;">Genesis 1</h2>
+                        <span id="chapterModalVersion" style="font-size: 0.75rem; color: var(--accent-gold); font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">King James Version</span>
+                    </div>
+                </div>
+                <button onclick="app.closeChapterModal()" style="background: var(--bg-elevated); border: 1px solid var(--border-subtle); color: var(--text-muted); width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; transition: 0.2s;" onmouseover="this.style.color='#ef4444'; this.style.background='rgba(239,68,68,0.1)'">&times;</button>
+            </div>
+
+            <!-- Modal Content -->
+            <div id="chapterModalContent" style="flex: 1; overflow-y: auto; padding: 40px; scrollbar-width: thin; scrollbar-color: var(--accent-emerald) transparent;">
+                <!-- Content will be injected here -->
+            </div>
+
+            <!-- Modal Footer (Navigation) -->
+            <div style="padding: 20px 32px; border-top: 1px solid var(--border-subtle); background: var(--bg-card); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+                <button id="prevChapterBtn" class="nav-btn" style="padding: 10px 24px; font-size: 0.9rem; background: var(--bg-card); border: 1px solid var(--border-default); color: var(--text-secondary);">
+                    <i class="fas fa-chevron-left" style="margin-right: 8px;"></i> Previous Chapter
+                </button>
+                <div style="display: flex; gap: 12px;">
+                    <button onclick="app.closeChapterModal()" class="nav-btn" style="padding: 10px 24px; font-size: 0.9rem; background: transparent; border: 1px solid var(--border-subtle); color: var(--text-muted);">Close</button>
+                </div>
+                <button id="nextChapterBtn" class="nav-btn" style="padding: 10px 24px; font-size: 0.9rem; background: var(--bg-card); border: 1px solid var(--border-default); color: var(--text-secondary);">
+                    Next Chapter <i class="fas fa-chevron-right" style="margin-left: 8px;"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generic Study Modal (For Interpretation, Art, etc.) -->
+    <div id="studyModal" class="modal-overlay">
+        <div class="glass-panel" style="width: 100%; max-width: 1100px; height: 92vh; padding: 0; display: flex; flex-direction: column; animation: fadeSlideUp 0.3s ease-out; border-radius: 28px; border: 1px solid var(--accent-gold); box-shadow: 0 50px 120px rgba(0,0,0,0.9); overflow: hidden;">
+            <!-- Modal Header -->
+            <div style="padding: 24px 32px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: rgba(245,197,66,0.05); flex-shrink: 0;">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <div id="studyModalIcon" style="width: 48px; height: 48px; background: var(--accent-gold-glow); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--accent-gold); font-size: 1.4rem; border: 1px solid rgba(245,197,66,0.2);">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <div>
+                        <h2 id="studyModalTitle" style="font-size: 1.5rem; color: var(--text-primary); margin: 0; font-family: 'Playfair Display', serif;">Verse Insight</h2>
+                        <span id="studyModalSubtitle" style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">John 3:16</span>
+                    </div>
+                </div>
+                <button onclick="app.closeStudyModal()" style="background: var(--bg-elevated); border: 1px solid var(--border-subtle); color: var(--text-muted); width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; transition: 0.2s;" onmouseover="this.style.color='#ef4444'; this.style.background='rgba(239,68,68,0.1)'">&times;</button>
+            </div>
+
+            <!-- Modal Content -->
+            <div id="studyModalContent" style="flex: 1; overflow-y: auto; padding: 32px; scrollbar-width: thin; scrollbar-color: var(--accent-gold) transparent;">
+                <!-- Content will be injected here -->
+            </div>
+
+            <!-- Modal Footer -->
+            <div style="padding: 16px 32px; border-top: 1px solid var(--border-subtle); background: var(--bg-card); display: flex; justify-content: flex-end; align-items: center; flex-shrink: 0;">
+                <button onclick="app.closeStudyModal()" class="nav-btn" style="padding: 10px 24px; font-size: 0.9rem; background: var(--bg-card); border: 1px solid var(--border-default); color: var(--text-secondary);">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Sermon Ingester Modal -->
-    <div id="ingesterModal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95); z-index: 11000; backdrop-filter: blur(20px); align-items: center; justify-content: center; padding: 20px;">
+    <div id="ingesterModal" class="modal-overlay">
         <div class="glass-panel" style="width: 100%; max-width: 600px; padding: 32px; border-color: var(--accent-gold); position: relative; animation: fadeSlideUp 0.4s ease-out; box-shadow: 0 30px 60px rgba(0,0,0,0.6);">
             <button onclick="app.closeIngester()" style="position: absolute; top: 20px; right: 20px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.5rem;">&times;</button>
             <h2 class="section-title" style="margin-bottom: 12px;">
@@ -3140,12 +3454,12 @@
     </div>
 
     <!-- Sermon Transcript Modal (Synchronized Reading) -->
-    <div id="transcriptModal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95); z-index: 11001; backdrop-filter: blur(25px); align-items: center; justify-content: center; padding: 30px;">
-        <div class="glass-panel" style="width: 100%; height: 85vh; max-width: 1200px; padding: 0; overflow: hidden; display: flex; flex-direction: column; animation: fadeSlideUp 0.3s ease-out; border-radius: 24px; border-color: var(--accent-emerald); box-shadow: 0 40px 100px rgba(0,0,0,0.7);">
+    <div id="transcriptModal" class="modal-overlay">
+        <div class="glass-panel" style="width: 100%; height: 95vh; max-width: 1200px; padding: 0; overflow: hidden; display: flex; flex-direction: column; animation: fadeSlideUp 0.3s ease-out; border-radius: 28px; border-color: var(--accent-emerald); box-shadow: 0 50px 120px rgba(0,0,0,0.9);">
             <!-- Modal Header -->
-            <div style="padding: 32px 40px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, rgba(52,211,153,0.1), rgba(15,23,42,0.9)); flex-shrink: 0;">
+            <div style="padding: 32px 40px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, var(--accent-emerald-glow), var(--bg-card)); flex-shrink: 0;">
                 <div style="display: flex; align-items: center; gap: 24px;">
-                    <button id="modalAudioToggleBtn" onclick="app.toggleGlobalAudio()" style="width: 64px; height: 64px; border-radius: 50%; background: #ff0000; border: none; color: white; cursor: pointer; box-shadow: 0 0 30px rgba(255,0,0,0.4);">
+                    <button id="modalAudioToggleBtn" onclick="app.toggleGlobalAudio()" style="width: 64px; height: 64px; border-radius: 50%; background: var(--accent-error); border: none; color: white; cursor: pointer; box-shadow: 0 0 30px rgba(255,0,0,0.4);">
                         <span id="modalAudioToggleIcon" style="font-size: 1.6rem;">▶</span>
                     </button>
                     <div>
@@ -3161,18 +3475,18 @@
                         <div style="font-family: 'JetBrains Mono', monospace; font-size: 1rem; color: var(--accent-emerald); font-weight: 700;">
                             <span id="modalAudioCurrentTime">0:00</span> / <span id="modalAudioDuration" style="color: var(--text-muted);">0:00</span>
                         </div>
-                        <div style="width: 150px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px;">
+                        <div style="width: 150px; height: 4px; background: var(--border-subtle); border-radius: 2px;">
                             <div id="modalHeaderProgressBar" style="width: 0%; height: 100%; background: var(--accent-emerald); border-radius: 2px;"></div>
                         </div>
                     </div>
-                    <button onclick="app.closeTranscriptModal()" style="background: rgba(255,255,255,0.1); border: 1px solid var(--border-subtle); color: white; width: 48px; height: 48px; border-radius: 50%; cursor: pointer; font-size: 1.5rem;">&times;</button>
+                    <button onclick="app.closeTranscriptModal()" style="background: var(--bg-elevated); border: 1px solid var(--border-subtle); color: var(--text-primary); width: 48px; height: 48px; border-radius: 50%; cursor: pointer; font-size: 1.5rem;">&times;</button>
                 </div>
             </div>
             
             <!-- Modal Body -->
-            <div style="display: grid; grid-template-columns: 1fr 300px; flex: 1; overflow: hidden;">
+            <div id="transcriptModalBodyGrid" style="display: grid; grid-template-columns: 1fr 300px; flex: 1; overflow: hidden;">
                 <div id="modalTranscriptContent" style="padding: 40px 40px 140px; overflow-y: auto; line-height: 1.9; color: var(--text-secondary); font-size: 1.1rem; white-space: pre-wrap; scroll-behavior: smooth;"></div>
-                <div style="padding: 30px; background: rgba(255,255,255,0.02); border-left: 1px solid var(--border-subtle); overflow-y: auto;">
+                <div style="padding: 30px; background: var(--bg-elevated); border-left: 1px solid var(--border-subtle); overflow-y: auto;">
                     <h4 style="font-size: 0.8rem; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 20px;">AI INSIGHTS</h4>
                     <div id="modalInterpretationContent"></div>
                 </div>
@@ -3183,25 +3497,25 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
 
-    <script src="app.js?v=21"></script>
+    <script src="app.js?v=22"></script>
     <!-- GLOBAL AUDIO PLAYER (Fixed Bottom Bar) -->
     <!-- MOBILE BOTTOM NAVIGATION -->
     <nav class="mobile-bottom-nav">
-        <div class="bottom-nav-item active" onclick="app.switchTab('search')">
+        <div class="bottom-nav-item active" onclick="app.showView('search')">
             <i class="fas fa-search"></i>
             <span>Bible</span>
         </div>
-        <div class="bottom-nav-item" onclick="app.switchTab('sermons')">
+        <div class="bottom-nav-item" onclick="app.showView('sermons')">
             <i class="fas fa-microphone-alt"></i>
             <span>Sermons</span>
         </div>
-        <div class="bottom-nav-item" onclick="app.switchTab('saved')">
-            <i class="fas fa-bookmark"></i>
-            <span>Saved</span>
+        <div class="bottom-nav-item" onclick="app.showView('read')">
+            <i class="fas fa-book-open"></i>
+            <span>Read</span>
         </div>
-        <div class="bottom-nav-item" onclick="app.switchTab('timeline')">
-            <i class="fas fa-history"></i>
-            <span>Activity</span>
+        <div class="bottom-nav-item" onclick="app.showView('library')">
+            <i class="fas fa-bookmark"></i>
+            <span>Library</span>
         </div>
     </nav>
 
@@ -3210,7 +3524,7 @@
         <i class="fas fa-chevron-up"></i>
     </button>
 
-    <div id="audioPlayerTray" style="position: fixed; bottom: -100px; left: 0; right: 0; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px); border-top: 1px solid var(--border-accent); z-index: 10000; height: 80px; transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; padding: 0 40px; gap: 32px; box-shadow: 0 -10px 40px rgba(0,0,0,0.5);">
+    <div id="audioPlayerTray" style="position: fixed; bottom: -100px; left: 0; right: 0; background: var(--glass-bg); backdrop-filter: blur(25px); border-top: 1px solid var(--border-accent); z-index: 10000; height: 80px; transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; padding: 0 40px; gap: 32px; box-shadow: 0 -10px 40px rgba(0,0,0,0.5);">
         <!-- Hidden YouTube Bridge -->
         <div id="ytAudioBridge" style="position: absolute; visibility: hidden; pointer-events: none; width: 1px; height: 1px;"></div>
         
@@ -3225,7 +3539,7 @@
         <div style="flex: 1; display: flex; flex-direction: column; gap: 8px; max-width: 600px;">
             <div style="display: flex; align-items: center; justify-content: center; gap: 24px;">
                 <button class="nav-btn" onclick="app.seekAudioRelative(-15)" style="background: none; border: none; font-size: 1rem; color: var(--text-muted);">↺ 15</button>
-                <button id="audioToggleBtn" onclick="app.toggleGlobalAudio()" style="width: 56px; height: 56px; border-radius: 50%; background: #ff0000; border: none; color: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(255,0,0,0.3); transition: transform 0.2s;" onmousedown="this.style.transform='scale(0.9)'" onmouseup="this.style.transform='scale(1)'">
+                <button id="audioToggleBtn" onclick="app.toggleGlobalAudio()" style="width: 56px; height: 56px; border-radius: 50%; background: var(--accent-error); border: none; color: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(255,0,0,0.3); transition: transform 0.2s;" onmousedown="this.style.transform='scale(0.9)'" onmouseup="this.style.transform='scale(1)'">
                     <span id="audioToggleIcon" style="font-size: 1.4rem; line-height: 1;">▶</span>
                     <span id="audioToggleLabel" style="font-size: 0.6rem; font-weight: 800; letter-spacing: 1px;">PLAY</span>
                 </button>
@@ -3233,7 +3547,7 @@
             </div>
             <div style="display: flex; align-items: center; gap: 12px;">
                 <span id="audioCurrentTime" style="font-size: 0.72rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; width: 45px;">0:00</span>
-                <div style="flex: 1; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; cursor: pointer; position: relative;" onclick="app.seekAudio(event)">
+                <div style="flex: 1; height: 4px; background: var(--border-subtle); border-radius: 2px; cursor: pointer; position: relative;" onclick="app.seekAudio(event)">
                     <div id="audioProgressBar" style="position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: var(--accent-emerald); border-radius: 2px; transition: width 0.1s linear;">
                         <div style="position: absolute; right: -6px; top: -4px; width: 12px; height: 12px; background: white; border-radius: 50%; box-shadow: 0 0 10px rgba(0,0,0,0.5);"></div>
                     </div>

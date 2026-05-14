@@ -14,6 +14,7 @@ import authRoutes from './src/routes/auth.js';
 import bookmarkRoutes from './src/routes/bookmarks.js';
 import commentaryRoutes from './src/routes/commentary.js';
 import sermonRoutes from './src/routes/api/sermons.js';
+import aiRoutes from './src/routes/api/ai.js';
 
 dotenv.config();
 
@@ -27,14 +28,57 @@ const PORT = process.env.PORT || 3000;
 app.use(helmet({
     contentSecurityPolicy: false, // Disable CSP for easier development with external fonts/scripts
 }));
-app.use(cors());
 
-// Rate limiting
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5000 // Increased from 100 to 5000 to accommodate live search typing
+// CORS — restrict to known origins in production
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+    : ['http://localhost:3000', 'http://localhost:8080'];
+
+app.use(cors({
+    origin: (origin, callback) => {
+        // Allow requests with no origin (mobile apps, curl, same-origin)
+        if (!origin) return callback(null, true);
+        if (process.env.NODE_ENV !== 'production') return callback(null, true);
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        callback(new Error(`CORS: origin ${origin} not allowed`));
+    },
+    credentials: true,
+}));
+
+// Simple request logger
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
 });
-app.use(limiter);
+
+// Rate limiting — tiered by route sensitivity
+const defaultLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 500,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many requests, please try again later.' },
+});
+
+// Live search fires on every keystroke — allow higher throughput
+const searchLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 120, // 2 searches/sec sustained
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Search rate limit exceeded, please slow down.' },
+});
+
+// Auth endpoints — strict to prevent brute force
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many auth attempts, please try again later.' },
+});
+
+app.use(defaultLimiter);
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
@@ -46,14 +90,26 @@ app.use('/Bible_Books', (req, res, next) => {
     next();
 }, express.static(path.join(__dirname, 'Bible_Books')));
 
+// Serve app.js and app-*.js with no-cache so browser always gets the latest version
+app.use((req, res, next) => {
+    if (/^\/(app|styles)(\.[\w]+)?\.js$/.test(req.path) || req.path === '/styles.css') {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+    }
+    next();
+});
+
 app.use(express.static(__dirname));
 
-// API Routes
+// API Routes — apply tiered rate limits
+app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/bibles/search', searchLimiter);
 app.use('/api/bibles', bibleRoutes);
-app.use('/api/auth', authRoutes);
 app.use('/api/bookmarks', bookmarkRoutes);
 app.use('/api/commentary', commentaryRoutes);
 app.use('/api/sermons', sermonRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req: Request, res: Response) => {

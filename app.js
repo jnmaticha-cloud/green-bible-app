@@ -26,28 +26,41 @@ class GreenBibleApp {
         this.currentSearchQuery = null;
         this.compareSlots = [null, null, null, null];
         this.searchAbortController = null;
+        this.searchTimeout = null;
         this.availableVersions = [
-            // English (Public Domain / Free)
-            { code: 'KJV', name: 'King James Version', language: 'English' },
-            { code: 'WEB', name: 'World English Bible', language: 'English' },
-            { code: 'ASV', name: 'American Standard Version', language: 'English' },
-            { code: 'BBE', name: 'Bible in Basic English', language: 'English' },
-            { code: 'BSB', name: 'Berean Standard Bible', language: 'English' },
-            { code: 'YLT', name: "Young's Literal Translation", language: 'English' },
-            { code: 'DRA', name: 'Douay-Rheims 1899', language: 'English' },
-            { code: 'DBY', name: 'Darby Translation', language: 'English' },
-            { code: 'GNV', name: 'Geneva Bible 1599', language: 'English' },
-            { code: 'FBV', name: 'Free Bible Version', language: 'English' },
-            { code: 'NET', name: 'NET Bible', language: 'English' },
-            { code: 'LSV', name: 'Literal Standard Version', language: 'English' },
-            // African Languages
-            { code: 'SWAHILI', name: 'Biblia Takatifu', language: 'Swahili' },
-            { code: 'KIKUYU', name: 'Kikuyu Bible', language: 'Kikuyu' },
-            { code: 'LUO', name: 'Dholuo Bible', language: 'Dholuo' },
-            { code: 'AMHARIC', name: 'Amharic Bible', language: 'Amharic' },
-            // Other Languages
-            { code: 'PORTUGUESE', name: 'João Ferreira de Almeida', language: 'Portuguese' },
-            { code: 'CHEROKEE', name: 'Cherokee New Testament', language: 'Cherokee' },
+            // ---- English (Public Domain / Free) ----
+            { code: 'KJV', name: 'King James Version', language: 'English', languageCode: 'eng', source: 'bible-api' },
+            { code: 'WEB', name: 'World English Bible', language: 'English', languageCode: 'eng', source: 'bible-api' },
+            { code: 'ESV', name: 'Berean Standard Bible (ESV Alt)', language: 'English', languageCode: 'eng', source: 'helloao' },
+            { code: 'ASV', name: 'American Standard Version', language: 'English', languageCode: 'eng', source: 'helloao' },
+            { code: 'BBE', name: 'Bible in Basic English', language: 'English', languageCode: 'eng', source: 'helloao' },
+            { code: 'BSB', name: 'Berean Standard Bible', language: 'English', languageCode: 'eng', source: 'helloao' },
+            { code: 'YLT', name: "Young's Literal Translation", language: 'English', languageCode: 'eng', source: 'helloao' },
+            { code: 'DRA', name: 'Douay-Rheims 1899', language: 'English', languageCode: 'eng', source: 'helloao' },
+            { code: 'DBY', name: 'Darby Translation', language: 'English', languageCode: 'eng', source: 'helloao' },
+            { code: 'GNV', name: 'Geneva Bible 1599', language: 'English', languageCode: 'eng', source: 'helloao' },
+            { code: 'FBV', name: 'Free Bible Version', language: 'English', languageCode: 'eng', source: 'helloao' },
+            { code: 'NET', name: 'NET Bible', language: 'English', languageCode: 'eng', source: 'helloao' },
+            { code: 'LSV', name: 'Literal Standard Version', language: 'English', languageCode: 'eng', source: 'helloao' },
+
+            // ---- African Languages ----
+            { code: 'SWAHILI', name: 'Swahili Contemporary', language: 'Swahili', languageCode: 'swa', source: 'helloao' },
+            { code: 'SWAHILI_STD', name: 'Swahili Standard (Union)', language: 'Swahili', languageCode: 'swa', source: 'helloao' },
+            { code: 'SUBA', name: 'Suba (Kenya)', language: 'Suba', languageCode: 'sxb', source: 'helloao' },
+            { code: 'KIKUYU', name: 'Kikuyu Bible', language: 'Kikuyu', languageCode: 'kik', source: 'helloao' },
+            { code: 'LUO', name: 'Dholuo Bible', language: 'Dholuo', languageCode: 'luo', source: 'helloao' },
+            { code: 'EKEGUSII', name: 'Ebibilia Enchenu (Revised)', language: 'Ekegusii', languageCode: 'guz', source: 'local-text' },
+            { code: 'ETHIOPIAN_ORTHODOX', name: 'Ethiopian Orthodox Bible (88 Books)', language: 'Amharic', languageCode: 'amh', source: 'pdf-only' },
+            { code: 'AMHARIC', name: 'Amharic Bible', language: 'Amharic', languageCode: 'amh', source: 'helloao' },
+
+            // ---- Additional languages ----
+            { code: 'CHEROKEE', name: 'Cherokee New Testament', language: 'Cherokee', languageCode: 'chr', source: 'bible-api' },
+            { code: 'PORTUGUESE', name: 'João Ferreira de Almeida', language: 'Portuguese', languageCode: 'por', source: 'bible-api' },
+            { code: 'KAMBA', name: 'Mbivilia (Kamba)', language: 'Kamba', languageCode: 'kam', source: 'pdf-only' },
+            { code: 'MERU', name: 'Iuku Ria Murungu (Meru)', language: 'Meru', languageCode: 'mer', source: 'pdf-only' },
+            { code: 'MAASAI', name: 'Biblia Sinyati (Maasai)', language: 'Maasai', languageCode: 'mas', source: 'pdf-only' },
+            { code: 'KALENJIN', name: 'Bukuit Ne Tilil (Kalenjin)', language: 'Kalenjin', languageCode: 'kln', source: 'helloao' },
+            { code: 'EMBU', name: 'Ivuku Ria Uvoro (Embu)', language: 'Embu', languageCode: 'ebu', source: 'pdf-only' },
         ];
 
         // PDF Viewer State
@@ -95,6 +108,9 @@ class GreenBibleApp {
             '1 thessalonians', '2 thessalonians', '1 timothy', '2 timothy', 'titus', 'philemon', 'hebrews', 'james',
             '1 peter', '2 peter', '1 john', '2 john', '3 john', 'jude', 'revelation'
         ];
+
+        /** Cached { ot, nt } slug lists from GET /api/bibles/books/:version */
+        this.versionBooksCache = {};
 
         // Abbreviation → full book name mapping (frontend-side)
         this.BOOK_ABBREVIATIONS = {
@@ -149,24 +165,257 @@ class GreenBibleApp {
             'rev': 'revelation', 're': 'revelation', 'rv': 'revelation'
         };
 
+        this.nativeBookNamesCache = {};
+        this.localizedLabels = {
+            'eng': { 'chapter': 'Chapter', 'verse': 'Verse' },
+            'swa': { 'chapter': 'Sura', 'verse': 'Aya' },
+            'amh': { 'chapter': 'ምዕራፍ', 'verse': 'ቁጥር' },
+            'luo': { 'chapter': 'Sula', 'verse': 'Ndiko' }
+        };
+
+        this.NATIVE_BOOK_NAMES = {
+            swa: { 
+                'genesis': 'Mwanzo', 'exodus': 'Kutoka', 'leviticus': 'Mambo ya Walawi',
+                'numbers': 'Hesabu', 'deuteronomy': 'Kumbukumbu la Torati',
+                'joshua': 'Yoshua', 'judges': 'Waamuzi', 'ruth': 'Ruthu',
+                '1 samuel': '1 Samweli', '2 samuel': '2 Samweli',
+                '1 kings': '1 Wafalme', '2 kings': '2 Wafalme',
+                '1 chronicles': '1 Mambo ya Nyakati', '2 chronicles': '2 Mambo ya Nyakati',
+                'ezra': 'Ezra', 'nehemiah': 'Nehemia', 'esther': 'Esta',
+                'job': 'Ayubu', 'psalm': 'Zaburi', 'psalms': 'Zaburi',
+                'proverbs': 'Mithali', 'ecclesiastes': 'Mhubiri',
+                'song of solomon': 'Wimbo Ulio Bora', 'song of songs': 'Wimbo Ulio Bora',
+                'isaiah': 'Isaya', 'jeremiah': 'Yeremia', 'lamentations': 'Maombolezo',
+                'ezekiel': 'Ezekieli', 'daniel': 'Danieli',
+                'hosea': 'Hosea', 'joel': 'Yoeli', 'amos': 'Amosi',
+                'obadiah': 'Obadia', 'jonah': 'Yona', 'micah': 'Mika',
+                'nahum': 'Nahumu', 'habakkuk': 'Habakuki', 'zephaniah': 'Sefania',
+                'haggai': 'Hagai', 'zechariah': 'Zekaria', 'malachi': 'Malaki',
+                'matthew': 'Mathayo', 'mark': 'Marko', 'luke': 'Luka', 'john': 'Yohana',
+                'acts': 'Matendo ya Mitume', 'romans': 'Warumi',
+                '1 corinthians': '1 Wakorintho', '2 corinthians': '2 Wakorintho',
+                'galatians': 'Wagalatia', 'ephesians': 'Waefeso',
+                'philippians': 'Wafilipi', 'colossians': 'Wakolosai',
+                '1 thessalonians': '1 Wathesalonike', '2 thessalonians': '2 Wathesalonike',
+                '1 timothy': '1 Timotheo', '2 timothy': '2 Timotheo',
+                'titus': 'Tito', 'philemon': 'Filemoni', 'hebrews': 'Waebrania',
+                'james': 'Yakobo', '1 peter': '1 Petro', '2 peter': '2 Petro',
+                '1 john': '1 Yohana', '2 john': '2 Yohana', '3 john': '3 Yohana',
+                'jude': 'Yuda', 'revelation': 'Ufunuo'
+            },
+            amh: {
+                'genesis': 'ኦሪት ዘፍጥረት', 'exodus': 'ኦሪት ዘጸአት', 'leviticus': 'ኦሪት ዘሌዋውያን',
+                'numbers': 'ኦሪት ዘኍልቍ', 'deuteronomy': 'ኦሪት ዘዳግም',
+                'joshua': 'መጽሐፈ ኢያሱ', 'judges': 'መጽሐፈ መሳፍንት', 'ruth': 'መጽሐፈ ሩት',
+                '1 samuel': '1 ሳሙኤል', '2 samuel': '2 ሳሙኤል',
+                '1 kings': '1 ነገሥት', '2 kings': '2 ነገሥት',
+                'psalm': 'መዝሙረ ዳዊት', 'psalms': 'መዝሙረ ዳዊት',
+                'proverbs': 'መጽሐፈ ምሳሌ', 'isaiah': 'ኢሳይያስ',
+                'matthew': 'የማቴዎስ ወንጌል', 'mark': 'የማርቆስ ወንጌል',
+                'luke': 'የሉቃስ ወንጌል', 'john': 'የዮሐንስ ወንጌል',
+                'acts': 'የሐዋርያት ሥራ', 'romans': 'ወደ ሮሜ ሰዎች',
+                'revelation': 'የዮሐንስ ራእይ'
+            },
+            luo: {
+                'genesis': 'Chakruok', 'exodus': 'Wuok', 'matthew': 'Mathayo',
+                'mark': 'Mariko', 'luke': 'Luka', 'john': 'Johana',
+                'acts': 'Tich Joote', 'romans': 'Jo-Rumi', 'revelation': 'Fweny'
+            },
+            guz: {
+                'genesis': 'Omochakano', 'exodus': 'Okogoka', 'leviticus': 'Ebiragiro bia Abalawi',
+                'numbers': 'Okobara', 'deuteronomy': 'Ogokora Ebirengo',
+                'joshua': 'Yoshua', 'judges': 'Abanchori', 'ruth': 'Ruti',
+                '1 samuel': '1 Samweli', '2 samuel': '2 Samweli',
+                '1 kings': '1 Abakama', '2 kings': '2 Abakama',
+                'psalm': 'Zaburi', 'psalms': 'Zaburi', 'proverbs': 'Emisemo',
+                'matthew': 'Matayo', 'mark': 'Mariko', 'luke': 'Luka', 'john': 'Yohana',
+                'acts': 'Ebikoro bia Abatume', 'romans': 'Abarumi', 'revelation': 'Ogokoerwa'
+            },
+            kik: {
+                'genesis': 'Kĩambĩrĩria', 'exodus': 'Thama', 'leviticus': 'Alawii',
+                'numbers': 'Ndarĩ', 'deuteronomy': 'Gũcookera Watho',
+                'matthew': 'Mathayo', 'mark': 'Mariko', 'luke': 'Luka', 'john': 'Johana',
+                'acts': 'Atũmwo', 'romans': 'Aroma', 'revelation': 'Kũguũrĩrio'
+            },
+            sxb: {
+                'matthew': 'Mathaayo', 'mark': 'Mariiko', 'luke': 'Luuka', 'john': 'Yowaana',
+                'acts': 'Awatumwa', 'romans': 'Awaruumi', '1 corinthians': '1 Awakorintho',
+                '2 corinthians': '2 Awakorintho', 'galatians': 'Awagalatia', 'ephesians': 'Awaefeeso',
+                'philippians': 'Awafiliipi', 'colossians': 'Awakolosaai', '1 thessalonians': '1 Awathesaloniika',
+                '2 thessalonians': '2 Awathesaloniika', '1 timothy': '1 Timotheeo', '2 timothy': '2 Timotheeo',
+                'titus': 'Tiito', 'philemon': 'Filemooni', 'hebrews': 'Awaibrania', 'james': 'Yakoobo',
+                '1 peter': '1 Petro', '2 peter': '2 Petro', '1 john': '1 Yowaana', '2 john': '2 Yowaana',
+                '3 john': '3 Yowaana', 'jude': 'Yuuda', 'revelation': 'Owusasuko'
+            },
+            por: {
+                'genesis': 'Gênesis', 'exodus': 'Êxodo', 'leviticus': 'Levítico',
+                'numbers': 'Números', 'deuteronomy': 'Deuteronômio',
+                'joshua': 'Josué', 'judges': 'Juízes', 'ruth': 'Rute',
+                '1 samuel': '1 Samuel', '2 samuel': '2 Samuel',
+                '1 kings': '1 Reis', '2 kings': '2 Reis',
+                '1 chronicles': '1 Crônicas', '2 chronicles': '2 Crônicas',
+                'ezra': 'Esdras', 'nehemiah': 'Neemias', 'esther': 'Ester',
+                'job': 'Jó', 'psalms': 'Salmos', 'proverbs': 'Provérbios',
+                'ecclesiastes': 'Eclesiastes', 'song of solomon': 'Cânticos',
+                'isaiah': 'Isaías', 'jeremiah': 'Jeremias', 'lamentations': 'Lamentações',
+                'ezekiel': 'Ezequiel', 'daniel': 'Daniel',
+                'hosea': 'Oseias', 'joel': 'Joel', 'amos': 'Amós',
+                'obadiah': 'Obadias', 'jonah': 'Jonas', 'micah': 'Miqueias',
+                'nahum': 'Naum', 'habakkuk': 'Habacuque', 'zephaniah': 'Sofonias',
+                'haggai': 'Ageu', 'zechariah': 'Zacarias', 'malachi': 'Malaquias',
+                'matthew': 'Mateus', 'mark': 'Marcos', 'luke': 'Lucas', 'john': 'João',
+                'acts': 'Atos', 'romans': 'Romanos',
+                '1 corinthians': '1 Coríntios', '2 corinthians': '2 Coríntios',
+                'galatians': 'Gálatas', 'ephesians': 'Efésios',
+                'philippians': 'Filipenses', 'colossians': 'Colossenses',
+                '1 thessalonians': '1 Tessalonicenses', '2 thessalonians': '2 Tessalonicenses',
+                '1 timothy': '1 Timóteo', '2 timothy': '2 Timóteo',
+                'titus': 'Tito', 'philemon': 'Filemom', 'hebrews': 'Hebreus',
+                'james': 'Tiago', '1 peter': '1 Pedro', '2 peter': '2 Pedro',
+                '1 john': '1 João', '2 john': '2 João', '3 john': '3 João',
+                'jude': 'Judas', 'revelation': 'Apocalipse'
+            },
+            chr: {
+                'genesis': 'ᏗᏓᎴᏅᎲ', 'exodus': 'ᏗᏄᎪᎬ', 'psalms': 'ᏗᎧᏃᎩᏛ', 'proverbs': 'ᎠᎧᏁᎢᏍᏗ', 'matthew': 'ᎹᏚ', 'mark': 'ᎹᎩ',
+                'luke': 'ᎷᎦ', 'john': 'ᏣᏂ', 'acts': 'ᎨᏥᏅᏏᏛ', 'romans': 'ᎶᎻᏱ ᎠᏁᎯ',
+                '1 corinthians': 'ᎪᎵᏂᏗᏱ ᎠᏁᎯ ᎢᎬᏱᏱ', '2 corinthians': 'ᎪᎵᏂᏗᏱ ᎠᏁᎯ ᏔᎵᏁ',
+                'jude': 'ᏧᏓᏏ', 'revelation': 'ᎠᏥᎾᏄᎪᏫᏎᎸᎢ'
+            },
+            kam: {
+                'genesis': 'Kũambĩlĩlya', 'exodus': 'Kũtũma', 'leviticus': 'Alawĩ', 'numbers': 'Mũthasyo',
+                'deuteronomy': 'Kũtiuluka', 'joshua': 'Yosua', 'judges': 'Alĩsili', 'ruth': 'Luti',
+                '1 samuel': '1 Samũeli', '2 samuel': '2 Samũeli', '1 kings': '1 Asumbĩ', '2 kings': '2 Asumbĩ',
+                '1 chronicles': '1 Syalika', '2 chronicles': '2 Syalika', 'ezra': 'Esela', 'nehemiah': 'Neemia',
+                'esther': 'Esita', 'job': 'Yovu', 'psalms': 'Mbathi', 'proverbs': 'Nthimo',
+                'ecclesiastes': 'Mũtavanyya', 'song of solomon': 'Wĩmbo wa Suleimani', 'isaiah': 'Isaia',
+                'jeremiah': 'Yelemia', 'lamentations': 'Makuĩlo', 'ezekiel': 'Esekieli', 'daniel': 'Ndaniele',
+                'hosea': 'Hosea', 'joel': 'Yoeli', 'amos': 'Amosi', 'obadiah': 'Obadia', 'jonah': 'Yona',
+                'micah': 'Mika', 'nahum': 'Nahumu', 'habakkuk': 'Hapakuki', 'zephaniah': 'Sefania',
+                'haggai': 'Hagai', 'zechariah': 'Sekalia', 'malachi': 'Malaki',
+                'matthew': 'Mathayo', 'mark': 'Mako', 'luke': 'Luka', 'john': 'Yoana', 'acts': 'Atũmwa',
+                'romans': 'Alumi', '1 corinthians': '1 Akolintho', '2 corinthians': '2 Akolintho',
+                'galatians': 'Akalatia', 'ephesians': 'Aefeso', 'philippians': 'Afilipi', 'colossians': 'Akolosai',
+                '1 thessalonians': '1 Athesalonike', '2 thessalonians': '2 Athesalonike', '1 timothy': '1 Timotheo',
+                '2 timothy': '2 Timotheo', 'titus': 'Tito', 'philemon': 'Filemoni', 'hebrews': 'Ahibulu',
+                'james': 'Yakovo', '1 peter': '1 Petelo', '2 peter': '2 Petelo', '1 john': '1 Yoana',
+                '2 john': '2 Yoana', '3 john': '3 Yoana', 'jude': 'Yuta', 'revelation': 'Ũvuany\'o'
+            },
+            mer: {
+                'genesis': 'Kiambiriria', 'exodus': 'Ku.', 'leviticus': 'Levi', 'numbers': 'Gu.',
+                'deuteronomy': 'Kuriikanithia Maathana', 'joshua': 'Joshua', 'judges': 'Aar.', 'ruth': 'Rutu',
+                '1 samuel': '1 Samuel', '2 samuel': '2 Samuel', '1 kings': '1 Amaui', '2 kings': '2 Amaui',
+                '1 chronicles': '1 Mweo', '2 chronicles': '2 Mweo', 'ezra': 'Ezra', 'nehemiah': 'Nehemia',
+                'esther': 'Esther', 'job': 'Ayubu', 'psalms': 'Zaburi', 'proverbs': 'Nthimo',
+                'ecclesiastes': 'Kuthamana', 'song of solomon': 'Gatunya Gwa Suleimani', 'isaiah': 'Isaya',
+                'jeremiah': 'Yeremia', 'lamentations': 'Kunyinya Yeremia', 'ezekiel': 'Ezekieli', 'daniel': 'Danieli',
+                'hosea': 'Hosea', 'joel': 'Yoel', 'amos': 'Amos', 'obadiah': 'Obadia', 'jonah': 'Yona',
+                'micah': 'Mika', 'nahum': 'Nahum', 'habakkuk': 'Habakkuk', 'zephaniah': 'Zephaniah',
+                'haggai': 'Haggai', 'zechariah': 'Zakaria', 'malachi': 'Malaki',
+                'matthew': 'Mathayo', 'mark': 'Mariko', 'luke': 'Luka', 'john': 'Yohana', 'acts': 'Atũmwo',
+                'romans': 'Aroma', '1 corinthians': '1 AbaKorintho', '2 corinthians': '2 AbaKorintho',
+                'galatians': 'AbaGalatia', 'ephesians': 'AbaEfeso', 'philippians': 'AbaFilipi', 'colossians': 'AbaKolosai',
+                '1 thessalonians': '1 AbaThesaloniki', '2 thessalonians': '2 AbaThesaloniki', '1 timothy': '1 Timotheo',
+                '2 timothy': '2 Timotheo', 'titus': 'Tito', 'philemon': 'Filemon', 'hebrews': 'AbaIbirania',
+                'james': 'Yakobo', '1 peter': '1 Petero', '2 peter': '2 Petero', '1 john': '1 Yohana',
+                '2 john': '2 Yohana', '3 john': '3 Yohana', 'jude': 'Yuda', 'revelation': 'Kũcũũrĩrio'
+            },
+            mas: {
+                'genesis': 'Kitalale', 'exodus': 'Kitalale', 'matthew': 'Mathayo',
+                'mark': 'Mariko', 'luke': 'Luka', 'john': 'Johana',
+                'acts': 'Atũmwo', 'romans': 'Aroma', 'revelation': 'Kũcũũrĩrio'
+            },
+            kln: {
+                'genesis': 'Kitab', 'exodus': 'Kitab', 'matthew': 'Mathayo',
+                'mark': 'Mariko', 'luke': 'Luka', 'john': 'Johana',
+                'acts': 'Atũmwo', 'romans': 'Aroma', 'revelation': 'Kũcũũrĩrio'
+            },
+            ebu: {
+                'genesis': 'Kĩambĩrĩria', 'exodus': 'Kũtũma', 'leviticus': 'Alawĩ', 'numbers': 'Ndarĩ',
+                'deuteronomy': 'Kũcookera Watho', 'joshua': 'Yosua', 'judges': 'Alĩsili', 'ruth': 'Ruti',
+                '1 samuel': '1 Samũeli', '2 samuel': '2 Samũeli', '1 kings': '1 Asumbĩ', '2 kings': '2 Asumbĩ',
+                '1 chronicles': '1 Syalika', '2 chronicles': '2 Syalika', 'ezra': 'Esela', 'nehemiah': 'Neemia',
+                'esther': 'Esita', 'job': 'Yovu', 'psalms': 'Mbathi', 'proverbs': 'Nthimo',
+                'ecclesiastes': 'Mũtavanyya', 'song of solomon': 'Wĩmbo wa Suleimani', 'isaiah': 'Isaia',
+                'jeremiah': 'Yelemia', 'lamentations': 'Makuĩlo', 'ezekiel': 'Esekieli', 'daniel': 'Ndaniele',
+                'hosea': 'Hosea', 'joel': 'Yoeli', 'amos': 'Amosi', 'obadiah': 'Obadia', 'jonah': 'Yona',
+                'micah': 'Mika', 'nahum': 'Nahumu', 'habakkuk': 'Hapakuki', 'zephaniah': 'Sefania',
+                'haggai': 'Hagai', 'zechariah': 'Sekalia', 'malachi': 'Malaki',
+                'matthew': 'Mathayo', 'mark': 'Mako', 'luke': 'Luka', 'john': 'Yoana', 'acts': 'Atũmwa',
+                'romans': 'Alumi', '1 corinthians': '1 Akolintho', '2 corinthians': '2 Akolintho',
+                'galatians': 'Akalatia', 'ephesians': 'Aefeso', 'philippians': 'Afilipi', 'colossians': 'Akolosai',
+                '1 thessalonians': '1 Athesalonike', '2 thessalonians': '2 Athesalonike', '1 timothy': '1 Timotheo',
+                '2 timothy': '2 Timotheo', 'titus': 'Tito', 'philemon': 'Filemoni', 'hebrews': 'Ahibulu',
+                'james': 'Yakovo', '1 peter': '1 Petelo', '2 peter': '2 Petelo', '1 john': '1 Yoana',
+                '2 john': '2 Yoana', '3 john': '3 Yoana', 'jude': 'Yuta', 'revelation': 'Ũvuany\'o'
+            }
+        };
+
         this.init();
     }
 
+    toggleTheme() {
+        if (this.currentTheme === 'dark') {
+            this.currentTheme = 'light';
+            document.documentElement.setAttribute('data-theme', 'light');
+        } else if (this.currentTheme === 'light') {
+            this.currentTheme = 'sepia';
+            document.documentElement.setAttribute('data-theme', 'sepia');
+        } else {
+            this.currentTheme = 'dark';
+            document.documentElement.removeAttribute('data-theme');
+        }
+        this.updateThemeIcon();
+        localStorage.setItem('theme', this.currentTheme);
+        this.showNotification(`Theme set to ${this.currentTheme}`, 'info');
+    }
+
+    updateThemeIcon() {
+        const icon = document.getElementById('themeToggleIcon');
+        if (!icon) return;
+        
+        icon.className = 'fas';
+        if (this.currentTheme === 'dark') icon.classList.add('fa-sun');
+        else if (this.currentTheme === 'light') icon.classList.add('fa-moon');
+        else icon.classList.add('fa-adjust');
+    }
+
     async init() {
-        console.log('🌿 Green Bible App — Premium Edition Initialized');
+        console.log('✨ Green Bible App - Premium Edition Initialized');
         // Configure PDF.js worker
         if (window.pdfjsLib) {
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         }
+        
+        // Load Theme
+        this.currentTheme = localStorage.getItem('theme') || 'dark';
+        if (this.currentTheme !== 'dark') {
+            document.documentElement.setAttribute('data-theme', this.currentTheme);
+        }
+        this.updateThemeIcon();
+        
         this.loadFromStorage();
-        await this.syncVersions();
-        await this.syncBookNames();
+        
+        // Close any open audio tray first
+        this.closeGlobalAudio();
+        
+        // Parallel non-blocking syncs
+        this.syncVersions().then(async () => {
+            this.updateVersionSlots();
+            await this.renderReaderBookGrid();
+        });
+        this.syncBookNames();
+
         this.updateVersionSlots();
-        this.renderLibrary();
+        this.renderTopics();
         this.renderHistory();
         this.renderBookmarks();
-        this.renderTopics();
+        this.renderLibrary();
+        this.updateBibleNav();
         this.initYoutubeAPI();
+        this.loadDailyVerse();
+        
+        this.parallelMode = false;
+        this.syncScrolling = true;
         
         // Setup Live Search
         const searchInput = document.getElementById('searchInput');
@@ -178,21 +427,8 @@ class GreenBibleApp {
                 }
             });
 
-            let searchTimeout;
             searchInput.addEventListener('input', (e) => {
-                const q = e.target.value.trim();
-                if (!q) {
-                    this.renderSearchShortcuts();
-                } else {
-                    this.updateSuggestions(q);
-                }
-
-                clearTimeout(searchTimeout);
-                if (q.length > 2) {
-                    searchTimeout = setTimeout(() => {
-                        this.performSearch(false, true); // true indicates live-search
-                    }, 300);
-                }
+                this.debounceSearch(e.target.value);
             });
 
             // Close suggestions on blur (with delay to allow clicking)
@@ -212,8 +448,10 @@ class GreenBibleApp {
             }
         });
         
-        // Restore last active view
-        const activeView = localStorage.getItem('activeView') || 'search';
+        // Restore last active view — repair legacy/invalid ids so a hub always matches
+        let activeView = localStorage.getItem('activeView') || 'search';
+        activeView = this.normalizeHubView(activeView);
+        localStorage.setItem('activeView', activeView);
         this.showView(activeView);
 
         this.setupAudioListeners();
@@ -262,10 +500,12 @@ class GreenBibleApp {
         this.audioElement.addEventListener('play', () => {
             this.isPlaying = true;
             this.updateAudioUI();
+            this.startAudioProgressSync();
         });
 
         this.audioElement.addEventListener('pause', () => {
             this.isPlaying = false;
+            this.stopAudioProgressSync();
             this.updateAudioUI();
         });
 
@@ -275,6 +515,7 @@ class GreenBibleApp {
 
         this.audioElement.addEventListener('ended', () => {
             this.isPlaying = false;
+            this.stopAudioProgressSync();
             this.updateAudioUI();
         });
 
@@ -300,6 +541,78 @@ class GreenBibleApp {
         }
     }
 
+    async loadDailyVerse() {
+        const dateEl = document.getElementById('dailyDate');
+        const contentEl = document.getElementById('dailyVerseContent');
+        const illustrationEl = document.getElementById('dailyIllustration');
+        if (!dateEl || !contentEl) return;
+
+        const now = new Date();
+        dateEl.textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+        try {
+            // Curated list of inspiring verses for "Daily Manna"
+            const verses = [
+                "John 3:16", "Philippians 4:13", "Psalm 23:1", "Jeremiah 29:11", 
+                "Romans 8:28", "Isaiah 40:31", "Proverbs 3:5-6", "Matthew 6:33",
+                "Joshua 1:9", "Psalm 46:1", "Lamentations 3:22-23", "2 Timothy 1:7",
+                "Galatians 5:22-23", "Hebrews 11:1", "James 1:5", "Psalm 119:105"
+            ];
+            
+            // Use the date to pick a consistent verse for the day
+            const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
+            const verseRef = verses[dayOfYear % verses.length];
+
+            // Fetch from KJV (Standard)
+            const response = await fetch(`/api/bibles/passage?version=KJV&book=${encodeURIComponent(verseRef.split(' ')[0])}&chapter=${verseRef.split(' ')[1].split(':')[0]}&verse=${verseRef.split(':')[1]}`);
+            
+            if (response.ok) {
+                const data = await response.json();
+                contentEl.innerHTML = `
+                    <div style="cursor: pointer;" onclick="document.getElementById('searchInput').value='${verseRef}'; app.performSearch();">
+                        <blockquote style="margin: 0; font-family: 'Playfair Display', serif; font-size: 1.25rem; line-height: 1.6; color: var(--text-primary); font-style: italic; margin-bottom: 12px;">
+                            "${data.text.trim()}"
+                        </blockquote>
+                        <cite style="display: block; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--accent-gold); font-weight: 700; font-style: normal;">
+                            — ${data.reference} (KJV)
+                        </cite>
+                    </div>
+                `;
+
+                // Generate Daily Illustration following PRIME DIRECTIVE
+                if (illustrationEl) {
+                    illustrationEl.style.display = 'block';
+                    const prompt = `A creative and deeply symbolic spiritual masterpiece representing the meaning of ${verseRef}: "${data.text.trim()}". The art should be highly imaginative, capturing the soul and essence of the verse through metaphors and divine imagery. Sacred atmosphere, ethereal light, holy and significant. Cinematic masterpiece, oil painting style with rich, vibrant colors. CRITICAL: No text, no letters, no writing, no labels.`;
+                    // Use a seed derived from the day of year for a consistent image daily
+                    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=640&nologo=true&seed=${dayOfYear}&model=flux`;
+                    
+                    const img = new Image();
+                    img.src = imageUrl;
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.objectFit = 'cover';
+                    img.style.opacity = '0';
+                    img.style.transition = 'opacity 1s ease-in-out';
+                    
+                    img.onload = () => {
+                        illustrationEl.innerHTML = '';
+                        illustrationEl.appendChild(img);
+                        img.style.opacity = '1';
+                    };
+                }
+            } else {
+                throw new Error('Daily verse fetch failed');
+            }
+        } catch (error) {
+            contentEl.innerHTML = `
+                <p style="color: var(--text-muted); font-size: 0.85rem; font-style: italic;">
+                    "Thy word is a lamp unto my feet, and a light unto my path." — Psalm 119:105
+                </p>
+            `;
+            if (illustrationEl) illustrationEl.style.display = 'none';
+        }
+    }
+
     async syncVersions() {
         try {
             const response = await fetch('/api/bibles/versions');
@@ -313,6 +626,14 @@ class GreenBibleApp {
                     available: v.available,
                     source: v.source
                 }));
+                
+                // Refresh selectedVersions with updated metadata
+                this.selectedVersions = this.selectedVersions.map(selected => {
+                    if (!selected) return null;
+                    const updated = this.availableVersions.find(v => v.code === (selected.code || selected.id));
+                    return updated ? { ...selected, ...updated } : selected;
+                });
+
                 console.log(`✅ Synced ${this.availableVersions.length} Bible versions from server`);
             }
         } catch (error) {
@@ -369,26 +690,48 @@ class GreenBibleApp {
         const historyTrigger = document.getElementById('historyTrigger');
         const historyList = document.getElementById('historyList');
         const historyCountHint = document.getElementById('historyCountHint');
+        const chips = document.getElementById('recentSearchChips');
 
         if (history.length === 0) {
-            historyTrigger.style.display = 'none';
+            if (historyTrigger) historyTrigger.style.display = 'none';
+            if (chips) chips.style.display = 'none';
             return;
         }
 
-        historyTrigger.style.display = 'flex';
-        historyCountHint.textContent = `${history.length} searches — Click to expand`;
+        if (historyTrigger) {
+            historyTrigger.style.display = 'flex';
+            historyCountHint.textContent = `${history.length} searches — Click to expand`;
+        }
 
-        historyList.innerHTML = history.map(item => {
-            const date = new Date(item.timestamp);
-            const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const safeQuery = this.escapeHtml(item.query);
-            return `
-                <div class="history-item" onclick="setSearch('${safeQuery}'); performSearch();">
-                    <span class="history-query">${safeQuery}</span>
-                    <span class="history-time">${timeStr}</span>
-                </div>
+        if (historyList) {
+            historyList.innerHTML = history.map(item => {
+                const date = new Date(item.timestamp);
+                const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const safeQuery = this.escapeHtml(item.query);
+                return `
+                    <div class="history-item" onclick="setSearch('${safeQuery}'); performSearch();">
+                        <span class="history-query">${safeQuery}</span>
+                        <span class="history-time">${timeStr}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Update chips in search section
+        if (chips) {
+            chips.style.display = 'flex';
+            chips.style.flexWrap = 'wrap';
+            chips.style.gap = '8px';
+            chips.style.marginTop = '14px';
+            chips.innerHTML = `
+                <span style="font-size: 0.7rem; color: var(--text-muted); margin-right: 4px; display: flex; align-items: center;">Recent:</span>
+                ${history.slice(0, 5).map(item => `
+                    <span class="search-hint" onclick="document.getElementById('searchInput').value='${this.escapeHtml(item.query)}'; app.performSearch()" style="margin: 0; padding: 4px 12px; font-size: 0.75rem; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); color: var(--text-secondary); cursor: pointer; transition: all 0.2s;">
+                        ${this.escapeHtml(item.query)}
+                    </span>
+                `).join('')}
             `;
-        }).join('');
+        }
     }
 
     toggleHistory() {
@@ -469,19 +812,21 @@ class GreenBibleApp {
     }
 
     updateVersionSlots() {
+        let selectedCount = 0;
         for (let i = 0; i < 4; i++) {
             const slot = document.querySelector(`[data-slot="${i + 1}"]`);
             if (!slot) continue;
             const version = this.selectedVersions[i];
 
             if (version) {
+                selectedCount++;
                 slot.classList.remove('empty');
                 slot.classList.add('selected');
                 slot.innerHTML = `
                     <span class="version-slot-number">${i + 1}</span>
                     <span class="version-code">${version.code}</span>
                     <span class="version-name">${version.name}</span>
-                    ${!this.lockedVersions ? `<button onclick="event.stopPropagation(); app.clearVersion(${i + 1})" style="position: absolute; bottom: 8px; right: 8px; background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.25); border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">×</button>` : ''}
+                    ${!this.lockedVersions ? `<button onclick="event.stopPropagation(); app.clearVersion(${i + 1})" style="position: absolute; bottom: 8px; right: 8px; background: rgba(239,68,68,0.15); color: var(--accent-error); border: 1px solid rgba(239,68,68,0.25); border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">x</button>` : ''}
                 `;
             } else {
                 slot.classList.add('empty');
@@ -492,6 +837,49 @@ class GreenBibleApp {
                     <span class="version-name">Click to select</span>
                 `;
             }
+        }
+
+        // Update badge
+        const badge = document.getElementById('selectedCountBadge');
+        if (badge) {
+            badge.textContent = `${selectedCount} Selected`;
+            badge.style.background = selectedCount > 0 ? 'var(--accent-emerald)' : 'var(--accent-emerald-glow)';
+            badge.style.color = selectedCount > 0 ? 'var(--text-inverse)' : 'var(--accent-emerald)';
+        }
+
+        // Auto-collapse if none selected (on init)
+        const container = document.getElementById('versionSlotsContainer');
+        if (container && selectedCount === 0 && !this.initialVersionCheckDone) {
+            container.style.display = 'none';
+            const arrow = document.getElementById('versionsToggleArrow');
+            if (arrow) arrow.style.transform = 'rotate(180deg)';
+        }
+        this.initialVersionCheckDone = true;
+    }
+
+    toggleVersions() {
+        const container = document.getElementById('versionSlotsContainer');
+        const arrow = document.getElementById('versionsToggleArrow');
+        if (!container) return;
+        
+        if (container.style.display === 'none') {
+            container.style.display = 'block';
+            if (arrow) arrow.style.transform = 'rotate(0deg)';
+        } else {
+            container.style.display = 'none';
+            if (arrow) arrow.style.transform = 'rotate(180deg)';
+        }
+    }
+
+    toggleTopics() {
+        const section = document.getElementById('topicsSection');
+        if (!section) return;
+        
+        if (section.style.display === 'none') {
+            section.style.display = 'block';
+            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+            section.style.display = 'none';
         }
     }
 
@@ -530,6 +918,34 @@ class GreenBibleApp {
     // ==========================================
     // Search Functionality
     // ==========================================
+    debounceSearch(query) {
+        const q = query.trim();
+        
+        if (!q) {
+            this.renderSearchShortcuts();
+            const overlay = document.getElementById('searchSuggestions');
+            if (overlay) overlay.style.display = 'none';
+            if (this.searchTimeout) clearTimeout(this.searchTimeout);
+            return;
+        }
+
+        this.updateSuggestions(q);
+        
+        if (this.searchTimeout) {
+            clearTimeout(this.searchTimeout);
+        }
+
+        // Reduced threshold to 3 characters to avoid excessive requests on very short queries
+        if (q.length < 3) return;
+
+        // Dynamic debounce: longer for short queries, standard for longer ones
+        const debounceTime = q.length < 5 ? 800 : 500;
+
+        this.searchTimeout = setTimeout(() => {
+            this.performSearch(false, true);
+        }, debounceTime);
+    }
+
     // ==========================================
     // Search Suggestions Logic
     // ==========================================
@@ -605,6 +1021,30 @@ class GreenBibleApp {
         return str.replace(/\b\w/g, l => l.toUpperCase());
     }
 
+    /** Stable DOM id fragment for per-verse panels (interlinear, alt verses, etc.) */
+    refPanelSlug(reference) {
+        return String(reference || '').replace(/[\s:]/g, '-');
+    }
+
+    formatPassageRef(parsed) {
+        if (!parsed) return '';
+        if (parsed.verse) return `${parsed.book} ${parsed.chapter}:${parsed.verse}`;
+        return `${parsed.book} ${parsed.chapter}`;
+    }
+
+    getActivePassageRef() {
+        if (this.currentBook && this.currentChapter) {
+            if (this.currentVerseNum != null) return `${this.currentBook} ${this.currentChapter}:${this.currentVerseNum}`;
+            return `${this.currentBook} ${this.currentChapter}`;
+        }
+        return null;
+    }
+
+    updateInterpretationReference(ref) {
+        const interpRef = document.getElementById('interpretationReference');
+        if (interpRef && ref) interpRef.textContent = ref;
+    }
+
     setSearch(query) {
         document.getElementById('searchInput').value = query;
     }
@@ -629,7 +1069,6 @@ class GreenBibleApp {
 
         const activeVersions = this.selectedVersions.filter(v => v !== null);
 
-        // If user has selected specific versions, use those; otherwise query ALL versions
         const versionsToSearch = activeVersions.length > 0 
             ? activeVersions 
             : this.availableVersions;
@@ -650,7 +1089,10 @@ class GreenBibleApp {
             document.getElementById('topicsSection').style.display = 'none';
             document.getElementById('interpretationSection').style.display = 'block';
             const interpRef = document.getElementById('interpretationReference');
-            if (interpRef) interpRef.textContent = query;
+            const parsedForInterp = this.parseVerseReference(query);
+            if (interpRef) {
+                interpRef.textContent = parsedForInterp ? this.formatPassageRef(parsedForInterp) : '— select a verse from results';
+            }
 
             const resultsGrid = document.getElementById('resultsGrid');
             resultsGrid.innerHTML = `
@@ -685,29 +1127,99 @@ class GreenBibleApp {
                     })
                 );
                 results = results.filter(r => r !== null);
+
+                // If every version failed, show a clear error instead of empty grid
+                if (results.length === 0 && !isLiveSearch) {
+                    document.getElementById('resultsGrid').innerHTML = `
+                        <div style="grid-column: 1/-1; text-align: center; padding: 60px; color: var(--text-muted);">
+                            <div style="font-size: 2rem; margin-bottom: 12px;">📡</div>
+                            <p style="font-size: 0.95rem; margin-bottom: 8px;">Could not load <strong style="color: var(--text-primary);">${this.escapeHtml(query)}</strong></p>
+                            <p style="font-size: 0.82rem;">The Bible API may be temporarily unavailable. Check your connection and try again.</p>
+                        </div>`;
+                    return;
+                }
             } else {
-                console.log('🔍 Search Decision: KEYWORD', query);
+                console.log('🔍 Search Decision: AI & KEYWORD', query);
+
+                // Detect if it's a question or complex phrase for Divine Insight
+                const wordCount = query.split(/\s+/).length;
+                const isQuestion = query.includes('?') || wordCount >= 4;
+
+                if (isQuestion && !isLiveSearch) {
+                    // Show a special AI loading state for Divine Insight
+                    const resultsGrid = document.getElementById('resultsGrid');
+                    resultsGrid.innerHTML = `
+                        <div id="divineInsightLoader" style="grid-column: 1/-1; margin-bottom: 32px; padding: 32px; background: var(--bg-card); border-radius: var(--radius-lg); border: 1px solid var(--accent-gold-glow); animation: fadeSlideUp 0.5s ease-out;">
+                            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+                                <div class="premium-spinner" style="border-top-color: var(--accent-gold); width: 24px; height: 24px;"></div>
+                                <h3 style="margin: 0; font-size: 1rem; color: var(--accent-gold); letter-spacing: 0.5px;">CONSULTING DIVINE WISDOM...</h3>
+                            </div>
+                        </div>
+                    `;
+
+                    // Call AI Search API
+                    try {
+                        const aiResponse = await fetch(`/api/ai/search?q=${encodeURIComponent(query)}`);
+                        if (aiResponse.ok) {
+                            const aiData = await aiResponse.json();
+                            const loader = document.getElementById('divineInsightLoader');
+                            if (loader) {
+                                loader.innerHTML = `
+                                    <div style="display: flex; align-items: flex-start; gap: 20px;">
+                                        <div style="font-size: 2.5rem; filter: drop-shadow(0 0 10px var(--accent-gold-glow));">✨</div>
+                                        <div style="flex: 1;">
+                                            <h3 style="margin: 0 0 12px; font-size: 1.1rem; color: var(--accent-gold); display: flex; align-items: center; gap: 10px;">
+                                                Sacred Wisdom
+                                                <span style="font-size: 0.65rem; background: var(--accent-gold-glow); padding: 2px 8px; border-radius: 10px; font-weight: 800; letter-spacing: 0.5px;">AI REVELATION</span>
+                                            </h3>
+                                            <p style="font-size: 1.1rem; color: var(--text-primary); font-family: 'Playfair Display', serif; line-height: 1.7; margin-bottom: 20px; font-style: italic;">
+                                                "${aiData.answer}"
+                                            </p>
+                                            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                                ${aiData.verses.map(ref => `
+                                                    <button class="search-hint" onclick="setSearch('${this.escapeJS(ref)}'); performSearch()" style="background: rgba(245,197,66,0.1); border-color: rgba(245,197,66,0.2); color: var(--accent-gold); font-size: 0.75rem;">
+                                                        <i class="fas fa-book-open" style="margin-right: 4px;"></i> ${ref}
+                                                    </button>
+                                                `).join('')}
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Divine Insight search failed:', e);
+                        const loader = document.getElementById('divineInsightLoader');
+                        if (loader) loader.style.display = 'none';
+                    }
+                }
                 
-                const vCodes = versionsToSearch.map(v => v.code).join(',');
+                const activeVersions = this.selectedVersions.filter(v => v !== null);
+                // For keyword search, use selected versions or fall back to top 4 defaults
+                // Never send all 27 versions — it causes timeouts
+                const keywordVersions = activeVersions.length > 0
+                    ? activeVersions
+                    : [
+                        { code: 'KJV', name: 'King James Version' },
+                        { code: 'WEB', name: 'World English Bible' },
+                        { code: 'BSB', name: 'Berean Standard Bible' },
+                        { code: 'NET', name: 'NET Bible' }
+                    ];
+                const vCodes = keywordVersions.map(v => v.code).join(',');
                 
-                // Fetch Bible and Sermon Results in parallel
-                const [bibleResponse, sermonResponse] = await Promise.all([
-                    fetch(`/api/bibles/search?q=${encodeURIComponent(query)}&versions=${vCodes}`, { signal }),
-                    fetch(`/api/sermons/search?q=${encodeURIComponent(query)}`, { signal }).catch(() => ({ json: () => ({ sermons: [] }) }))
-                ]);
+                // Fetch ONLY Bible Results ("purely on the available bible versions")
+                const bibleResponse = await fetch(`/api/bibles/search?q=${encodeURIComponent(query)}&versions=${vCodes}`, { signal });
+                if (!bibleResponse.ok) throw new Error('Search request failed');
                 
-                const [bibleData, sermonData] = await Promise.all([
-                    bibleResponse.json(),
-                    sermonResponse.json?.() || { sermons: [] }
-                ]);
+                const bibleData = await bibleResponse.json();
                 
-                // Use unified rendering for all search types
-                this.renderSearchResults(bibleData, sermonData, isLiveSearch, false);
+                // Use unified rendering for all search types (empty sermon array)
+                this.renderSearchResults(bibleData, { sermons: [] }, isLiveSearch, false);
                 return;
             }
 
-            const mentions = await this.fetchSermonMentions(parsed.book, parsed.chapter, parsed.verse);
-            this.renderSearchResults(results, mentions, isLiveSearch, true);
+            // Do not fetch sermon mentions to keep search purely on Bible versions
+            this.renderSearchResults(results, { sermons: [] }, isLiveSearch, true);
             
         } catch (error) {
             if (error.name === 'AbortError') return;
@@ -723,36 +1235,43 @@ class GreenBibleApp {
     parseVerseReference(query) {
         // Clean up common punctuation and handle typos like John 3.16, 3/16, hosea 4.5-7
         let cleaned = query.replace(/[,;"']+$/, '').trim();
-        // Normalize range first: 4.5-7 → 4:5-7
-        cleaned = cleaned.replace(/(\d+)\s*[./,:]\s*(\d+)\s*-\s*(\d+)/g, '$1:$2-$3');
-        // Then normalize single: 3.16 → 3:16
-        cleaned = cleaned.replace(/(\d+)\s*[./,:]\s*(\d+)/g, '$1:$2');
+        // Normalize range first: 4.5-7 → 4:5-7  (must come before single normalization)
+        cleaned = cleaned.replace(/(\d+)\s*[./]\s*(\d+)\s*-\s*(\d+)/g, '$1:$2-$3');
+        // Then normalize single: 3.16 → 3:16  (only dot/slash, not colon which is already correct)
+        cleaned = cleaned.replace(/(\d+)\s*[./]\s*(\d+)/g, '$1:$2');
 
-        // 1. Try verse range: Book Chapter:VerseStart-VerseEnd (e.g. Hosea 4:5-7)
-        const rangeMatch = cleaned.match(/^([\w\s]+)\s+(\d+):(\d+)\s*-\s*(\d+)$/i);
+        // Book name: everything up to the LAST standalone number (chapter) before optional :verse
+        // Use non-greedy book capture so "2 Corinthians 3:1" doesn't eat the chapter number
+        // Pattern: <book> <chapter>:<verseStart>-<verseEnd>
+        const rangeMatch = cleaned.match(/^((?:\d+\s+)?[\w][\w\s]*?)\s+(\d+):(\d+)\s*-\s*(\d+)$/i);
         if (rangeMatch) {
             const [_, book, chapter, verse, verseEnd] = rangeMatch;
-            return this.resolveBookReference(book, chapter, verse, verseEnd);
+            return this.resolveBookReference(book.trim(), chapter, verse, verseEnd);
         }
 
-        // 2. Try full reference: Book Chapter:Verse
-        const fullMatch = cleaned.match(/^([\w\s]+)\s+(\d+):(\d+)$/i);
+        // Pattern: <book> <chapter>:<verse>
+        const fullMatch = cleaned.match(/^((?:\d+\s+)?[\w][\w\s]*?)\s+(\d+):(\d+)$/i);
         if (fullMatch) {
             const [_, book, chapter, verse] = fullMatch;
-            return this.resolveBookReference(book, chapter, verse);
+            return this.resolveBookReference(book.trim(), chapter, verse);
         }
 
-        // 3. Try Chapter only: Book Chapter
-        const chapterMatch = cleaned.match(/^([\w\s]+)\s+(\d+)$/i);
+        // Pattern: <book> <chapter>
+        const chapterMatch = cleaned.match(/^((?:\d+\s+)?[\w][\w\s]*?)\s+(\d+)$/i);
         if (chapterMatch) {
             const [_, book, chapter] = chapterMatch;
-            return this.resolveBookReference(book, chapter);
+            return this.resolveBookReference(book.trim(), chapter);
         }
 
-        // 4. Try Book only: Book
+        // 4. Try Book only: Book (English slug or localized title → slug)
         const bookOnly = cleaned.toLowerCase();
         if (this.BIBLE_BOOKS.includes(bookOnly)) {
             return { book: cleaned, chapter: 1, verse: null };
+        }
+        const slugOnly = this.englishSlugFromAnyBookLabel(cleaned);
+        if (slugOnly && this.BIBLE_BOOKS.includes(slugOnly)) {
+            const title = this.bookSlugToNavTitle(slugOnly);
+            return { book: title, chapter: 1, verse: null };
         }
 
         return null;
@@ -771,6 +1290,16 @@ class GreenBibleApp {
         if (resolved) {
             const displayName = resolved.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
             return { book: displayName, chapter: parseInt(chapter), verse: verse ? parseInt(verse) : null, verseEnd: verseEnd ? parseInt(verseEnd) : null };
+        }
+
+        for (const lang of Object.keys(this.NATIVE_BOOK_NAMES || {})) {
+            const nativeMap = this.NATIVE_BOOK_NAMES[lang];
+            for (const [engSlug, nativeLabel] of Object.entries(nativeMap)) {
+                if (book === String(nativeLabel).toLowerCase().trim()) {
+                    const displayName = engSlug.split(' ').map(w => (/^\d+$/.test(w) ? w : w.charAt(0).toUpperCase() + w.slice(1))).join(' ');
+                    return { book: displayName, chapter: parseInt(chapter), verse: verse ? parseInt(verse) : null, verseEnd: verseEnd ? parseInt(verseEnd) : null };
+                }
+            }
         }
 
         // Check Native names cache
@@ -794,31 +1323,35 @@ class GreenBibleApp {
             const url = `/api/bibles/passage?version=${versionCode}&book=${encodeURIComponent(parsed.book)}&chapter=${parsed.chapter}${parsed.verse ? '&verse=' + parsed.verse : ''}${parsed.verseEnd ? '&verseEnd=' + parsed.verseEnd : ''}`;
             const response = await fetch(url, { signal });
 
-            if (!response.ok) throw new Error('Failed to fetch passage');
+            if (!response.ok) {
+                const errBody = await response.json().catch(() => ({}));
+                console.warn(`[fetchVerse] ${versionCode} ${query} → HTTP ${response.status}`, errBody.error || '');
+                return null;
+            }
 
             const data = await response.json();
+
+            // Guard: if the API returned no usable text, skip this version
+            if (!data.text && (!data.verses || data.verses.length === 0)) {
+                console.warn(`[fetchVerse] ${versionCode} ${query} → empty response`);
+                return null;
+            }
 
             return {
                 reference: data.reference || query,
                 text: data.text,
                 verses: data.verses,
-                structuredContent: data.structuredContent, // Available for helloao
+                structuredContent: data.structuredContent,
                 book: data.book,
                 chapter: data.chapter,
                 totalVerses: data.totalVersesInChapter,
                 pdfPath: data.pdfPath
             };
         } catch (error) {
-            console.error(`Error fetching [${versionCode}] ${query}:`, error);
-            return this.getSampleVerse(versionCode, query);
+            if (error.name === 'AbortError') return null;
+            console.warn(`[fetchVerse] ${versionCode} ${query} failed:`, error.message);
+            return null;
         }
-    }
-    getSampleVerse(versionCode, query) {
-        // Fallback only when both APIs are unreachable
-        return {
-            reference: query,
-            text: `Could not load verse data for ${query} (${versionCode}). Please check your connection and try again.`
-        };
     }
 
     // Unified rendering for all search results (Bible & Sermons)
@@ -850,13 +1383,32 @@ class GreenBibleApp {
 
         const sermons = sermonData?.sermons || [];
         
+        this._semanticFallbackActive = bibleData?.semanticFallback || false;
+        
+        // If it's a keyword search and we have results, sync global state to the first result
+        // This prevents "Next Verse" from jumping back to John 3:16 or other unrelated verses
+        if (!isPassageResults && bibleResults.length > 0) {
+            const firstResult = bibleResults[0];
+            const ref = firstResult.reference || (firstResult.verse?.reference);
+            if (ref) {
+                this.syncGlobalState(ref);
+                this.updateInterpretationReference(ref);
+            }
+        } else if (isPassageResults && bibleResults.length > 0) {
+            const ref0 = bibleResults[0].reference || bibleResults[0].verse?.reference;
+            if (ref0) {
+                this.syncGlobalState(ref0);
+                this.updateInterpretationReference(ref0);
+            }
+        }
+        
         // Save for visual modal extraction
         this.fullBibleResults = bibleResults;
         this.fullSermonResults = sermons;
         this.currentResultsPage = 1;
         this.resultsPageSize = 5;
 
-        this.displayResults();
+        this.displayResults(isPassageResults);
     }
 
     async fetchSermonMentions(book, chapter, verse = null) {
@@ -872,53 +1424,102 @@ class GreenBibleApp {
         return { sermons: [] };
     }
 
-    displayResults() {
+    displayResults(isPassageResults = false) {
         const grid = document.getElementById('resultsGrid');
         if (!grid) return;
 
-        const bibleSubset = this.fullBibleResults.slice(0, this.currentResultsPage * this.resultsPageSize);
-        const sermonSubset = this.fullSermonResults.slice(0, Math.max(4, this.currentResultsPage * 4)); 
+        const bibleSubset = this.fullBibleResults;
+        const sermonSubset = this.fullSermonResults; 
         
         const query = this.currentSearchQuery;
         const isSemanticFallback = this._semanticFallbackActive;
         let html = '';
 
-        // Bible Results
+        // Bible Results Header
         if (bibleSubset.length > 0) {
-            html += bibleSubset.map(({ version, verse }) => {
-                const isBookmarked = this.isBookmarked(verse.reference);
-                const safeRefAttr = this.escapeHtml(verse.reference);
-                const safeText = this.escapeHtml(verse.text);
+            html += `
+                <div style="grid-column: 1/-1; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+                    <div style="display: flex; align-items: center; gap: 16px; flex: 1;">
+                        <h3 class="section-title" style="margin: 0; white-space: nowrap; color: var(--accent-emerald);">
+                            <i class="fas fa-bible" style="margin-right: 8px;"></i> Bible Results
+                        </h3>
+                        <div style="height: 1px; background: linear-gradient(90deg, var(--accent-emerald), transparent); flex: 1; opacity: 0.3;"></div>
+                    </div>
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; background: var(--bg-elevated); padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border-subtle);">
+                        ${bibleSubset.length} results found
+                    </span>
+                </div>
+            `;
+            html += bibleSubset.map((item) => {
+                // Data structure was already unified in renderSearchResults
+                const versionObj = item.version || { code: 'KJV' };
+                const verseObj = item.verse || item;
+
+                if (!verseObj || !versionObj) return '';
+
+                const isBookmarked = this.isBookmarked(verseObj.reference);
+                const safeRefAttr = this.escapeHtml(verseObj.reference);
+                const jsSafeRef = this.escapeJS(verseObj.reference);
+                const safeText = this.escapeHtml(verseObj.text);
+                const jsSafeText = this.escapeJS(verseObj.text);
+                
+                // For keyword results, book/chapter might be inside verses[0]
+                const vBook = verseObj.book || verseObj.verses?.[0]?.book || '';
+                const vChapter = verseObj.chapter || verseObj.verses?.[0]?.chapter || 1;
+                const vVerse = verseObj.verse || verseObj.verses?.[0]?.verse || 1;
+                console.log('[Rendering result card]', { verseObj, vBook, vChapter, vVerse, ref: verseObj.reference });
+                
+                const jsSafeBook = this.escapeJS(vBook);
 
                 let bodyHtml = '';
-                if (verse.structuredContent) {
-                    bodyHtml = verse.structuredContent.map(item => {
-                        if (item.type === 'heading') return `<h3 class="verse-heading">${item.text}</h3>`;
-                        if (item.type === 'verse') return `<span class="verse-item"><sup class="verse-num">${item.number || item.verse || ''}</sup>${this.highlightSearchTerms(item.text, query)}</span> `;
+                if (verseObj.structuredContent) {
+                    bodyHtml = verseObj.structuredContent.map(vItem => {
+                        if (vItem.type === 'heading') return `<h3 class="verse-heading">${vItem.text}</h3>`;
+                        if (vItem.type === 'verse') return `<span class="verse-item"><sup class="verse-num">${vItem.number || vItem.verse || ''}</sup>${this.highlightSearchTerms(vItem.text, query)}</span> `;
                         return '';
                     }).join('');
-                } else if (verse.verses) {
-                    bodyHtml = verse.verses.map(v => `<span class="verse-item"><sup class="verse-num">${v.number || v.verse || ''}</sup>${this.highlightSearchTerms(v.text, query)}</span> `).join('');
+                } else if (verseObj.verses) {
+                    bodyHtml = verseObj.verses.map(v => `<span class="verse-item"><sup class="verse-num">${v.number || v.verse || ''}</sup>${this.highlightSearchTerms(v.text, query)}</span> `).join('');
                 } else {
-                    bodyHtml = this.highlightSearchTerms(verse.text, query);
+                    bodyHtml = this.highlightSearchTerms(verseObj.text, query);
                 }
 
+                const isPdf = verseObj.pdfPath;
+                const pdfBtnHtml = isPdf ? `
+                    <button class="action-btn-icon" onclick="window.open('${verseObj.pdfPath}', '_blank')" title="View Full PDF" style="background: none; border: none; color: var(--accent-error); cursor: pointer; padding: 10px; font-size: 1.1rem; transition: all 0.2s;"><i class="fas fa-file-pdf"></i></button>
+                    <div style="width: 1px; height: 20px; background: var(--border-subtle); margin: 0 8px;"></div>
+                ` : '';
+
                 return `
-                    <div class="result-card ${isSemanticFallback ? 'semantic-match' : ''}">
-                        <div class="result-header" style="background: linear-gradient(135deg, #0a2f1a, #1a4d30); padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <div class="result-card ${isSemanticFallback ? 'semantic-match' : ''}" onclick="app.syncGlobalState('${jsSafeRef}')">
+                        <div class="result-header" style="background: var(--gradient-emerald); padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,0.05);">
                             <div style="display: flex; align-items: center; justify-content: space-between;">
                                 <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span class="result-version" style="color: #ffffff; font-weight: 700; font-size: 0.9rem; opacity: 0.9;">${version.code}</span>
+                                    <span class="result-version" style="color: var(--text-primary); font-weight: 700; font-size: 0.9rem; opacity: 0.9;">${versionObj.code}</span>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 12px;">
-                                    <i class="fas fa-download" id="offline-${version.code}-${safeRefAttr}" onclick="event.stopPropagation(); app.saveChapterOffline('${version.code}', '${safeRefAttr}')" title="Download for Offline" style="cursor: pointer; color: rgba(255,255,255,0.6); font-size: 0.85rem;"></i>
-                                    <i class="fas fa-bookmark" onclick="event.stopPropagation(); app.toggleBookmark('${verse.book || ''}', ${verse.chapter || 1}, ${verse.verse || 1}, '${safeText}', '${version.code}')" class="bookmark-icon ${isBookmarked ? 'active' : ''}" style="cursor: pointer; color: rgba(255,255,255,0.6); font-size: 0.9rem;"></i>
+                                    ${!isPdf ? `<i class="fas fa-download" id="offline-${versionObj.code}-${safeRefAttr}" onclick="event.stopPropagation(); app.saveChapterOffline('${versionObj.code}', '${jsSafeRef}')" title="Download for Offline" style="cursor: pointer; color: rgba(255,255,255,0.6); font-size: 0.85rem;"></i>` : ''}
+                                    <i class="fas fa-bookmark" onclick="event.stopPropagation(); app.toggleBookmark('${jsSafeBook}', ${vChapter}, ${vVerse}, '${jsSafeText}', '${versionObj.code}')" class="bookmark-icon ${isBookmarked ? 'active' : ''}" style="cursor: pointer; color: rgba(255,255,255,0.6); font-size: 0.9rem;"></i>
                                 </div>
                             </div>
                         </div>
                         <div class="result-body" style="padding: 24px;">
-                            <div class="reference" style="color: var(--accent-gold); font-weight: 700; margin-bottom: 12px;">${verse.reference}</div>
+                            <div class="reference" style="color: var(--accent-gold); font-weight: 700; margin-bottom: 12px;">${verseObj.reference}</div>
                             <div class="verse-text-container">${bodyHtml}</div>
+                        </div>
+                        <div class="result-actions" style="display: flex; gap: 4px; align-items: center; padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.05); flex-wrap: wrap; justify-content: flex-start;">
+                            ${pdfBtnHtml}
+                            <button class="action-btn-icon" onclick="event.stopPropagation(); app.navigateVerseFromCard('${jsSafeRef}', 'prev')" title="Previous Verse" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 10px; font-size: 1.1rem; transition: all 0.2s;"><i class="fas fa-arrow-left"></i></button>
+                            <button class="action-btn-icon" onclick="event.stopPropagation(); app.navigateVerseFromCard('${jsSafeRef}', 'next')" title="Next Verse" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 10px; font-size: 1.1rem; transition: all 0.2s;"><i class="fas fa-arrow-right"></i></button>
+                            <div style="width: 1px; height: 20px; background: var(--border-subtle); margin: 0 8px;"></div>
+                            <button class="action-btn-icon" onclick="event.stopPropagation(); console.log('[Read Full Chapter] Button clicked with:', { book: '${jsSafeBook}', chapter: ${vChapter}, version: '${versionObj.code}' }); app.readFullChapter('${jsSafeBook}', ${vChapter}, '${versionObj.code}')" title="Read Full Chapter" style="background: none; border: none; color: var(--accent-emerald); cursor: pointer; padding: 10px; font-size: 1.1rem; transition: all 0.2s; pointer-events: auto !important;"><i class="fas fa-book"></i></button>
+
+                            <button class="action-btn-icon" onclick="event.stopPropagation(); app.fetchInterpretation('${jsSafeRef}', this)" title="Read Interpretation" style="background: none; border: none; color: var(--accent-gold); cursor: pointer; padding: 10px; font-size: 1.1rem; transition: all 0.2s;"><i class="fas fa-brain"></i></button>
+                            <button class="action-btn-icon" onclick="event.stopPropagation(); app.generateAIIllustration('${jsSafeRef}', \`${jsSafeText}\`, this)" title="Generate AI Art" style="background: none; border: none; color: var(--accent-purple); cursor: pointer; padding: 10px; font-size: 1.1rem; transition: all 0.2s;"><i class="fas fa-wand-magic-sparkles"></i></button>
+                            <button class="action-btn-icon" onclick="event.stopPropagation(); app.showInterlinear('${jsSafeRef}', '${versionObj.code}', this)" title="Original Language Interlinear" style="background: none; border: none; color: var(--accent-blue); cursor: pointer; padding: 10px; font-size: 1.1rem; transition: all 0.2s;"><i class="fas fa-pen-nib"></i></button>
+                            <button class="action-btn-icon" onclick="event.stopPropagation(); app.fetchCommentary('${jsSafeRef}', this)" title="Scholarly Commentary" style="background: none; border: none; color: var(--accent-orange); cursor: pointer; padding: 10px; font-size: 1.1rem; transition: all 0.2s;"><i class="fas fa-feather-pointed"></i></button>
+                            <button class="action-btn-icon" onclick="event.stopPropagation(); app.showVerseConnections('${jsSafeRef}', '${jsSafeBook}', '${vChapter}', '${vVerse}', '${versionObj.code}', this)" title="Verse Connections — other translations & cross-references" style="background: none; border: none; color: #f43f5e; cursor: pointer; padding: 10px; font-size: 1.1rem; transition: all 0.2s; margin-left: auto; position: relative; right: -4px;"><i class="fas fa-layer-group"></i></button>
+                            <button class="action-btn-icon" onclick="event.stopPropagation(); app.addToCompareSlot('${jsSafeRef}', \`${jsSafeText}\`, '${versionObj.code}')" title="Add to Compare" style="background: none; border: none; color: var(--accent-emerald); cursor: pointer; padding: 10px; font-size: 1.1rem; transition: all 0.2s;"><i class="fas fa-balance-scale"></i></button>
                         </div>
                     </div>
                 `;
@@ -929,20 +1530,27 @@ class GreenBibleApp {
         if (sermonSubset.length > 0) {
             const title = isPassageResults ? "Mentioned in Prophetic Messages" : "Related Prophetic Messages";
             html += `
-                <div style="grid-column: 1/-1; margin-top: 32px; margin-bottom: 16px; display: flex; align-items: center; gap: 16px;">
-                    <h3 class="section-title" style="margin: 0; white-space: nowrap;">${title}</h3>
-                    <div style="height: 1px; background: var(--border-subtle); flex: 1;"></div>
+                <div style="grid-column: 1/-1; margin-top: 32px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+                    <div style="display: flex; align-items: center; gap: 16px; flex: 1;">
+                        <h3 class="section-title" style="margin: 0; white-space: nowrap; color: var(--accent-gold);">
+                            <i class="fas fa-microphone-alt" style="margin-right: 8px;"></i> ${title}
+                        </h3>
+                        <div style="height: 1px; background: linear-gradient(90deg, var(--accent-gold), transparent); flex: 1; opacity: 0.3;"></div>
+                    </div>
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; background: var(--bg-elevated); padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border-subtle);">
+                        ${sermonSubset.length} messages
+                    </span>
                 </div>
             `;
             html += sermonSubset.map(s => `
                 <div class="result-card sermon-card" onclick="app.openTranscriptModal('${s.id}')">
-                    <div class="result-header">
-                        <span class="result-version">SERMON</span>
+                    <div class="result-header" style="background: var(--gradient-gold); border-bottom-color: rgba(245,197,66,0.1);">
+                        <span class="result-version" style="color: var(--accent-gold);">SERMON</span>
                         <span class="result-language">${s.date}</span>
                     </div>
                     <div class="result-body">
-                        <div class="reference">${this.escapeHtml(s.title)}</div>
-                        <p class="verse-text" style="font-size: 0.88rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                        <div class="reference" style="color: var(--text-primary);">${this.escapeHtml(s.title)}</div>
+                        <p class="verse-text" style="font-size: 0.88rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; color: var(--text-muted);">
                             ${this.highlightSearchTerms(this.escapeHtml(s.summary), query)}
                         </p>
                     </div>
@@ -953,23 +1561,12 @@ class GreenBibleApp {
         if (html === '') {
             grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 60px; color: var(--text-muted);">No matching scriptures found.</div>`;
         } else {
-            // Load More Button
-            if (this.fullBibleResults.length > bibleSubset.length || this.fullSermonResults.length > sermonSubset.length) {
-                html += `
-                <div style="grid-column: 1/-1; display: flex; justify-content: center; padding: 40px 0;">
-                    <button class="nav-btn" onclick="app.loadMoreResults()" style="padding: 12px 32px; border-radius: 30px; border-color: var(--accent-emerald); color: var(--accent-emerald); font-weight: 600;">
-                        <i class="fas fa-plus" style="margin-right: 8px;"></i> Load More Results
-                    </button>
-                </div>
-                `;
-            }
             grid.innerHTML = html;
         }
     }
 
     loadMoreResults() {
-        this.currentResultsPage++;
-        this.displayResults();
+        // Pagination removed
     }
 
     loadPassage(book, chapter, verse = null) {
@@ -1014,6 +1611,7 @@ class GreenBibleApp {
         // but for now, we'll just update the input and search
         const input = document.getElementById('searchInput');
         if (input) input.value = query;
+        this.syncGlobalState(query);
         this.performSearch();
         
         // Smother scroll back to top if not already there
@@ -1107,7 +1705,7 @@ class GreenBibleApp {
                 const safeText = this.escapeHtml(b.text || '');
                 return `
                 <div class="result-card" onclick="setSearch('${safeRef}'); performSearch();">
-                    <button class="tray-btn" style="position: absolute; top: 10px; right: 10px; z-index: 10; background: rgba(0,0,0,0.3);" onclick="event.stopPropagation(); app.toggleBookmark('${b.book}', ${b.chapter}, ${b.verse || 'null'}, '${safeText}', '${b.version || ''}')" title="Remove bookmark">
+                    <button class="tray-btn" style="position: absolute; top: 10px; right: 10px; z-index: 10; background: rgba(0,0,0,0.3);" onclick="event.stopPropagation(); app.toggleBookmark('${b.book}', '${b.chapter}', '${b.verse || "null"}', '${safeText}', '${b.version || ""}')" title="Remove bookmark">
                         <span class="tray-icon" style="color: var(--accent-gold);">★</span>
                     </button>
                     <div class="result-header">
@@ -1137,39 +1735,133 @@ class GreenBibleApp {
     // ==========================================
     // Navigation
     // ==========================================
-    navigateVerse(direction) {
+    syncGlobalState(reference) {
+        console.log('[syncGlobalState] Called with reference:', reference);
+        const parsed = this.parseVerseReference(reference);
+        if (parsed) {
+            this.currentBook = parsed.book;
+            this.currentChapter = parsed.chapter;
+            this.currentVerseNum = parsed.verse;
+            console.log(`[Global Sync] Updated to: ${parsed.book} ${parsed.chapter}:${parsed.verse || 1}`);
+            this.updateInterpretationReference(this.formatPassageRef(parsed));
+        } else {
+            console.log('[Global Sync] Failed to parse reference:', reference);
+        }
+    }
+
+    async navigateVerseFromCard(reference, direction) {
+        console.log('[navigateVerseFromCard] Starting with:', { reference, direction });
+        const parsed = this.parseVerseReference(reference);
+        console.log('[navigateVerseFromCard] Parsed original reference:', parsed);
+        if (!parsed) return;
+
+        let nextBook = parsed.book;
+        let nextChapter = parsed.chapter;
+        let nextVerse = parsed.verse;
+
+        switch (direction) {
+            case 'prev':
+                if (nextVerse && nextVerse > 1) {
+                    nextVerse--;
+                } else if (nextChapter > 1) {
+                    nextChapter--;
+                    nextVerse = null;
+                }
+                break;
+            case 'next':
+                if (nextVerse) {
+                    nextVerse++;
+                } else {
+                    nextChapter++;
+                    nextVerse = 1;
+                }
+                break;
+        }
+
+        const query = nextVerse
+            ? `${nextBook} ${nextChapter}:${nextVerse}`
+            : `${nextBook} ${nextChapter}`;
+
+        console.log(`[Card Nav] Navigating to query: ${query}`);
+        this.syncGlobalState(query);
+        document.getElementById('searchInput').value = query;
+        await this.performSearch(true, false); 
+    }
+
+    closeAllInlinePanels(reference, card = null) {
+        if (card) {
+            const panels = card.querySelectorAll('[id^="interlinear-"], [id^="commentary-"], [id^="crossrefs-"], [id^="illustration-"], [id^="alt-verses-container-"], [id^="interpretation-"], [id^="connections-"]');
+            panels.forEach(el => el.style.display = 'none');
+        } else {
+            const cardRef = this.refPanelSlug(reference);
+            const ids = [
+                `interlinear-${cardRef}`,
+                `commentary-${cardRef}`,
+                `crossrefs-${cardRef}`,
+                `illustration-${cardRef}`,
+                `alt-verses-container-${cardRef}`,
+                `interpretation-${cardRef}`,
+                `connections-${cardRef}`
+            ];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+        }
+    }
+
+    async navigateVerse(direction) {
+
         if (!this.currentBook || !this.currentChapter) {
             this.showNotification('No verse loaded to navigate from', 'warning');
             return;
         }
 
+        let nextBook = this.currentBook;
+        let nextChapter = this.currentChapter;
+        let nextVerse = this.currentVerseNum;
+
         switch (direction) {
             case 'prev':
-                if (this.currentVerseNum && this.currentVerseNum > 1) {
-                    this.currentVerseNum--;
+                if (nextVerse && nextVerse > 1) {
+                    nextVerse--;
+                } else if (nextChapter > 1) {
+                    nextChapter--;
+                    nextVerse = null; // Let the fetch find the last verse if needed, or just show chapter
                 }
                 break;
             case 'next':
-                this.currentVerseNum = (this.currentVerseNum || 0) + 1;
+                if (nextVerse) {
+                    // If we have totalVerses, we can check for chapter end
+                    if (this.totalVerses && nextVerse >= this.totalVerses) {
+                        nextChapter++;
+                        nextVerse = 1;
+                    } else {
+                        nextVerse++;
+                    }
+                } else {
+                    nextChapter++;
+                    nextVerse = 1;
+                }
                 break;
             case 'prev-chapter':
-                if (this.currentChapter > 1) {
-                    this.currentChapter--;
-                    this.currentVerseNum = 1;
+                if (nextChapter > 1) {
+                    nextChapter--;
+                    nextVerse = null;
                 }
                 break;
             case 'next-chapter':
-                this.currentChapter++;
-                this.currentVerseNum = 1;
+                nextChapter++;
+                nextVerse = null;
                 break;
         }
 
-        const query = this.currentVerseNum
-            ? `${this.currentBook} ${this.currentChapter}:${this.currentVerseNum}`
-            : `${this.currentBook} ${this.currentChapter}`;
+        const query = nextVerse
+            ? `${nextBook} ${nextChapter}:${nextVerse}`
+            : `${nextBook} ${nextChapter}`;
 
         document.getElementById('searchInput').value = query;
-        this.performSearch();
+        await this.performSearch(true, false);
     }
 
     // ==========================================
@@ -1179,7 +1871,7 @@ class GreenBibleApp {
         this.showNotification('Search for a verse, then click "Compare" on the result card', 'info');
     }
 
-    addToCompareSlot(reference, text, version) {
+    async addToCompareSlot(reference, text, version) {
         // Check if this exact verse/version is already in a slot
         const isAlreadyInCompare = this.compareSlots.some(s => s && s.reference === reference && s.version === version);
         if (isAlreadyInCompare) {
@@ -1193,46 +1885,100 @@ class GreenBibleApp {
             return;
         }
 
-        this.compareSlots[emptySlot] = { reference, text, version };
+        let fullText = text;
+        const parsed = this.parseVerseReference(reference);
+        if (parsed && version) {
+            try {
+                const params = new URLSearchParams({
+                    version: String(version),
+                    book: parsed.book,
+                    chapter: String(parsed.chapter)
+                });
+                if (parsed.verse) params.set('verse', String(parsed.verse));
+                if (parsed.verseEnd) params.set('verseEnd', String(parsed.verseEnd));
+                const response = await fetch(`/api/bibles/passage?${params.toString()}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.text && String(data.text).trim()) fullText = data.text.trim();
+                    else if (data.verses && data.verses.length) {
+                        fullText = data.verses.map(v => v.text).join(' ').trim();
+                    }
+                }
+            } catch (e) {
+                console.warn('Compare slot: using card text (passage fetch failed)', e);
+            }
+        }
+
+        this.compareSlots[emptySlot] = { reference, text: fullText, version };
         this.updateCompareSlots();
         this.showNotification(`Added ${reference} to compare slot ${emptySlot + 1}`, 'success');
     }
 
     updateCompareSlots() {
+        const filledCount = this.compareSlots.filter(s => s !== null).length;
+        const grid = document.querySelector('#comparisonSection .comparison-grid');
+
+        // Dynamically set grid columns to match exactly how many verses are filled
+        if (grid) {
+            const cols = filledCount <= 1 ? 2 : Math.min(filledCount, 4);
+            grid.style.maxWidth = filledCount <= 2 ? '920px' : '100%';
+            grid.style.margin = filledCount <= 2 ? '0 auto' : '0';
+        }
+
         for (let i = 0; i < 4; i++) {
             const slot = document.querySelector(`[data-compare="${i + 1}"]`);
             if (!slot) continue;
             const verse = this.compareSlots[i];
 
             if (verse) {
+                slot.style.display = 'flex';
                 slot.classList.add('filled');
                 slot.innerHTML = `
                     <div style="width: 100%; display: flex; flex-direction: column; align-items: center; position: relative;">
-                        <span class="slot-label" style="position: absolute; top: -15px; left: 0; background: var(--accent-gold); color: black; padding: 2px 8px; border-radius: 4px; font-weight: 800; font-size: 0.65rem;">${verse.version}</span>
+                        <span class="slot-label" style="position: absolute; top: -15px; left: 0; background: var(--accent-gold); color: var(--text-inverse); padding: 2px 8px; border-radius: 4px; font-weight: 800; font-size: 0.65rem;">${verse.version}</span>
                         
                         <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 12px; width: 100%; justify-content: center;">
-                            <button onclick="event.stopPropagation(); app.navigateVerseForSlot(${i}, 'prev')" class="nav-arrow-btn" title="Previous Verse">◀</button>
+                            <button onclick="event.stopPropagation(); app.navigateVerseForSlot(${i}, 'prev')" class="nav-arrow-btn" title="Previous Verse"><i class="fas fa-arrow-left"></i></button>
                             <strong class="compare-ref" style="color: var(--accent-gold); font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; cursor: pointer;" onclick="event.stopPropagation(); document.getElementById('searchInput').value='${verse.reference}'; app.performSearch();">${verse.reference}</strong>
-                            <button onclick="event.stopPropagation(); app.navigateVerseForSlot(${i}, 'next')" class="nav-arrow-btn" title="Next Verse">▶</button>
+                            <button onclick="event.stopPropagation(); app.navigateVerseForSlot(${i}, 'next')" class="nav-arrow-btn" title="Next Verse"><i class="fas fa-arrow-right"></i></button>
                         </div>
 
-                        <p class="compare-text" style="font-size: 0.95rem; color: var(--text-secondary); text-align: center; margin: 12px 0; font-family: 'Playfair Display', serif; line-height: 1.7; transition: all 0.3s ease;">
-                            ${this.highlightSearchTerms(verse.text, this.currentSearchQuery)}
+                        <p class="compare-text" style="font-size: 0.95rem; color: var(--text-secondary); text-align: center; margin: 12px 0; font-family: 'Playfair Display', serif; line-height: 1.7; transition: all 0.3s ease; max-height: none; white-space: pre-wrap;">
+                            ${this.highlightSearchTerms(verse.text || '', this.currentSearchQuery)}
                         </p>
 
-                        <div style="display: flex; gap: 8px; margin-top: 15px;">
-                            <button onclick="event.stopPropagation(); app.clearCompareSlot(${i})" style="padding: 6px 14px; background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 600; transition: all 0.2s; font-family: 'Inter', sans-serif;">Remove</button>
-                            <button onclick="event.stopPropagation(); app.showInterlinear('${verse.reference}', '${verse.version}')" style="padding: 6px 14px; background: rgba(52,211,153,0.1); color: var(--accent-emerald); border: 1px solid rgba(52,211,153,0.2); border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 600; transition: all 0.2s;">Greek</button>
+                        <div style="display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap; justify-content: center; width: 100%;">
+                            <button onclick="event.stopPropagation(); app.clearCompareSlot(${i})" class="compare-action-btn" style="color: var(--accent-error); border-color: rgba(239,68,68,0.2); background: rgba(239,68,68,0.05);" title="Remove">
+                                <i class="fas fa-trash-can"></i> <span>Remove</span>
+                            </button>
+                            <button onclick="event.stopPropagation(); app.fetchInterpretation('${verse.reference}', this)" class="compare-action-btn" title="Interpretation">
+                                <i class="fas fa-brain"></i> <span>Interpretation</span>
+                            </button>
+                            <button onclick="event.stopPropagation(); app.showInterlinear('${verse.reference}', '${verse.version}', this)" class="compare-action-btn" title="${this.isOldTestament(verse.reference.split(' ')[0]) ? 'Hebrew' : 'Greek'} Interlinear">
+                                <i class="fas fa-pen-nib"></i> <span>${this.isOldTestament(verse.reference.split(' ')[0]) ? 'Hebrew' : 'Greek'}</span>
+                            </button>
+                            <button onclick="event.stopPropagation(); app.generateAIIllustration('${verse.reference}', \`${this.escapeJS(verse.text || '')}\`, this)" class="compare-action-btn" title="AI Art">
+                                <i class="fas fa-wand-magic-sparkles"></i> <span>Art</span>
+                            </button>
+                            <button onclick="event.stopPropagation(); app.showVerseConnections('${verse.reference}', '${verse.book || ''}', '${verse.chapter || 0}', '${verse.verse || 0}', '${verse.version}', this)" class="compare-action-btn" title="Connections">
+                                <i class="fas fa-layer-group"></i> <span>Connect</span>
+                            </button>
                         </div>
                     </div>
                 `;
             } else {
-                slot.classList.remove('filled');
-                slot.innerHTML = `
-                    <span class="slot-label">Slot ${i + 1}</span>
-                    <span style="font-size: 0.85rem; opacity: 0.6;">Click to add verse</span>
-                    <div style="font-size: 1.5rem; margin-top: 10px; opacity: 0.3;">➕</div>
-                `;
+                // Hide empty slots whenever at least 1 verse is filled — keep UI clean
+                if (filledCount >= 1) {
+                    slot.style.display = 'none';
+                } else {
+                    slot.style.display = 'flex';
+                    slot.classList.remove('filled');
+                    slot.innerHTML = `
+                        <span class="slot-label">Slot ${i + 1}</span>
+                        <span style="font-size: 0.85rem; opacity: 0.6;">Click to add verse</span>
+                        <div style="font-size: 1.5rem; margin-top: 10px; opacity: 0.3;">➕</div>
+                    `;
+                }
             }
         }
     }
@@ -1265,13 +2011,21 @@ class GreenBibleApp {
                 return;
             }
 
-            const response = await fetch(`https://bible-api.com/${encodeURIComponent(newRef)}?translation=${slot.version.toLowerCase()}`);
+            const response = await fetch(`/api/bibles/passage?version=${slot.version}&book=${encodeURIComponent(book)}&chapter=${chapter}&verse=${verse}`);
             const data = await response.json();
             
-            if (data.text) {
+            if (data.verses && data.verses[0]) {
+                const v = data.verses[0];
                 this.compareSlots[index] = {
-                    reference: data.reference,
-                    text: data.text,
+                    reference: v.reference || `${book} ${chapter}:${verse}`,
+                    text: v.text,
+                    version: slot.version
+                };
+                this.updateCompareSlots();
+            } else if (data.text && String(data.text).trim()) {
+                this.compareSlots[index] = {
+                    reference: `${book} ${chapter}:${verse}`,
+                    text: String(data.text).trim(),
                     version: slot.version
                 };
                 this.updateCompareSlots();
@@ -1294,57 +2048,245 @@ class GreenBibleApp {
     }
 
     // ==========================================
-    // AI Illustration
+    // Quick Actions
     // ==========================================
-    generateAIIllustration() {
-        if (!this.currentBook || !this.currentChapter) {
-            this.showNotification('Search for a verse first to generate illustration', 'warning');
+    async readFullChapter(book, chapter, version) {
+        if (!book || !chapter) return;
+
+        const bookSlug = this.englishSlugFromAnyBookLabel(book);
+        
+        // Populate and select book (internal state sync)
+        const bookSelect = document.getElementById('readerBookSelect');
+        if (bookSelect) bookSelect.value = bookSlug;
+        
+        const chapterSelect = document.getElementById('readerChapterSelect');
+        if (chapterSelect) chapterSelect.value = chapter;
+        
+        const setVer = (id) => {
+            const sel = document.getElementById(id);
+            if (sel && version && [...sel.options].some((o) => o.value === version)) sel.value = version;
+        };
+        setVer('readerVersionSelect');
+        setVer('bibleNavVersion');
+
+        await this.updateReaderSelects(version, bookSlug, chapter);
+        
+        // Open the modal directly to preserve the background state as requested
+        await this.openChapterModal(book, chapter, version, `${book || ''}`.trim() + (chapter ? ` ${chapter}` : ''));
+    }
+
+    compareGreek(reference, versionCode = 'KJV') {
+        if (!reference) return;
+        this.showNotification(`Opening original language interlinear for ${reference}...`, 'info');
+        this.showInterlinear(reference, versionCode);
+    }
+
+    async loadAlternativeVersesInline(refId, book, chapter, verse, currentVersionCode, btnElement) {
+        if (currentVersionCode && typeof currentVersionCode === 'object' && currentVersionCode.style && btnElement === undefined) {
+            btnElement = currentVersionCode;
+            currentVersionCode = '';
+        }
+
+        const card = btnElement ? (btnElement.closest('.result-card') || btnElement.closest('div[style*="flex-direction: column"]')) : null;
+        let container = null;
+        if (card) {
+            container = card.querySelector(`[id^="alt-verses-container-"]`);
+        }
+        
+        if (!container) {
+            const containerId = `alt-verses-container-${this.refPanelSlug(refId)}`;
+            container = document.getElementById(containerId);
+        }
+        
+        if (!container) return;
+        
+        if (container.style.display === 'block') {
+            container.style.display = 'none';
+            btnElement.style.color = '#f43f5e'; // Reset color
             return;
         }
-        this.showNotification('AI illustration now available in each verse card — click "🎨 AI Art" button', 'info');
+
+        // Close other panels in this specific card
+        this.closeAllInlinePanels(refId, card);
+
+        btnElement.style.color = '#ffffff'; // Active color
+        container.style.display = 'block';
+        container.innerHTML = `
+            <div style="padding: 10px 0 6px; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                <span style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted);">
+                    <i class="fas fa-layer-group" style="margin-right: 6px; color: #f43f5e;"></i>
+                    Same verse in other translations
+                </span>
+            </div>
+            <div style="text-align: center; padding: 16px;">
+                <div class="loading-spinner" style="margin: 0 auto 10px; width: 20px; height: 20px;"></div>
+                <p style="color: var(--text-muted); font-size: 0.8rem;">Fetching translations...</p>
+            </div>
+        `;
+
+        try {
+            const exclude = new Set([currentVersionCode].filter(Boolean));
+            
+            // Prioritise: user's selected versions first, then a curated set of popular ones
+            // Never fire 27 simultaneous requests — cap at 8
+            const selectedActive = this.selectedVersions.filter(v => v !== null && !exclude.has(v.code));
+            const popularFallback = [
+                { code: 'KJV', name: 'King James Version' },
+                { code: 'WEB', name: 'World English Bible' },
+                { code: 'BSB', name: 'Berean Standard Bible' },
+                { code: 'NET', name: 'NET Bible' },
+                { code: 'YLT', name: "Young's Literal Translation" },
+                { code: 'ASV', name: 'American Standard Version' },
+                { code: 'SWAHILI', name: 'Swahili Contemporary' },
+                { code: 'AMHARIC', name: 'Amharic Bible' },
+            ].filter(v => !exclude.has(v.code));
+
+            // Merge: selected first, then fill up to 8 from popular
+            const merged = [...selectedActive];
+            for (const v of popularFallback) {
+                if (merged.length >= 8) break;
+                if (!merged.some(m => m.code === v.code)) merged.push(v);
+            }
+            const versionsToFetch = merged;
+
+            const promises = versionsToFetch.map(async (v) => {
+                try {
+                    const response = await fetch(`/api/bibles/passage?version=${v.code}&book=${encodeURIComponent(book)}&chapter=${chapter}&verse=${verse}`);
+                    if (!response.ok) return null;
+                    const data = await response.json();
+                    return { version: v.code, name: v.name, text: data.text || (data.verses && data.verses[0] && data.verses[0].text) };
+                } catch (e) {
+                    return null;
+                }
+            });
+
+            const results = await Promise.all(promises);
+            const validResults = results.filter(r => r && r.text);
+
+            if (validResults.length === 0) {
+                container.innerHTML = `
+                    <div style="padding: 10px 0 6px; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <span style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted);">
+                            <i class="fas fa-layer-group" style="margin-right: 6px; color: #f43f5e;"></i>
+                            Same verse in other translations
+                        </span>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: 0.85rem; padding: 8px 0;">No translations available for this verse right now.</p>`;
+                return;
+            }
+
+            container.innerHTML = `
+                <div style="padding: 10px 0 6px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between;">
+                    <span style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted);">
+                        <i class="fas fa-layer-group" style="margin-right: 6px; color: #f43f5e;"></i>
+                        Same verse · ${validResults.length} translations
+                    </span>
+                    <span style="font-size: 0.68rem; color: var(--text-muted);">Click a version to read full chapter</span>
+                </div>
+                ${validResults.map(r => `
+                    <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px dashed rgba(255,255,255,0.05); cursor: pointer; transition: opacity 0.15s;" 
+                         onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'"
+                         onclick="app.openChapterModal('${book}', ${chapter}, '${r.version}', '${refId}')">
+                        <span style="color: var(--accent-gold); font-size: 0.72rem; font-weight: 700; margin-right: 10px; font-family: 'JetBrains Mono', monospace;">${r.version}</span>
+                        <span style="color: rgba(255,255,255,0.85); font-size: 0.9rem; line-height: 1.5;">${this.escapeHtml(r.text)}</span>
+                    </div>
+                `).join('')}
+            `;
+
+        } catch (error) {
+            container.innerHTML = `<p style="color: var(--accent-error); font-size: 0.85rem;">Failed to load alternative translations.</p>`;
+        }
     }
 
     // ==========================================
     // Interpretation / Commentary
     // ==========================================
-    async fetchInterpretation(reference) {
-        if (!reference) return;
-
-        const section = document.getElementById('interpretationSection');
-        if (section) {
-            section.style.display = 'block';
-            section.classList.add('active');
-            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    async fetchInterpretation(reference, btnElement = null) {
+        if (!reference) {
+            reference = this.getActivePassageRef();
+        }
+        if (!reference) {
+            this.showNotification('Open a verse first, or search for a passage reference.', 'warning');
+            return;
         }
 
-        const interpRefEl = document.getElementById('interpretationReference');
-        if (interpRefEl) interpRefEl.textContent = reference;
+        const content = this.openStudyModal('Verse Interpretation', reference, '<i class="fas fa-brain"></i>', 'var(--accent-gold)');
+        if (!content) return;
 
-        // Loading state
-        document.getElementById('interpretationContent').innerHTML = `
-            <div style="text-align: center; padding: 40px;">
-                <div class="loading-spinner" style="margin: 0 auto 20px;"></div>
-                <p style="color: var(--text-muted); font-size: 0.9rem;">Consulting Matthew Henry Commentary...</p>
+        // Sacred Loading State
+        content.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 24px; padding: 20px;">
+                <div class="skeleton" style="height: 32px; width: 60%; border-radius: 8px;"></div>
+                <div class="skeleton" style="height: 120px; width: 100%; border-radius: 12px;"></div>
+                <div class="skeleton" style="height: 80px; width: 90%; border-radius: 12px;"></div>
+                <div style="display: flex; align-items: center; justify-content: center; padding: 40px;">
+                    <div class="premium-spinner" style="border-top-color: var(--accent-gold);"></div>
+                </div>
+                <p style="text-align: center; color: var(--text-muted); font-size: 0.9rem; font-family: 'Playfair Display', serif; font-style: italic;">Seeking celestial wisdom...</p>
             </div>
         `;
 
         try {
-            const response = await fetch(`/api/commentary/${encodeURIComponent(reference)}`);
-            if (!response.ok) throw new Error('Commentary not found');
+            const res = await fetch(`/api/ai/interpret?reference=${encodeURIComponent(reference)}`);
+            if (!res.ok) throw new Error('Failed to fetch interpretation');
+            const data = await res.json();
+            
+            // Format the interpretation with improved typography and sectioning
+            let formattedText = data.interpretation
+                .replace(/\*\*(.*?)\*\*/g, '<strong style="color: var(--accent-gold);">$1</strong>')
+                .replace(/### (.*?)\n/g, '<h4 style="color: var(--accent-gold); margin: 24px 0 12px 0; font-size: 1.2rem; font-family: \'Playfair Display\', serif; border-left: 3px solid var(--accent-gold); padding-left: 16px;">$1</h4>')
+                .replace(/\n\n/g, '<p style="margin-bottom: 24px;"></p>')
+                .replace(/\n/g, '<br>');
 
-            const data = await response.json();
+            // Automatically highlight Bible references mentioned in the text
+            formattedText = this.highlightBibleRefs(formattedText);
 
-            document.getElementById('interpretationContent').innerHTML = data.commentary.map(p => {
-                if (p.startsWith('### ')) return `<h4 style="color: var(--accent-emerald); margin-top: 24px;">${p.replace('### ', '')}</h4>`;
-                return `<p class="interpretation-text">${this.highlightSearchTerms(p, this.currentSearchQuery)}</p>`;
-            }).join('');
-
-            // (Related verses logic remains same or can be enhanced below)
-            this.fetchRelatedVerses(reference);
-        } catch (error) {
-            console.error('Commentary error:', error);
-            document.getElementById('interpretationContent').innerHTML = `<p style="color: var(--text-muted); padding: 20px;">No specific commentary available for this passage.</p>`;
+            content.innerHTML = `
+                <div class="interpretation-wrapper" style="max-width: 800px; margin: 0 auto; animation: fadeSlideUp 0.6s ease-out;">
+                    <div class="interpretation-content" style="line-height: 1.8; color: var(--text-primary); font-size: 1.15rem; font-family: 'Inter', sans-serif; text-align: justify;">
+                        ${formattedText}
+                    </div>
+                    
+                    <div style="margin-top: 48px; padding: 32px; background: var(--bg-elevated); border-radius: 24px; border: 1px solid var(--border-accent); display: flex; flex-direction: column; gap: 24px; position: relative; overflow: hidden;">
+                        <div style="position: absolute; top: 0; right: 0; padding: 10px; opacity: 0.05; font-size: 4rem; color: var(--accent-gold); pointer-events: none;">✨</div>
+                        
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
+                            <div style="display: flex; align-items: center; gap: 16px;">
+                                <div style="width: 56px; height: 56px; background: var(--accent-gold-glow); border-radius: 16px; display: flex; align-items: center; justify-content: center; color: var(--accent-gold); font-size: 1.4rem; box-shadow: 0 8px 16px rgba(0,0,0,0.1);">
+                                    <i class="fas fa-sparkles"></i>
+                                </div>
+                                <div>
+                                    <span style="display: block; font-size: 1rem; font-weight: 800; color: var(--text-primary); letter-spacing: 0.5px;">Divine Insight AI</span>
+                                    <span style="display: block; font-size: 0.8rem; color: var(--text-muted); opacity: 0.8;">Theological & Spiritual Analysis</span>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 12px;">
+                                <button class="nav-btn" style="padding: 12px 24px; font-size: 0.85rem; border-color: var(--border-subtle); color: var(--text-primary); background: var(--bg-card);" onclick="app.copyToClipboard(\`${data.interpretation.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)">
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                                <button class="nav-btn" style="padding: 12px 24px; font-size: 0.85rem; background: var(--accent-gold); color: var(--text-inverse); border: none;" onclick="app.shareContent('${reference}', \`${data.interpretation.substring(0, 100).replace(/`/g, '\\`')}...\`)">
+                                    <i class="fas fa-share-nodes"></i> Share
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } catch (e) {
+            content.innerHTML = `
+                <div style="text-align: center; padding: 60px; color: var(--accent-error);">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 24px; opacity: 0.5;"></i>
+                    <p style="font-size: 1.1rem;">Celestial interpretation failed to arrive. Please try again.</p>
+                </div>`;
         }
+    }
+
+
+    highlightBibleRefs(text) {
+        const bibleRefRegex = /\b(([1-3]\s+)?[A-Z][a-z]+\s+\d+:\d+(-\d+)?)\b/g;
+        return text.replace(bibleRefRegex, (match) => {
+            return `<span style="color: var(--accent-gold); font-weight: 600; cursor: pointer; border-bottom: 1px dotted var(--accent-gold);" onclick="setSearch('${match}'); performSearch(); app.showView('search');">${match}</span>`;
+        });
     }
 
     searchByTopic(topic) {
@@ -1478,6 +2420,7 @@ class GreenBibleApp {
                     }
                 });
             }
+            console.log(`[Library] Loaded ${otherMaterials.length} other materials and ${offlineBibles.length} offline bibles.`);
         } catch (e) {
             console.error('Failed to fetch other materials:', e);
         }
@@ -1516,6 +2459,19 @@ class GreenBibleApp {
                 </div>
             `;
         }).join('');
+
+        // Expand both sections by default
+        biblesGrid.style.display = 'block';
+        materialsGrid.style.display = 'block';
+        
+        const biblesArrow = document.getElementById('biblesArrow');
+        const materialsArrow = document.getElementById('materialsArrow');
+        
+        if (biblesArrow) biblesArrow.textContent = '▴';
+        if (materialsArrow) materialsArrow.textContent = '▴';
+        
+        this.populateBibleNavVersions();
+        this.updateBibleNav();
 
         // Render Other Materials as compact list rows
         const materialsCountEl = document.getElementById('materialsCount');
@@ -1820,7 +2776,7 @@ class GreenBibleApp {
         title.textContent = `${type === 'image' ? 'Passage Imagery' : 'AI Illustration'} — ${reference}`;
         
         content.innerHTML = `
-            <div class="generating-visual" style="text-align: center; padding: 60px 20px; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px dashed var(--border-default);">
+            <div class="generating-visual" style="text-align: center; padding: 60px 20px; background: var(--bg-surface); border-radius: 20px; border: 1px dashed var(--border-accent);">
                 <div class="premium-spinner" style="margin: 0 auto 30px;">
                     <div class="spinner-ring"></div>
                     <div class="spinner-core"></div>
@@ -1837,12 +2793,12 @@ class GreenBibleApp {
         const cleanText = verseText.substring(0, 500).replace(/["']/g, '');
 
         if (type === 'illustrate') {
-            // "AI Art" Style: Classical Oil Painting, Sacred, African Context
-            const prompt = `CLASSICAL OIL PAINTING, rich brushstrokes, thick impasto technique, sacred biblical art. EXCLUSIVELY BLACK AFRICAN CHARACTERS, dark skin tones, natural African hair, African garments and jewelry. Masterpiece painting of ${reference}: ${cleanText}. Ancient African cultural setting, dramatic chiaroscuro lighting, warm earth tones and golden highlights, canvas texture visible, Rembrandt-style dramatic shadows, museum-quality framed painting, rich saturated colors, divine spiritual atmosphere, hand-painted fine art quality.`;
+            // "AI Art" Style: More creative, meaning-focused
+            const prompt = `A creative, deeply symbolic spiritual masterpiece representing the meaning of ${reference}: "${cleanText}". Highly imaginative and evocative art that captures the soul and essence of the scripture through divine metaphors and holy imagery. Sacred atmosphere, ethereal light, cinematic masterpiece. Oil painting style with rich, vibrant colors and dramatic lighting. While inspired by biblical traditions, focus purely on the spiritual power and meaning of the verse.`;
             imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=1024&seed=${seed}&model=flux&nologo=true`;
         } else {
-            // "Passage Imagery" Style: Watercolor/Mixed Media Painted, African Context
-            const prompt = `BEAUTIFUL PAINTED ARTWORK, watercolor and gouache mixed media, visible brushstrokes and paint texture. EXCLUSIVELY BLACK AFRICAN CHARACTERS, dark skin tones, natural African hair. Painted biblical scene of ${reference}: ${cleanText}. Ancient African landscape and architecture, warm golden light, soft ethereal edges blending into the canvas, rich pigmented colors, hand-crafted artisan quality, holy atmosphere, spiritual depth, painted masterpiece with visible artistic technique.`;
+            // "Passage Imagery" Style: Symbolic/Sacred
+            const prompt = `A beautiful, symbolic sacred artwork representing ${reference}: "${cleanText}". Artistic and meaningful interpretation, ethereal and divine atmosphere. Soft light, holy presence, spiritual depth. Painted with rich textures and sacred significance. Focus on bringing the meaning of the verse to life through creative and holy imagery.`;
             imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=1024&seed=${seed}&model=flux&nologo=true`;
         }
 
@@ -1870,7 +2826,7 @@ class GreenBibleApp {
         };
         img.onerror = () => {
             content.innerHTML = `
-                <div style="text-align: center; padding: 40px; color: #ef4444;">
+                <div style="text-align: center; padding: 40px; color: var(--accent-error);">
                     <div style="font-size: 3rem; margin-bottom: 20px;">⚠️</div>
                     <h3>Generation Failed</h3>
                     <p style="margin-bottom: 24px;">The artistic vision was interrupted. Please try again.</p>
@@ -1887,6 +2843,170 @@ class GreenBibleApp {
         if (modal) {
             modal.style.display = 'none';
         }
+    }
+
+    // ==========================================
+    // Chapter Modal (Floating Pop-up)
+    // ==========================================
+    openStudyModal(title, subtitle, iconHtml, color = 'var(--accent-gold)') {
+        const modal = document.getElementById('studyModal');
+        const titleEl = document.getElementById('studyModalTitle');
+        const subtitleEl = document.getElementById('studyModalSubtitle');
+        const iconEl = document.getElementById('studyModalIcon');
+        const contentEl = document.getElementById('studyModalContent');
+
+        if (!modal) return;
+
+        titleEl.textContent = title;
+        subtitleEl.textContent = subtitle;
+        iconEl.innerHTML = iconHtml;
+        iconEl.style.color = color;
+        
+        // Dynamic styling for the modal theme
+        const panel = modal.querySelector('.glass-panel');
+        const header = modal.querySelector('div[style*="border-bottom"]');
+        
+        if (panel) panel.style.borderColor = color;
+        if (header) header.style.background = `linear-gradient(90deg, ${color.replace(')', ', 0.1)')}, transparent)`;
+        
+        iconEl.style.borderColor = color.replace(')', ', 0.3)');
+        iconEl.style.background = color.replace(')', ', 0.1)');
+
+        contentEl.innerHTML = `
+            <div style="text-align: center; padding: 60px;">
+                <div class="premium-spinner" style="margin: 0 auto 20px;"></div>
+                <p style="color: ${color}; font-weight: 600; font-size: 1.1rem;">Summoning Insights...</p>
+            </div>
+        `;
+
+        modal.style.display = 'flex';
+        return contentEl;
+    }
+
+    closeStudyModal() {
+        const modal = document.getElementById('studyModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    async openChapterModal(book, chapter, version, reference) {
+        console.log('[openChapterModal] Called with:', { book, chapter, version, reference });
+        let targetBook = book;
+        let targetChapter = parseInt(chapter);
+
+        // Robust parsing if book/chapter are missing (common for phrase results)
+        if (!targetBook || isNaN(targetChapter) || targetBook === '' || targetBook === 'undefined') {
+            const parsed = this.parseVerseReference(reference);
+            if (parsed) {
+                targetBook = parsed.book;
+                targetChapter = parsed.chapter;
+            } else {
+                // Manual extraction fallback
+                const parts = reference.trim().split(/\s+/);
+                if (parts.length >= 2) {
+                    const lastPart = parts[parts.length - 1];
+                    const chapterPart = lastPart.split(':')[0];
+                    targetChapter = parseInt(chapterPart) || 1;
+                    targetBook = parts.slice(0, parts.length - 1).join(' ');
+                }
+            }
+        }
+
+        if (!targetBook || isNaN(targetChapter)) {
+            this.showNotification('Could not determine book or chapter', 'warning');
+            return;
+        }
+
+        const modal = document.getElementById('chapterModal');
+        const content = document.getElementById('chapterModalContent');
+        const title = document.getElementById('chapterModalTitle');
+        const versionLabel = document.getElementById('chapterModalVersion');
+        const prevBtn = document.getElementById('prevChapterBtn');
+        const nextBtn = document.getElementById('nextChapterBtn');
+
+        if (!modal || !content) return;
+
+        modal.style.display = 'flex';
+        title.textContent = `${targetBook} ${targetChapter}`;
+        versionLabel.textContent = version;
+
+        // Theme alignment (Emerald)
+        const panel = modal.querySelector('.glass-panel');
+        const header = modal.querySelector('div[style*="border-bottom"]');
+        if (panel) panel.style.borderColor = 'var(--accent-emerald)';
+        if (header) header.style.background = 'linear-gradient(90deg, rgba(52,211,153,0.1), transparent)';
+
+        content.innerHTML = `
+            <div style="text-align: center; padding: 60px;">
+                <div class="premium-spinner" style="margin: 0 auto 20px; border-top-color: var(--accent-emerald);"></div>
+                <p style="color: var(--accent-emerald); font-weight: 600; font-size: 1.1rem;">Sanctifying the Word...</p>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 8px;">Loading ${targetBook} ${targetChapter} (${version})</p>
+            </div>
+        `;
+
+        // Set up navigation buttons
+        prevBtn.onclick = () => {
+            if (targetChapter > 1) {
+                this.openChapterModal(targetBook, targetChapter - 1, version, `${targetBook} ${targetChapter - 1}`);
+            } else {
+                this.showNotification('This is the first chapter of the book.', 'info');
+            }
+        };
+        nextBtn.onclick = () => {
+            this.openChapterModal(targetBook, targetChapter + 1, version, `${targetBook} ${targetChapter + 1}`);
+        };
+
+        try {
+            const url = `/api/bibles/passage?version=${version}&book=${encodeURIComponent(targetBook)}&chapter=${targetChapter}`;
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.error || 'Failed to fetch chapter');
+            }
+            
+            const data = await response.json();
+            const verses = data.verses || [];
+
+            if (verses.length === 0) {
+                throw new Error('No verses found for this chapter');
+            }
+
+            content.innerHTML = `
+                <div style="line-height: 2.2; color: var(--text-primary); font-size: 1.25rem; font-family: 'Playfair Display', serif;">
+                    ${verses.map(v => `
+                        <span class="chapter-modal-verse" style="margin-right: 12px; display: inline; position: relative; transition: 0.2s;" onmouseover="this.style.color='var(--accent-gold)'" onmouseout="this.style.color='var(--text-primary)'">
+                            <sup style="color: var(--accent-emerald); font-weight: 800; font-size: 0.75rem; margin-right: 6px; vertical-align: top;">${v.number}</sup>${v.text}
+                        </span>
+                    `).join(' ')}
+                </div>
+                <div style="margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border-subtle); text-align: center;">
+                    <button class="nav-btn" onclick="app.loadPassage('${targetBook}', ${targetChapter}); app.closeChapterModal();" style="padding: 12px 32px; background: var(--accent-emerald-glow); border-color: var(--accent-emerald); color: var(--accent-emerald); font-weight: 600;">
+                        <i class="fas fa-external-link-alt" style="margin-right: 10px;"></i> Open in Main Reader
+                    </button>
+                </div>
+            `;
+            
+            // Scroll to top
+            content.scrollTop = 0;
+
+        } catch (e) {
+            console.error('Chapter modal load error:', e);
+            content.innerHTML = `
+                <div style="padding: 60px; text-align: center; color: var(--accent-error); background: rgba(239,68,68,0.05); border-radius: 20px; margin: 20px;">
+                    <i class="fas fa-exclamation-circle" style="font-size: 3rem; margin-bottom: 20px;"></i>
+                    <h3 style="margin-bottom: 12px; color: var(--text-primary);">Sacred Text Unavailable</h3>
+                    <p style="margin-bottom: 24px; color: var(--text-muted);">${e.message || 'Failed to load full chapter.'}</p>
+                    <button onclick="app.openChapterModal('${targetBook}', ${targetChapter}, '${version}', '${reference}')" class="nav-btn" style="border-color: var(--accent-error); color: var(--accent-error);">
+                        <i class="fas fa-redo" style="margin-right: 8px;"></i> Try Again
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    closeChapterModal() {
+        const modal = document.getElementById('chapterModal');
+        if (modal) modal.style.display = 'none';
     }
 
     showVerseImage(reference) {
@@ -1980,135 +3100,156 @@ class GreenBibleApp {
     }
 
     // ==========================================
-    // Greek/Hebrew Interlinear
+    // AI Sacred Art Illustration
     // ==========================================
-    async showInterlinear(reference, versionCode) {
+    async generateAIIllustration(reference, text, btnElement = null) {
+        const content = this.openStudyModal('AI Sacred Art', reference, '<i class="fas fa-wand-magic-sparkles"></i>', '#a855f7');
+        if (!content) return;
+
+        try {
+            // Refined Prompt: Scripturally relevant masterpiece, strictly NO TEXT/WRITING
+            const basePrompt = `Professional biblical illustration of ${reference}: ${text.substring(0, 200)}. Cinematic digital art, divine atmosphere, ethereal lighting, holy and spiritually profound composition. Historically inspired scriptural setting, stunning visual narrative, masterpiece quality, high fidelity. CRITICAL: No text, no letters, no writing, no labels, no watermark.`;
+            const seed = Math.floor(Math.random() * 1000000);
+            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(basePrompt)}?width=1024&height=1024&nologo=true&seed=${seed}&model=flux`;
+
+            content.innerHTML = `
+                <div style="width: 100%; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); background: #000; min-height: 400px; display: flex; align-items: center; justify-content: center; position: relative;">
+                    <img id="generatedIllustration" src="${imageUrl}" style="width: 100%; height: auto; display: block; opacity: 0; transition: opacity 1.5s ease-in-out;" alt="AI Scripture Illustration">
+                    <div id="artLoadingOverlay" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); z-index: 5;">
+                        <div class="premium-spinner" style="border-top-color: var(--accent-purple);"></div>
+                        <p style="margin-top: 16px; color: var(--accent-purple); font-weight: 600; letter-spacing: 1px;">PAINTING VISION...</p>
+                    </div>
+                </div>
+                <div style="margin-top: 24px; padding: 20px; background: rgba(168,85,247,0.05); border-radius: 12px; border: 1px solid rgba(168,85,247,0.2);">
+                    <p style="font-size: 1.05rem; color: var(--text-primary); font-style: italic; line-height: 1.7; font-family: 'Playfair Display', serif;">
+                        <i class="fas fa-quote-left" style="color: var(--accent-purple); margin-right: 8px; opacity: 0.5;"></i>
+                        ${text}
+                    </p>
+                </div>
+                <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">Seed: ${seed} | Powered by Flux AI</span>
+                    <button class="nav-btn" style="padding: 8px 20px; border-color: var(--accent-purple); color: var(--accent-purple);" onclick="window.open('${imageUrl}', '_blank')">
+                        <i class="fas fa-expand"></i> Full Screen
+                    </button>
+                </div>
+            `;
+
+            const img = document.getElementById('generatedIllustration');
+            const overlay = document.getElementById('artLoadingOverlay');
+            img.onload = () => { 
+                img.style.opacity = '1'; 
+                overlay.style.display = 'none';
+            };
+        } catch (e) {
+            content.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: var(--accent-error);">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 2.5rem; margin-bottom: 16px;"></i>
+                    <p>Artisan was unable to complete the work. Please try again.</p>
+                </div>`;
+        }
+    }
+
+    // ==========================================
+    // AI Bible Commentary
+    // ==========================================
+    async fetchCommentary(reference, btnElement = null) {
+        const content = this.openStudyModal('Scholarly Commentary', reference, '<i class="fas fa-feather-pointed"></i>', '#f59e0b');
+        if (!content) return;
+
+        try {
+            const response = await fetch(`/api/bibles/ai-commentary?reference=${encodeURIComponent(reference)}`);
+            if (!response.ok) throw new Error('Failed to fetch commentary');
+            const payload = await response.json();
+            const text = payload.commentary;
+            if (typeof text !== 'string') throw new Error('Invalid commentary response');
+
+            let html = text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/### (.*?)\n/g, '<h4 style="color: var(--accent-gold); margin: 24px 0 12px 0; font-size: 1.2rem; font-family: \'Playfair Display\', serif; border-left: 3px solid var(--accent-gold); padding-left: 16px;">$1</h4>')
+                .replace(/## (.*?)\n/g, '<h3 style="color: var(--accent-emerald); margin: 32px 0 16px 0; font-size: 1.4rem; font-family: \'Playfair Display\', serif;">$1</h3>')
+                .replace(/\n\n/g, '<p style="margin-bottom: 20px;"></p>')
+                .replace(/\n/g, '<br>')
+                .replace(/\[(.*?)\]/g, '<span style="color: var(--accent-gold); font-weight: 600;">$1</span>'); // Highlight bracketed refs
+
+            content.innerHTML = `
+                <div class="commentary-scroll-container" style="font-size: 1.15rem; line-height: 1.9; color: var(--text-primary); font-family: 'Inter', sans-serif; max-width: 800px; margin: 0 auto;">
+                    ${html}
+                </div>
+                <div style="margin-top: 48px; padding: 24px; background: rgba(245, 158, 11, 0.05); border-radius: 16px; border: 1px solid rgba(245, 158, 11, 0.2); display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 40px; height: 40px; background: var(--accent-gold-glow); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent-gold);">
+                            <i class="fas fa-feather-pointed"></i>
+                        </div>
+                        <div>
+                            <span style="display: block; font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">Scholarly Perspective</span>
+                            <span style="display: block; font-size: 0.7rem; color: var(--text-muted);">Analytical Theology & Historical Context</span>
+                        </div>
+                    </div>
+                    <button class="nav-btn" style="padding: 10px 24px; font-size: 0.85rem; border-color: var(--accent-gold); color: var(--accent-gold);" onclick="app.copyToClipboard(\`${text.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)">
+                        <i class="fas fa-copy"></i> Copy Full Analysis
+                    </button>
+                </div>
+            `;
+        } catch (error) {
+            content.innerHTML = `<p style="color: var(--accent-error); font-size: 1rem; text-align: center; padding: 40px;">Failed to load commentary.</p>`;
+        }
+    }
+
+    // ==========================================
+    // Original Language Interlinear (Greek/Hebrew)
+    // ==========================================
+    async showInterlinear(reference, versionCode, btnElement = null) {
         const parsed = this.parseVerseReference(reference);
         if (!parsed || !parsed.verse) {
             this.showNotification('Interlinear requires a specific verse (e.g. John 3:16)', 'warning');
             return;
         }
 
-        const panelId = `interlinear-${reference.replace(/[\s:]/g, '-')}`;
-        const panel = document.getElementById(panelId);
-        if (!panel) return;
-
-        // Toggle off if already visible
-        if (panel.style.display === 'block') {
-            panel.style.display = 'none';
-            return;
-        }
-
-        panel.style.display = 'block';
-        panel.innerHTML = `
-            <div style="text-align: center; padding: 20px;">
-                <div class="loading-spinner" style="margin: 0 auto 12px; width: 24px; height: 24px;"></div>
-                <p style="color: var(--text-muted); font-size: 0.82rem;">Loading original language data...</p>
-            </div>
-        `;
-
-        const isOT = this.isOldTestament(parsed.book);
-        const originalLang = isOT ? 'Hebrew' : 'Greek';
-        const langIcon = isOT ? '🔤' : 'Αβ';
+        const content = this.openStudyModal('Original Language Interlinear', reference, '<i class="fas fa-pen-nib"></i>', '#3b82f6');
+        if (!content) return;
 
         try {
-            // Use Pollinations AI to generate interlinear data
-            const prompt = `For ${reference}, provide a word-by-word ${originalLang} interlinear breakdown. For each word give: original ${originalLang} word, transliteration, Strong's number if known, English meaning. Return JSON array: [{"original":"...","transliteration":"...","strongs":"...","english":"..."}]. NO REASONING. ONLY OUTPUT THE JSON ARRAY. NO MARKDOWN. NO BACKTICKS.`;
-            const systemPrompt = "You are a JSON API. Output ONLY a raw JSON array. Do not include markdown formatting, backticks, or any conversational text.";
-            const url = `https://text.pollinations.ai/${encodeURIComponent(prompt)}?system=${encodeURIComponent(systemPrompt)}&model=openai&jsonMode=true`;
-
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 25000);
-            const response = await fetch(url, { signal: controller.signal });
-            clearTimeout(timeout);
-
-            let text = await response.text();
-
-            // Parse JSON from response
-            try {
-                const outer = JSON.parse(text);
-                // Handle new API formats that might not have content
-                let contentText = outer.choices?.[0]?.message?.content || outer.content;
-                if (!contentText && outer.reasoning) contentText = text; // Just scan the whole text if content is missing
-                text = contentText || text;
-                if (typeof text !== 'string') text = JSON.stringify(text);
-            } catch(e) {}
-
-            // Aggressively search for a JSON array pattern anywhere in the response
-            const arrayMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
-            let jsonStr = arrayMatch ? arrayMatch[0] : null;
-
-            let words = [];
-            if (jsonStr) {
-                try { words = JSON.parse(jsonStr); } catch(e) {}
-            }
-
-            // Fallback for demo purposes if the free AI API timed out or hallucinated reasoning
-            if (words.length === 0) {
-                if (reference.toLowerCase().includes('john 3:16')) {
-                    words = [
-                        {"original":"Οὕτως","transliteration":"Houtōs","strongs":"G3779","english":"For so"},
-                        {"original":"γὰρ","transliteration":"gar","strongs":"G1063","english":"for"},
-                        {"original":"ἠγάπησεν","transliteration":"ēgapēsen","strongs":"G25","english":"loved"},
-                        {"original":"ὁ","transliteration":"ho","strongs":"G3588","english":"-"},
-                        {"original":"Θεὸς","transliteration":"Theos","strongs":"G2316","english":"God"},
-                        {"original":"τὸν","transliteration":"ton","strongs":"G3588","english":"the"},
-                        {"original":"κόσμον","transliteration":"kosmon","strongs":"G2889","english":"world"}
-                    ];
-                } else if (reference.toLowerCase().includes('genesis 1:1')) {
-                    words = [
-                        {"original":"בְּרֵאשִׁית","transliteration":"Bereshit","strongs":"H7225","english":"In the beginning"},
-                        {"original":"בָּרָא","transliteration":"bara","strongs":"H1254","english":"created"},
-                        {"original":"אֱלֹהִים","transliteration":"Elohim","strongs":"H430","english":"God"},
-                        {"original":"אֵת","transliteration":"et","strongs":"H853","english":"-"},
-                        {"original":"הַשָּׁמַיִם","transliteration":"hashamayim","strongs":"H8064","english":"the heavens"},
-                        {"original":"וְאֵת","transliteration":"ve'et","strongs":"H853","english":"and"},
-                        {"original":"הָאָרֶץ","transliteration":"ha'aretz","strongs":"H776","english":"the earth"}
-                    ];
-                }
-            }
+            const url = `/api/bibles/interlinear?reference=${encodeURIComponent(reference)}`;
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Failed to fetch interlinear data');
+            
+            const result = await response.json();
+            const words = result.data || [];
+            const originalLang = result.originalLang || (this.isOldTestament(parsed.book) ? 'Hebrew' : 'Greek');
+            const isOT = originalLang === 'Hebrew';
 
             if (words.length === 0) {
-                panel.innerHTML = `
-                    <div style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
-                        <p style="margin-bottom: 12px;">Interlinear data currently unavailable due to high API traffic.</p>
-                        <button onclick="app.showInterlinear('${reference}', '${versionCode}')" class="nav-btn" style="padding: 6px 16px; font-size: 0.75rem; border-color: var(--accent-gold); color: var(--accent-gold);">🔄 Retry Fetch</button>
-                    </div>
-                `;
+                content.innerHTML = `
+                    <div style="padding: 40px; text-align: center; color: var(--text-muted);">
+                        <p>Interlinear data currently unavailable for this verse.</p>
+                    </div>`;
                 return;
             }
 
-            panel.innerHTML = `
-                <div style="background: linear-gradient(135deg, rgba(245,197,66,0.06), rgba(52,211,153,0.04)); border: 1px solid rgba(245,197,66,0.2); border-radius: 16px; padding: 20px; animation: fadeSlideUp 0.4s ease-out;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <span style="font-size: 1.2rem;">${langIcon}</span>
-                            <h4 style="margin: 0; font-size: 0.85rem; color: var(--accent-gold); font-family: 'Inter', sans-serif; text-transform: uppercase; letter-spacing: 1px;">${originalLang} Interlinear — ${reference}</h4>
+            content.innerHTML = `
+                <div style="display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; ${isOT ? 'flex-direction: row-reverse;' : ''}">
+                    ${words.map(w => `
+                        <div class="interlinear-word" style="background: rgba(10, 15, 13, 0.4); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 16px; text-align: center; min-width: 120px; transition: all 0.3s ease; cursor: default;">
+                            <div style="font-size: 1.6rem; color: var(--accent-gold); font-weight: 600; margin-bottom: 8px; font-family: 'Playfair Display', serif; direction: ${isOT ? 'rtl' : 'ltr'};">${this.escapeHtml(w.word || w.original || '')}</div>
+                            <div style="font-size: 0.85rem; color: var(--accent-emerald); font-style: italic; margin-bottom: 6px; font-family: 'Inter', sans-serif; letter-spacing: 0.5px;">${this.escapeHtml(w.transliteration || '')}</div>
+                            <div style="font-size: 1.05rem; color: var(--text-primary); font-weight: 600; margin-bottom: 8px;">${this.escapeHtml(w.translation || w.english || '')}</div>
+                            ${w.parsing ? `<div style="font-size: 0.7rem; color: var(--text-muted); font-style: normal; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; opacity: 0.8;">${this.escapeHtml(w.parsing)}</div>` : ''}
+                            ${w.strongs ? `
+                                <div onclick="document.getElementById('searchInput').value='${w.strongs}'; app.performSearch(); app.closeStudyModal();" 
+                                     style="font-size: 0.65rem; color: var(--accent-gold); font-family: 'JetBrains Mono', monospace; background: rgba(245, 197, 66, 0.08); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(245, 197, 66, 0.2); cursor: pointer; display: inline-block; transition: 0.2s;"
+                                     onmouseover="this.style.background='rgba(245, 197, 66, 0.15)'" onmouseout="this.style.background='rgba(245, 197, 66, 0.08)'">
+                                    <i class="fas fa-search" style="font-size: 0.6rem; margin-right: 4px;"></i> ${this.escapeHtml(w.strongs)}
+                                </div>` : ''}
                         </div>
-                        <button onclick="document.getElementById('${panelId}').style.display='none'" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1rem;">✕</button>
-                    </div>
-                    <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;">
-                        ${words.map(w => `
-                            <div class="interlinear-word" style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 10px 14px; text-align: center; min-width: 80px; transition: all 0.2s; cursor: default;" onmouseover="this.style.borderColor='var(--accent-gold)'; this.style.background='rgba(245,197,66,0.08)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.06)'; this.style.background='rgba(0,0,0,0.25)'">
-                                <div style="font-size: 1.1rem; color: var(--accent-gold); font-weight: 600; margin-bottom: 4px; direction: ${isOT ? 'rtl' : 'ltr'};">${this.escapeHtml(w.original || '')}</div>
-                                <div style="font-size: 0.75rem; color: var(--accent-emerald); font-style: italic; margin-bottom: 2px;">${this.escapeHtml(w.transliteration || '')}</div>
-                                <div style="font-size: 0.78rem; color: var(--text-primary); font-weight: 500;">${this.escapeHtml(w.english || '')}</div>
-                                ${w.strongs ? `<div style="font-size: 0.6rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; margin-top: 3px;">${this.escapeHtml(w.strongs)}</div>` : ''}
-                            </div>
-                        `).join('')}
-                    </div>
-                    <p style="text-align: center; color: var(--text-muted); font-size: 0.7rem; margin-top: 12px; font-style: italic;">
-                        AI-generated interlinear. For academic study, cross-check with printed lexicons.
-                    </p>
+                    `).join('')}
+                </div>
+                <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; color: var(--text-muted); font-size: 0.75rem;">
+                    <span>Primary Language: <strong>${originalLang}</strong></span>
+                    <span>Source: Sacred Manuscripts & Concordance</span>
                 </div>
             `;
         } catch (error) {
-            if (error.name === 'AbortError') {
-                panel.innerHTML = `<div style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">Request timed out. Please try again.</div>`;
-            } else {
-                console.error('Interlinear error:', error);
-                panel.innerHTML = `<div style="padding: 16px; text-align: center; color: #ef4444; font-size: 0.85rem;">Failed to load interlinear data. Please try again.</div>`;
-            }
+            content.innerHTML = `<p style="color: var(--accent-error); font-size: 1rem; text-align: center; padding: 40px;">Failed to load interlinear data.</p>`;
         }
     }
 
@@ -2122,17 +3263,154 @@ class GreenBibleApp {
     }
 
     // ==========================================
+    // Verse Connections (Combined Alt Verses & Cross Refs)
+    // ==========================================
+    async showVerseConnections(reference, book, chapter, verse, currentVersionCode, btnElement = null) {
+        const content = this.openStudyModal('Verse Connections', reference, '<i class="fas fa-layer-group"></i>', '#f43f5e');
+        if (!content) return;
+
+        content.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 32px;">
+                <div id="alt-verses-section-${this.refPanelSlug(reference)}">
+                    <div style="text-align: center; padding: 20px;">
+                        <div class="loading-spinner" style="margin: 0 auto 12px; width: 24px; height: 24px;"></div>
+                        <p style="color: var(--text-muted); font-size: 0.82rem;">Loading other translations...</p>
+                    </div>
+                </div>
+                <div style="height: 1px; background: var(--border-subtle);"></div>
+                <div id="cross-refs-section-${this.refPanelSlug(reference)}">
+                    <div style="text-align: center; padding: 20px;">
+                        <div class="loading-spinner" style="margin: 0 auto 12px; width: 24px; height: 24px;"></div>
+                        <p style="color: var(--text-muted); font-size: 0.82rem;">Finding related scriptures...</p>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Fetch both datasets
+        this.fetchAltVersesForSection(reference, book, chapter, verse, currentVersionCode, content.querySelector(`[id^="alt-verses-section-"]`));
+        this.fetchCrossRefsForSection(reference, content.querySelector(`[id^="cross-refs-section-"]`));
+    }
+
+    async fetchAltVersesForSection(refId, book, chapter, verse, currentVersionCode, container) {
+        if (!container) return;
+        try {
+            const exclude = new Set([currentVersionCode].filter(Boolean));
+            const popularFallback = [
+                { code: 'KJV', name: 'King James Version' },
+                { code: 'WEB', name: 'World English Bible' },
+                { code: 'BSB', name: 'Berean Standard Bible' },
+                { code: 'NET', name: 'NET Bible' },
+                { code: 'YLT', name: "Young's Literal Translation" },
+                { code: 'ASV', name: 'American Standard Version' },
+                { code: 'SWAHILI', name: 'Swahili Contemporary' },
+                { code: 'AMHARIC', name: 'Amharic Bible' },
+            ].filter(v => !exclude.has(v.code));
+
+            const merged = this.selectedVersions.filter(v => v !== null && !exclude.has(v.code));
+            for (const v of popularFallback) {
+                if (merged.length >= 8) break;
+                if (!merged.some(m => m.code === v.code)) merged.push(v);
+            }
+
+            const promises = merged.map(async (v) => {
+                try {
+                    const response = await fetch(`/api/bibles/passage?version=${v.code}&book=${encodeURIComponent(book)}&chapter=${chapter}&verse=${verse}`);
+                    if (!response.ok) return null;
+                    const data = await response.json();
+                    return { version: v.code, name: v.name, text: data.text || (data.verses && data.verses[0] && data.verses[0].text) };
+                } catch (e) { return null; }
+            });
+
+            const results = (await Promise.all(promises)).filter(r => r && r.text);
+
+            if (results.length === 0) {
+                container.innerHTML = `<p style="color: var(--text-muted); font-size: 0.8rem; padding: 10px;">No other translations found.</p>`;
+                return;
+            }
+
+            container.innerHTML = `
+                <div style="padding: 0 0 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between;">
+                    <span style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--accent-emerald);">
+                        <i class="fas fa-layer-group" style="margin-right: 6px;"></i> Same Verse
+                    </span>
+                    <span style="font-size: 0.65rem; color: var(--text-muted); opacity: 0.7;">Click a version to read full chapter</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    ${results.map(r => `
+                        <div onclick="app.openChapterModal('${book.replace(/'/g, "\\'")}', ${chapter}, '${r.version}', '${refId}')" style="cursor: pointer; transition: background 0.2s; padding: 8px; border-radius: 6px;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                <span style="font-weight: 700; color: var(--accent-gold); font-size: 0.75rem;">${r.version}</span>
+                                <span style="font-size: 0.65rem; color: var(--text-muted);">${r.name}</span>
+                            </div>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; font-family: 'Playfair Display', serif;">${r.text}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        } catch (error) {
+            container.innerHTML = `<p style="color: var(--accent-error); font-size: 0.8rem;">Error loading translations.</p>`;
+        }
+    }
+
+    async fetchCrossRefsForSection(reference, container) {
+        if (!container) return;
+        try {
+            const response = await fetch(`/api/bibles/ai-cross-references?reference=${encodeURIComponent(reference)}`);
+            if (!response.ok) throw new Error('Failed to fetch');
+            const data = await response.json();
+
+            const crossRefs = data.references || data.crossReferences || [];
+            if (crossRefs.length === 0) {
+                container.innerHTML = `<p style="color: var(--text-muted); font-size: 0.8rem; padding: 10px;">No cross-references found for this specific verse yet.</p>`;
+                return;
+            }
+
+            container.innerHTML = `
+                <div style="padding: 0 0 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <span style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--accent-gold);">
+                        <i class="fas fa-link" style="margin-right: 6px;"></i> Divine Connections
+                    </span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    ${crossRefs.map(ref => `
+                        <div onclick="app.setSearch('${this.escapeJS(ref.reference)}'); app.performSearch()" 
+                             style="cursor: pointer; transition: all 0.3s; padding: 16px; border-radius: 12px; background: var(--bg-elevated); border: 1px solid var(--border-subtle);" 
+                             onmouseover="this.style.background='var(--bg-card-hover)'; this.style.borderColor='var(--accent-gold)'; this.style.transform='translateX(8px)'" 
+                             onmouseout="this.style.background='var(--bg-elevated)'; this.style.borderColor='var(--border-subtle)'; this.style.transform='translateX(0)'">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="font-weight: 700; color: var(--accent-gold); font-size: 0.9rem;">${ref.reference}</span>
+                                <span style="font-size: 0.7rem; color: var(--text-muted); background: rgba(245,197,66,0.1); padding: 2px 8px; border-radius: 10px;">Theological Connection</span>
+                            </div>
+                            <p style="font-size: 0.95rem; color: var(--text-secondary); line-height: 1.6; font-family: 'Playfair Display', serif;">${ref.reason || ref.text || 'Explore this related passage to see how it illuminates the truth.'}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        } catch (error) {
+            container.innerHTML = `<p style="color: var(--accent-error); font-size: 0.8rem;">Error loading cross-references.</p>`;
+        }
+    }
+
+    // ==========================================
     // Cross References / Alternative Verses
     // ==========================================
-    async showCrossReferences(reference) {
+    async showCrossReferences(reference, btnElement = null) {
         const parsed = this.parseVerseReference(reference);
         if (!parsed || !parsed.verse) {
             this.showNotification('Cross references require a specific verse (e.g. John 3:16)', 'warning');
             return;
         }
-
-        const panelId = `crossrefs-${reference.replace(/[\s:]/g, '-')}`;
-        const panel = document.getElementById(panelId);
+        const card = btnElement ? (btnElement.closest('.result-card') || btnElement.closest('div[style*="flex-direction: column"]')) : null;
+        let panel = null;
+        if (card) {
+            panel = card.querySelector(`[id^="crossrefs-"]`);
+        }
+        
+        if (!panel) {
+            const panelId = `crossrefs-${this.refPanelSlug(reference)}`;
+            panel = document.getElementById(panelId);
+        }
         if (!panel) return;
 
         // Toggle off if already visible
@@ -2140,6 +3418,9 @@ class GreenBibleApp {
             panel.style.display = 'none';
             return;
         }
+
+        // Close other panels
+        this.closeAllInlinePanels(reference);
 
         panel.style.display = 'block';
         panel.innerHTML = `
@@ -2150,33 +3431,18 @@ class GreenBibleApp {
         `;
 
         try {
-            const prompt = `For ${reference}, list the top 6 most relevant cross-reference Bible verses. For each give: reference, a brief reason why it relates. Return JSON array: [{"reference":"Book Chapter:Verse","reason":"..."}]. Only return the JSON array.`;
-            const systemPrompt = "You are a JSON API for Bible cross-references. Output ONLY a raw JSON array. No markdown.";
-            const url = `https://text.pollinations.ai/${encodeURIComponent(prompt)}?system=${encodeURIComponent(systemPrompt)}&model=openai`;
-
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 20000);
-            const response = await fetch(url, { signal: controller.signal });
+            const response = await fetch(
+                `/api/bibles/ai-cross-references?reference=${encodeURIComponent(reference)}`,
+                { signal: controller.signal }
+            );
             clearTimeout(timeout);
+            if (!response.ok) throw new Error('Failed to fetch cross references');
 
-            let text = await response.text();
-            try {
-                const outer = JSON.parse(text);
-                text = outer.choices?.[0]?.message?.content || outer.content || text;
-                if (typeof text !== 'string') text = JSON.stringify(text);
-            } catch(e) {}
-
-            const mdMatch = text.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/);
-            let jsonStr = mdMatch ? mdMatch[1] : null;
-            if (!jsonStr) {
-                const s = text.indexOf('['), e = text.lastIndexOf(']');
-                if (s !== -1 && e > s) jsonStr = text.substring(s, e + 1);
-            }
-
-            let refs = [];
-            if (jsonStr) {
-                try { refs = JSON.parse(jsonStr); } catch(e) {}
-            }
+            const payload = await response.json();
+            let refs = payload.references || [];
+            if (!Array.isArray(refs)) refs = [];
 
             if (refs.length === 0) {
                 panel.innerHTML = `
@@ -2193,13 +3459,13 @@ class GreenBibleApp {
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <span style="font-size: 1.1rem;">🔗</span>
-                            <h4 style="margin: 0; font-size: 0.85rem; color: var(--accent-emerald); font-family: 'Inter', sans-serif; text-transform: uppercase; letter-spacing: 1px;">Related Verses — ${reference}</h4>
+                            <h4 style="margin: 0; font-size: 0.85rem; color: var(--accent-emerald); font-family: 'Inter', sans-serif; text-transform: uppercase; letter-spacing: 1px;">Cross-References — Thematically linked verses</h4>
                         </div>
                         <button onclick="document.getElementById('${panelId}').style.display='none'" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1rem;">✕</button>
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px;">
                         ${refs.map(r => `
-                            <div class="crossref-item" onclick="document.getElementById('searchInput').value='${this.escapeHtml(r.reference)}'; app.performSearch();" style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 12px 16px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent-emerald)'; this.style.background='rgba(52,211,153,0.06)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.05)'; this.style.background='rgba(0,0,0,0.2)'">
+                            <div class="crossref-item" onclick="document.getElementById('searchInput').value='${this.escapeHtml(r.reference)}'; app.performSearch();" style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 12px 16px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent-emerald)'; this.style.background='rgba(52,211,153,0.06)'" onmouseout="this.style.borderColor='var(--border-subtle)'; this.style.background='var(--bg-card)'">
                                 <div style="color: var(--accent-emerald); font-weight: 700; font-size: 0.88rem; font-family: 'JetBrains Mono', monospace; margin-bottom: 4px;">${this.escapeHtml(r.reference)}</div>
                                 <div style="color: var(--text-muted); font-size: 0.78rem; line-height: 1.4;">${this.escapeHtml(r.reason || '')}</div>
                             </div>
@@ -2215,7 +3481,7 @@ class GreenBibleApp {
                 panel.innerHTML = `<div style="padding: 16px; text-align: center; color: var(--text-muted);">Request timed out. Please try again.</div>`;
             } else {
                 console.error('Cross-reference error:', error);
-                panel.innerHTML = `<div style="padding: 16px; text-align: center; color: #ef4444;">Failed to load cross references.</div>`;
+                panel.innerHTML = `<div style="padding: 16px; text-align: center; color: var(--accent-error);">Failed to load cross references.</div>`;
             }
         }
     }
@@ -2223,10 +3489,16 @@ class GreenBibleApp {
     // ==========================================
     // Compare Section - Inline Search
     // ==========================================
-    async compareSearch() {
+    async compareSearch(passedQuery = null) {
+        if (passedQuery) {
+            this.showView('compare');
+            const input = document.getElementById('compareSearchInput');
+            if (input) input.value = passedQuery;
+        }
+
         const input = document.getElementById('compareSearchInput');
-        if (!input) return;
-        const query = input.value.trim();
+        if (!input && !passedQuery) return;
+        const query = passedQuery || input.value.trim();
         if (!query) {
             this.showNotification('Enter a verse reference to search', 'warning');
             return;
@@ -2271,18 +3543,21 @@ class GreenBibleApp {
             }
 
             resultsDiv.innerHTML = validResults.map(({ version, verse }) => {
-                const safeRef = this.escapeHtml(verse.reference || query);
-                const safeText = this.escapeHtml(verse.text || '').substring(0, 200);
+                const refRaw = verse.reference || query;
+                const safeRef = this.escapeHtml(refRaw);
+                const jsSafeRef = this.escapeJS(refRaw);
+                const preview = this.escapeHtml((verse.text || '').substring(0, 200));
+                const jsSafeFullText = this.escapeJS(verse.text || '');
                 return `
-                    <div style="display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px; border-radius: 10px; background: rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.04); transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent-emerald)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.04)'">
+                    <div style="display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px; border-radius: 10px; background: var(--bg-card); border: 1px solid var(--border-subtle); transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent-emerald)'" onmouseout="this.style.borderColor='var(--border-subtle)'">
                         <div style="flex: 1; min-width: 0;">
                             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
                                 <span style="font-weight: 700; color: var(--accent-emerald); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;">${version.code}</span>
                                 <span style="color: var(--text-muted); font-size: 0.7rem;">${version.language || ''}</span>
                             </div>
-                            <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5; margin: 0; font-family: 'Playfair Display', serif;">${safeText}${verse.text?.length > 200 ? '…' : ''}</p>
+                            <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5; margin: 0; font-family: 'Playfair Display', serif;">${preview}${verse.text?.length > 200 ? '…' : ''}</p>
                         </div>
-                        <button onclick="app.addToCompareSlot('${safeRef}', \`${safeText}\`, '${version.code}')" style="padding: 8px 14px; background: var(--accent-emerald-glow); color: var(--accent-emerald); border: 1px solid var(--border-accent); border-radius: 8px; cursor: pointer; font-size: 0.75rem; font-weight: 600; white-space: nowrap; transition: all 0.2s; font-family: 'Inter', sans-serif;" onmouseover="this.style.background='var(--accent-emerald)'; this.style.color='white'" onmouseout="this.style.background='var(--accent-emerald-glow)'; this.style.color='var(--accent-emerald)'">
+                        <button onclick="app.addToCompareSlot('${jsSafeRef}', \`${jsSafeFullText}\`, '${version.code}')" style="padding: 8px 14px; background: var(--accent-emerald-glow); color: var(--accent-emerald); border: 1px solid var(--border-accent); border-radius: 8px; cursor: pointer; font-size: 0.75rem; font-weight: 600; white-space: nowrap; transition: all 0.2s; font-family: 'Inter', sans-serif;" onmouseover="this.style.background='var(--accent-emerald)'; this.style.color='white'" onmouseout="this.style.background='var(--accent-emerald-glow)'; this.style.color='var(--accent-emerald)'">
                             + Add
                         </button>
                     </div>
@@ -2291,7 +3566,7 @@ class GreenBibleApp {
 
         } catch (error) {
             console.error('Compare search error:', error);
-            resultsDiv.innerHTML = `<div style="text-align: center; padding: 20px; color: #ef4444;">Search failed. Please try again.</div>`;
+            resultsDiv.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--accent-error);">Search failed. Please try again.</div>`;
         }
     }
 
@@ -2351,11 +3626,22 @@ class GreenBibleApp {
         } catch (error) {
             console.error('Offline save failed:', error);
             this.showNotification('Failed to save chapter for offline.', 'error');
-            if (btn) btn.innerHTML = '<i class="fas fa-download" style="font-size: 0.8rem; color: #ef4444;"></i>';
+            if (btn) btn.innerHTML = '<i class="fas fa-download" style="font-size: 0.8rem; color: var(--accent-error);"></i>';
         }
     }
 
+    /** Maps legacy or typo view ids to real `#hub-*` sections so the UI never goes blank. */
+    normalizeHubView(view) {
+        const v = String(view || '').trim();
+        if (v === 'library') return 'read';
+        if (v === 'home') return 'search';
+        const valid = new Set(['search', 'read', 'compare', 'bookmarks', 'sermons']);
+        return valid.has(v) ? v : 'search';
+    }
+
     showView(view) {
+        view = this.normalizeHubView(view);
+
         // Pause audio when moving away from the sermon/transcript views
         if (view !== 'sermons' && view !== 'sermon' && view !== 'transcript') {
             this.stopGlobalAudio();
@@ -2376,11 +3662,12 @@ class GreenBibleApp {
         // Update mobile bottom nav UI
         document.querySelectorAll('.bottom-nav-item').forEach(item => {
             item.classList.remove('active');
-            // Check for both 'search' (bible) and other tab names
             const icon = item.querySelector('i');
+            if (!icon) return;
             if (view === 'search' && icon.classList.contains('fa-search')) item.classList.add('active');
             if (view === 'sermons' && icon.classList.contains('fa-microphone-alt')) item.classList.add('active');
-            if (view === 'saved' && icon.classList.contains('fa-bookmark')) item.classList.add('active');
+            if (view === 'read' && icon.classList.contains('fa-book-open')) item.classList.add('active');
+            if (view === 'bookmarks' && icon.classList.contains('fa-bookmark')) item.classList.add('active');
             if (view === 'timeline' && icon.classList.contains('fa-history')) item.classList.add('active');
         });
 
@@ -2403,9 +3690,26 @@ class GreenBibleApp {
 
         // Specific Hub Logic
         if (view === 'sermons') this.fetchSermons();
-        if (view === 'read' && !this.pdfDoc) {
-            document.getElementById('libraryContainer').style.display = 'block';
-            document.getElementById('materialViewerContainer').style.display = 'none';
+        if (view === 'read') {
+            const readSection = document.getElementById('readSection');
+            if (readSection) {
+                readSection.style.opacity = '1';
+                readSection.style.display = 'block';
+            }
+            
+            const isViewingPdf = this.pdfDoc || (document.getElementById('materialViewerContainer') && document.getElementById('materialViewerContainer').style.display === 'block');
+            if (!isViewingPdf) {
+                const libContainer = document.getElementById('libraryContainer');
+                const viewerContainer = document.getElementById('materialViewerContainer');
+                if (libContainer) libContainer.style.display = 'block';
+                if (viewerContainer) viewerContainer.style.display = 'none';
+                
+                // Restore last read position and load the chapter text
+                const lastVersion = localStorage.getItem('lastReadVersion') || 'KJV';
+                const lastBook = localStorage.getItem('lastReadBook') || 'genesis';
+                const lastChapter = localStorage.getItem('lastReadChapter') || '1';
+                this.updateReaderSelects(lastVersion, lastBook, lastChapter).then(() => this.loadReaderChapter());
+            }
         }
 
         // Show recent searches on search view
@@ -2420,6 +3724,29 @@ class GreenBibleApp {
     // ==========================================
     // Sermons Logic
     // ==========================================
+    
+    async syncUserData() {
+        try {
+            const dataToSync = {
+                progress: this.sermonProgress || {},
+                bookmarks: this.bookmarkedSermons || [],
+                notes: JSON.parse(localStorage.getItem('sermonNotes') || '{}')
+            };
+
+            const response = await fetch('/api/sermons/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dataToSync)
+            });
+
+            if (response.ok) {
+                console.log('✅ User progress & notes synced to server successfully.');
+            }
+        } catch (e) {
+            console.warn('⚠️ Could not sync user data to server:', e);
+        }
+    }
+
     async fetchSermons(forceRefresh = false) {
         const grid = document.getElementById('sermonsGrid');
         if (!grid) return;
@@ -2444,7 +3771,8 @@ class GreenBibleApp {
                 </div>
             `;
             
-            const response = await fetch(`/api/sermons?t=${Date.now()}`);
+            // Request full=true to cache all details including transcripts for offline use
+            const response = await fetch(`/api/sermons?full=true&t=${Date.now()}`);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             
             const data = await response.json();
@@ -2453,20 +3781,24 @@ class GreenBibleApp {
             // Update cache
             this.sermonsCache = sermons;
             this.sermonsCacheTime = Date.now();
-            console.log(`✅ Cached ${sermons.length} sermons`);
+            console.log(`✅ Cached ${sermons.length} sermons for offline use`);
             localStorage.setItem(SERMONS_CACHE_KEY, JSON.stringify(sermons));
             localStorage.setItem(SERMONS_CACHE_TIME_KEY, Date.now().toString());
             
             this.allSermons = sermons;
             this.renderSermons(sermons);
+            
+            // Sync user data to server
+            this.syncUserData();
+            
         } catch (error) {
             console.error('Sermons fetch error:', error);
             grid.innerHTML = `
                 <div style="grid-column: 1/-1; text-align: center; padding: 60px; background: rgba(239, 68, 68, 0.05); border-radius: 12px; border: 1px solid rgba(239, 68, 68, 0.1);">
-                    <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #ef4444; margin-bottom: 16px;"></i>
+                    <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: var(--accent-error); margin-bottom: 16px;"></i>
                     <h4 style="color: var(--text-primary); margin-bottom: 8px;">Unable to load messages</h4>
                     <p style="color: var(--text-muted); margin-bottom: 24px; font-size: 0.9rem;">Please check your connection and try again.</p>
-                    <button class="search-btn" onclick="app.fetchSermons(true)" style="background: #ef4444; border-color: #ef4444;">
+                    <button class="search-btn" onclick="app.fetchSermons(true)" style="background: #ef4444; border-color: var(--accent-error);">
                         <i class="fas fa-redo" style="margin-right: 8px;"></i> Retry Connection
                     </button>
                 </div>
@@ -2548,7 +3880,7 @@ class GreenBibleApp {
                             <span style="display: flex; align-items: center; gap: 8px;"><i class="fas fa-list-ul" style="font-size: 0.8rem; opacity: 0.6;"></i> ${p.name}</span> 
                             <div style="display: flex; align-items: center; gap: 6px;">
                                 <span class="title-badge">${p.sermons.length}</span>
-                                <i class="fas fa-trash" style="font-size: 0.7rem; color: #ef4444; opacity: 0.4; cursor: pointer;" onclick="event.stopPropagation(); app.deletePlaylist('${p.id}')"></i>
+                                <i class="fas fa-trash" style="font-size: 0.7rem; color: var(--accent-error); opacity: 0.4; cursor: pointer;" onclick="event.stopPropagation(); app.deletePlaylist('${p.id}')"></i>
                             </div>
                         </div>
                     `).join('')}
@@ -2615,9 +3947,10 @@ class GreenBibleApp {
                             <i class="fas fa-bookmark bookmark-icon" style="color: ${isBookmarked ? 'var(--accent-gold)' : '#fff'}; font-size: 0.9rem;"></i>
                         </button>
                         <button class="nav-btn" style="position: absolute; top: 10px; right: 54px; width: 36px; height: 36px; padding: 0; border-radius: 50%; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);" onclick="event.stopPropagation(); app.showPlaylistSelector('${s.id}');" title="Add to Playlist">
-                            <i class="fas fa-plus" style="color: #fff; font-size: 0.9rem;"></i>
+                            <i class="fas fa-plus" style="color: var(--text-primary); font-size: 0.9rem;"></i>
                         </button>
                         <span style="position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-family: 'JetBrains Mono', monospace;">MESSAGE</span>
+                        ${s.transcript ? `<span style="position: absolute; bottom: 10px; left: 10px; background: rgba(16, 185, 129, 0.9); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; backdrop-filter: blur(4px); box-shadow: 0 2px 4px rgba(0,0,0,0.2);" title="Available Offline"><i class="fas fa-cloud-download-alt"></i> Cached</span>` : ''}
                         ${this.renderProgressBar(s.id)}
                     </div>
                     <div style="padding: 20px;">
@@ -2643,75 +3976,6 @@ class GreenBibleApp {
     }
 
     // --- Sermon Bookmarks & Playlists ---
-    isSermonBookmarked(id) {
-        return (this.bookmarkedSermons || []).includes(id);
-    }
-
-    toggleSermonBookmark(id, title = '') {
-        if (!this.bookmarkedSermons) this.bookmarkedSermons = [];
-        const idx = this.bookmarkedSermons.indexOf(id);
-        if (idx > -1) {
-            this.bookmarkedSermons.splice(idx, 1);
-            this.showNotification('Bookmark removed', 'info');
-        } else {
-            this.bookmarkedSermons.push(id);
-            this.showNotification(`Bookmarked: ${title}`, 'success');
-        }
-        localStorage.setItem('bookmarkedSermons', JSON.stringify(this.bookmarkedSermons));
-        // Refresh the card's bookmark icon
-        const icon = document.querySelector(`#sermon-card-${id} .bookmark-icon`);
-        if (icon) {
-            icon.style.color = this.isSermonBookmarked(id) ? 'var(--accent-gold)' : '#fff';
-        }
-    }
-
-    renderProgressBar(sermonId) {
-        const progress = this.sermonProgress ? this.sermonProgress[sermonId] : null;
-        if (!progress || !progress.percent) return '';
-        const pct = Math.min(100, Math.round(progress.percent));
-        return `<div style="position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: rgba(0,0,0,0.5);">
-            <div style="height: 100%; width: ${pct}%; background: var(--accent-emerald); transition: width 0.3s;"></div>
-        </div>`;
-    }
-
-    filterSermons(category) {
-        this.currentSermonFilter = category;
-        this.renderSermons(this.allSermons || [], category);
-    }
-
-    performSermonSearch(query) {
-        if (!query || !query.trim()) {
-            this.renderSermons(this.allSermons || []);
-            return;
-        }
-        const q = query.toLowerCase().trim();
-        const filtered = (this.allSermons || []).filter(s => {
-            const searchable = `${s.title || ''} ${s.summary || ''} ${s.category || ''}`.toLowerCase();
-            return searchable.includes(q);
-        });
-        this.renderSermons(filtered);
-    }
-
-    sortSermons(sortBy) {
-        if (!this.allSermons) return;
-
-        let sorted = [...this.allSermons];
-        switch (sortBy) {
-            case 'oldest':
-                sorted.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
-                break;
-            case 'alphabetical':
-                sorted.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
-                break;
-            case 'newest':
-            default:
-                sorted.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-                break;
-        }
-        this.allSermons = sorted;
-        this.renderSermons(sorted);
-    }
-
     showPlaylistSelector(sermonId) {
         const playlists = this.sermonPlaylists || [];
         if (playlists.length === 0) {
@@ -2930,9 +4194,17 @@ class GreenBibleApp {
                     });
 
                     html += `
-                        <div class="transcript-line" data-time="${chunkStartTime.toFixed(2)}" style="margin-bottom: 8px; padding: 6px 10px; border-radius: 6px; cursor: pointer; transition: background 0.2s, border-left 0.2s;" onclick="app.seekSermon(${chunkStartTime.toFixed(2)})">
-                            <span style="opacity: 0.5; font-size: 0.7em; margin-right: 8px; font-family: monospace;">[${this.formatTime(chunkStartTime)}]</span>
-                            ${wordHtml}
+                        <div class="transcript-line" data-time="${chunkStartTime.toFixed(2)}" style="margin-bottom: 8px; padding: 6px 10px; border-radius: 6px; cursor: pointer; transition: background 0.2s, border-left 0.2s; display: flex; align-items: flex-start; gap: 12px;" onclick="app.seekSermon(${chunkStartTime.toFixed(2)})">
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 45px;">
+                                <span style="opacity: 0.5; font-size: 0.7em; font-family: monospace;">[${this.formatTime(chunkStartTime)}]</span>
+                                <div style="display: flex; gap: 2px;">
+                                    <i class="fas fa-share-alt transcript-action-icon" style="font-size: 0.65rem; color: var(--text-muted); cursor: pointer; opacity: 0;" title="Share this moment" 
+                                       onclick="event.stopPropagation(); app.shareSermonTimestamp('${this.currentSermon?.id}', ${chunkStartTime}, '${this.escapeHtml(this.currentSermon?.title || 'Message')}')"></i>
+                                    <i class="fas fa-copy transcript-action-icon" style="font-size: 0.65rem; color: var(--text-muted); cursor: pointer; opacity: 0;" title="Copy this segment" 
+                                       onclick="event.stopPropagation(); app.copyToClipboard('${this.escapeJS(chunk.join(' '))}')"></i>
+                                </div>
+                            </div>
+                            <div style="flex: 1;">${wordHtml}</div>
                         </div>
                     `;
                 });
@@ -2976,10 +4248,14 @@ class GreenBibleApp {
             }).join(' ');
             
             const timestampLink = `
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
                     <span class="timestamp-link" style="color: var(--accent-emerald); font-family: monospace; font-size: 0.9em; font-weight: bold;" onclick="app.seekSermon(${startSecs})">[${timeString}]</span>
-                    <i class="fas fa-share-alt" style="font-size: 0.75rem; color: var(--text-muted); cursor: pointer; opacity: 0; transition: opacity 0.2s;" title="Share this moment" 
-                       onclick="event.stopPropagation(); app.shareSermonTimestamp('${this.currentSermon?.id}', ${startSecs}, '${this.escapeHtml(this.currentSermon?.title || 'Message')}')"></i>
+                    <div style="display: flex; gap: 4px;">
+                        <i class="fas fa-share-alt transcript-action-icon" style="font-size: 0.75rem; color: var(--text-muted); cursor: pointer; opacity: 0;" title="Share this moment" 
+                           onclick="event.stopPropagation(); app.shareSermonTimestamp('${this.currentSermon?.id}', ${startSecs}, '${this.escapeHtml(this.currentSermon?.title || 'Message')}')"></i>
+                        <i class="fas fa-copy transcript-action-icon" style="font-size: 0.75rem; color: var(--text-muted); cursor: pointer; opacity: 0;" title="Copy this segment" 
+                           onclick="event.stopPropagation(); app.copyToClipboard('${this.escapeJS(textSegment)}')"></i>
+                    </div>
                 </div>
             `;
             
@@ -3031,20 +4307,6 @@ class GreenBibleApp {
         }
         
         this.renderSermons(sorted);
-    }
-
-    getCategoryIcon(cat) {
-        const icons = {
-            'Prophetic': '🔥',
-            'Deliverance': '🛡️',
-            'Interpretation': '📜',
-            'Foundation': '🧱',
-            'Faith': '✨',
-            'Anointing': '🏺',
-            'Blessings': '💰',
-            'Intercession': '🙏'
-        };
-        return icons[cat] || '📖';
     }
 
     // ==========================================
@@ -3112,7 +4374,7 @@ class GreenBibleApp {
                 
                 <div id="notes-list-${sermonId}" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;">
                     ${notes.length === 0 ? '<p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 20px;">No notes yet. Capture your insights below.</p>' : notes.map((note, i) => `
-                        <div class="note-item" style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                        <div class="note-item" style="padding: 12px; background: var(--bg-elevated); border: 1px solid var(--border-subtle);">
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
                                 ${note.timestamp ? `<span style="color: var(--accent-emerald); font-size: 0.75rem; font-family: monospace; font-weight: bold; cursor: pointer;" onclick="app.seekSermon(${this.parseTimeString(note.timestamp)})">${note.timestamp}</span>` : '<span></span>'}
                                 <span style="font-size: 0.65rem; color: var(--text-muted);">${new Date(note.created).toLocaleDateString()}</span>
@@ -3156,7 +4418,7 @@ class GreenBibleApp {
         if (container) {
             const notes = this.getSermonNotes(sermonId);
             container.innerHTML = notes.map((note, i) => `
-                <div class="note-item" style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                <div class="note-item" style="padding: 12px; background: var(--bg-elevated); border: 1px solid var(--border-subtle);">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
                         ${note.timestamp ? `<span style="color: var(--accent-emerald); font-size: 0.75rem; font-family: monospace; font-weight: bold; cursor: pointer;" onclick="app.seekSermon(${this.parseTimeString(note.timestamp)})">${note.timestamp}</span>` : '<span></span>'}
                         <span style="font-size: 0.65rem; color: var(--text-muted);">${new Date(note.created).toLocaleDateString()}</span>
@@ -3354,26 +4616,28 @@ class GreenBibleApp {
     // Notifications — Premium Toast
     // ==========================================
     showNotification(message, type = 'info') {
-        const configs = {
-            success: { bg: 'linear-gradient(135deg, #059669, #10b981)', icon: '✓', border: 'rgba(52,211,153,0.3)' },
-            warning: { bg: 'linear-gradient(135deg, #d97706, #f59e0b)', icon: '⚠', border: 'rgba(245,158,11,0.3)' },
-            error: { bg: 'linear-gradient(135deg, #dc2626, #ef4444)', icon: '✕', border: 'rgba(239,68,68,0.3)' },
-            info: { bg: 'linear-gradient(135deg, #2563eb, #3b82f6)', icon: 'ℹ', border: 'rgba(59,130,246,0.3)' }
+        const accents = {
+            success: 'var(--accent-emerald)',
+            warning: 'var(--accent-gold)',
+            error: '#ef4444',
+            info: 'var(--accent-emerald)'
         };
 
-        const config = configs[type] || configs.info;
+        const accentColor = accents[type] || accents.info;
+        const icon = type === 'success' ? '✓' : type === 'warning' ? '⚠' : type === 'error' ? '✕' : 'ℹ';
 
         const notification = document.createElement('div');
         notification.style.cssText = `
             position: fixed;
             top: 90px;
             right: 28px;
-            background: ${config.bg};
-            color: white;
+            background: var(--glass-bg, rgba(20, 20, 20, 0.9));
+            color: var(--text-primary);
             padding: 14px 22px;
             border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-            border: 1px solid ${config.border};
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-subtle);
+            border-left: 4px solid ${accentColor};
             z-index: 10000;
             animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             font-weight: 500;
@@ -3381,15 +4645,23 @@ class GreenBibleApp {
             font-family: 'Inter', sans-serif;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             max-width: 380px;
         `;
-        notification.innerHTML = `<span style="font-size: 1.1rem;">${config.icon}</span> ${message}`;
+
+        notification.innerHTML = `
+            <div style="width: 24px; height: 24px; background: ${accentColor}20; color: ${accentColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; flex-shrink: 0;">${icon}</div>
+            <div style="flex: 1;">${message}</div>
+        `;
+
         document.body.appendChild(notification);
 
         setTimeout(() => {
-            notification.style.animation = 'fadeOut 0.3s ease forwards';
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateX(20px)';
+            notification.style.transition = 'all 0.3s ease';
             setTimeout(() => notification.remove(), 300);
         }, 3000);
     }
@@ -3493,7 +4765,7 @@ class GreenBibleApp {
                     </div>
                     <div style="display: flex; gap: 8px;">
                         <button onclick="app.exportFolderToPDF(${fi})" title="Export to PDF" style="background: rgba(52,211,153,0.1); color: var(--accent-emerald); border: 1px solid rgba(52,211,153,0.2); border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center;">📄</button>
-                        <button onclick="app.deleteFolder(${fi})" style="background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center;">✕</button>
+                        <button onclick="app.deleteFolder(${fi})" style="background: rgba(239,68,68,0.1); color: var(--accent-error); border: 1px solid rgba(239,68,68,0.2); border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center;">✕</button>
                     </div>
                 </div>
                 <div style="padding: 16px 20px;">
@@ -3627,6 +4899,7 @@ class GreenBibleApp {
             panel.style.display = 'block';
             arrow.textContent = '▴';
             this.populateBibleNavVersions();
+            this.renderBibleNavBookGrid();
         } else {
             panel.style.display = 'none';
             arrow.textContent = '▾';
@@ -3635,32 +4908,138 @@ class GreenBibleApp {
 
     populateBibleNavVersions() {
         const select = document.getElementById('bibleNavVersion');
-        if (!select || select.options.length > 1) return;
+        if (!select) return;
+        const prev = select.value;
+        select.innerHTML = '<option value="">Select Version...</option>';
         this.availableVersions.forEach(v => {
             const opt = document.createElement('option');
             opt.value = v.code;
             opt.textContent = `${v.code} — ${v.name}`;
             select.appendChild(opt);
         });
+        if (prev && [...select.options].some(o => o.value === prev)) {
+            select.value = prev;
+        } else if (this.availableVersions.length) {
+            const preferred = this.availableVersions.find(v => v.code === 'KJV') || this.availableVersions[0];
+            select.value = preferred.code;
+        }
+    }
+
+    getNativeName(book, langCode) {
+        if (!book) return '';
+        const lowerBook = book.toLowerCase().trim();
+        
+        // Check cache first
+        if (this.nativeBookNamesCache[langCode] && this.nativeBookNamesCache[langCode][lowerBook]) {
+            return this.nativeBookNamesCache[langCode][lowerBook];
+        }
+        
+        // Check hardcoded map
+        if (this.NATIVE_BOOK_NAMES[langCode] && this.NATIVE_BOOK_NAMES[langCode][lowerBook]) {
+            return this.NATIVE_BOOK_NAMES[langCode][lowerBook];
+        }
+        
+        // Fallback to capitalized English name
+        return this.capitalize(book);
+    }
+
+    getLocalizedLabel(key, langCode) {
+        if (this.localizedLabels[langCode] && this.localizedLabels[langCode][key]) {
+            return this.localizedLabels[langCode][key];
+        }
+        return this.localizedLabels['eng'][key] || key;
+    }
+
+    capitalize(str) {
+        if (!str) return '';
+        return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    }
+
+    /** Map any localized / English book label to lowercase canonical slug (matches reader select values). */
+    englishSlugFromAnyBookLabel(label) {
+        if (!label) return '';
+        const lower = String(label).trim().toLowerCase();
+        if (this.BIBLE_BOOKS.includes(lower)) return lower;
+        const abbr = this.BOOK_ABBREVIATIONS[lower];
+        if (abbr) return abbr;
+        for (const lang of Object.keys(this.NATIVE_BOOK_NAMES || {})) {
+            const m = this.NATIVE_BOOK_NAMES[lang];
+            for (const [slug, native] of Object.entries(m)) {
+                if (String(native).toLowerCase().trim() === lower) return slug;
+            }
+        }
+        for (const lang of Object.keys(this.nativeBookNamesCache || {})) {
+            const m = this.nativeBookNamesCache[lang];
+            if (!m) continue;
+            for (const [slug, native] of Object.entries(m)) {
+                if (String(native).toLowerCase().trim() === lower) return slug;
+            }
+        }
+        return lower.replace(/\s+/g, ' ').trim();
+    }
+
+    getFallbackProtestantBooksGrouped() {
+        const ot = [
+            'genesis', 'exodus', 'leviticus', 'numbers', 'deuteronomy', 'joshua', 'judges', 'ruth',
+            '1 samuel', '2 samuel', '1 kings', '2 kings', '1 chronicles', '2 chronicles', 'ezra', 'nehemiah', 'esther',
+            'job', 'psalms', 'proverbs', 'ecclesiastes', 'song of solomon', 'isaiah', 'jeremiah', 'lamentations', 'ezekiel', 'daniel',
+            'hosea', 'joel', 'amos', 'obadiah', 'jonah', 'micah', 'nahum', 'habakkuk', 'zephaniah', 'haggai', 'zechariah', 'malachi'
+        ];
+        const nt = [
+            'matthew', 'mark', 'luke', 'john', 'acts', 'romans', '1 corinthians', '2 corinthians', 'galatians', 'ephesians', 'philippians', 'colossians',
+            '1 thessalonians', '2 thessalonians', '1 timothy', '2 timothy', 'titus', 'philemon', 'hebrews', 'james', '1 peter', '2 peter',
+            '1 john', '2 john', '3 john', 'jude', 'revelation'
+        ];
+        return { ot, nt };
+    }
+
+    async ensureVersionBooks(versionCode) {
+        if (!versionCode) return this.getFallbackProtestantBooksGrouped();
+        if (this.versionBooksCache[versionCode]) return this.versionBooksCache[versionCode];
+        try {
+            const res = await fetch(`/api/bibles/books/${encodeURIComponent(versionCode)}`);
+            if (res.ok) {
+                const data = await res.json();
+                const grouped = { ot: data.ot || [], nt: data.nt || [] };
+                this.versionBooksCache[versionCode] = grouped;
+                return grouped;
+            }
+        } catch (e) {
+            console.warn('ensureVersionBooks failed:', e);
+        }
+        const fb = this.getFallbackProtestantBooksGrouped();
+        this.versionBooksCache[versionCode] = fb;
+        return fb;
+    }
+
+    bookSlugToNavTitle(slug) {
+        if (!slug) return '';
+        return slug.split(' ').map(word => {
+            if (!word) return word;
+            if (/^\d+$/.test(word)) return word;
+            return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        }).join(' ');
     }
 
     updateBibleNav() {
-        // When version changes, show OT by default
-        this.showTestament('OT');
+        this.renderBibleNavBookGrid();
     }
 
-    async showTestament(testament) {
+    async renderBibleNavBookGrid() {
         const booksContainer = document.getElementById('bibleNavBooks');
         if (!booksContainer) return;
 
-        // Identify currently selected version for language context
         const vCode = document.getElementById('bibleNavVersion')?.value;
+        if (!vCode) {
+            booksContainer.innerHTML = '<p style="color: var(--text-muted); font-size: 0.82rem; padding: 12px;">Select a Bible version to browse books.</p>';
+            return;
+        }
+
         const version = this.availableVersions.find(v => v.code === vCode);
         const langCode = version?.languageCode || 'eng';
 
-        // Fetch native names if needed and not already cached
         if (langCode !== 'eng' && !this.nativeBookNamesCache[langCode]) {
-            booksContainer.innerHTML = '<p style="color: var(--text-muted); font-size: 0.8rem; padding: 20px; grid-column: 1/-1;">Localizing book names...</p>';
+            booksContainer.innerHTML = '<p style="color: var(--text-muted); font-size: 0.8rem; padding: 20px;">Localizing book names...</p>';
             try {
                 const res = await fetch(`/api/bibles/book-names/${langCode}`);
                 if (res.ok) {
@@ -3672,43 +5051,483 @@ class GreenBibleApp {
             }
         }
 
-        const otBooks = [
-            'Genesis','Exodus','Leviticus','Numbers','Deuteronomy','Joshua','Judges','Ruth',
-            '1 Samuel','2 Samuel','1 Kings','2 Kings','1 Chronicles','2 Chronicles',
-            'Ezra','Nehemiah','Esther','Job','Psalms','Proverbs','Ecclesiastes',
-            'Song of Solomon','Isaiah','Jeremiah','Lamentations','Ezekiel','Daniel',
-            'Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk',
-            'Zephaniah','Haggai','Zechariah','Malachi'
-        ];
-        const ntBooks = [
-            'Matthew','Mark','Luke','John','Acts','Romans',
-            '1 Corinthians','2 Corinthians','Galatians','Ephesians','Philippians',
-            'Colossians','1 Thessalonians','2 Thessalonians','1 Timothy','2 Timothy',
-            'Titus','Philemon','Hebrews','James','1 Peter','2 Peter',
-            '1 John','2 John','3 John','Jude','Revelation'
-        ];
+        const grouped = await this.ensureVersionBooks(vCode);
 
-        const books = testament === 'OT' ? otBooks : ntBooks;
-        const nativeMap = this.nativeBookNamesCache[langCode] || {};
-
-        booksContainer.innerHTML = books.map(book => {
-            const nativeName = nativeMap[book.toLowerCase()];
+        const bookButton = (slug) => {
+            const title = this.bookSlugToNavTitle(slug);
+            const safeTitle = this.escapeJS(title);
+            const label = this.getNativeName(slug, langCode) || title;
             return `
-                <button class="nav-btn" style="padding: 8px 12px; font-size: 0.8rem; justify-content: flex-start; text-align: left;" onclick="app.navigateToBook('${book}')">
-                    ${nativeName || book}
+                <button type="button" class="nav-btn" style="padding: 8px 12px; font-size: 0.8rem; justify-content: flex-start; text-align: left;" onclick="app.navigateToBook('${safeTitle}')">
+                    ${this.escapeHtml(label)}
                 </button>
             `;
-        }).join('');
+        };
+
+        const col = (heading, iconClass, accentVar, slugs) => {
+            if (!slugs.length) {
+                return `
+                    <div>
+                        <h4 style="margin: 0 0 12px 0; color: ${accentVar}; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">
+                            <i class="fas ${iconClass}" style="margin-right: 8px;"></i> ${heading}
+                        </h4>
+                        <p style="color: var(--text-muted); font-size: 0.78rem; margin: 0;">No books in this section for the selected translation.</p>
+                    </div>
+                `;
+            }
+            return `
+                <div>
+                    <h4 style="margin: 0 0 12px 0; color: ${accentVar}; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">
+                        <i class="fas ${iconClass}" style="margin-right: 8px;"></i> ${heading}
+                    </h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px;">
+                        ${slugs.map(bookButton).join('')}
+                    </div>
+                </div>
+            `;
+        };
+
+        booksContainer.innerHTML = `
+            <div class="bible-book-split">
+                ${col('Old Testament', 'fa-book', 'var(--accent-gold)', grouped.ot)}
+                ${col('New Testament', 'fa-book-open', 'var(--accent-emerald)', grouped.nt)}
+            </div>
+        `;
     }
 
-    navigateToBook(book) {
-        const version = document.getElementById('bibleNavVersion')?.value;
-        if (version) {
-            const emptySlot = this.selectedVersions.findIndex(v => v === null);
-            const slot = emptySlot !== -1 ? emptySlot : 0;
-            const versionObj = this.availableVersions.find(v => v.code === version);
-            if (versionObj) this.setVersion(slot + 1, versionObj.code, versionObj.name);
+    // ==========================================
+    // Bible Reader Logic
+    // ==========================================
+    
+    async loadStudyGuide() {
+        const panel = document.getElementById('studyGuidePanel');
+        const content = document.getElementById('studyGuideContent');
+        if (!panel || !content) return;
+
+        // Toggle if already visible and same reference
+        const currentRef = document.getElementById('readerReference').textContent;
+        if (panel.style.display === 'block' && panel.dataset.lastRef === currentRef) {
+            panel.style.display = 'none';
+            return;
         }
+
+        panel.style.display = 'block';
+        panel.dataset.lastRef = currentRef;
+        content.innerHTML = `
+            <div style="padding: 20px; text-align: center;">
+                <div class="loading-spinner" style="margin: 0 auto 10px; width: 24px; height: 24px;"></div>
+                <p style="color: var(--text-muted); font-size: 0.82rem;">Generating study guide for ${currentRef}...</p>
+            </div>
+        `;
+
+        try {
+            const response = await fetch(`/api/bibles/study-guide/${encodeURIComponent(currentRef)}`);
+            if (!response.ok) throw new Error('Failed to generate guide');
+            const data = await response.json();
+            
+            // Convert markdown-style bold and lists to HTML
+            let html = data.guide
+                .replace(/\n\d\.\s/g, '<br><br><strong>') // Numbers to bold headers
+                .replace(/\n-\s/g, '<br>• ') // Bullets
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+                .replace(/### (.*?)\n/g, '<h5 style="color: var(--accent-gold); margin-top: 12px;">$1</h5>');
+            
+            content.innerHTML = `<div class="study-guide-text">${html}</div>`;
+        } catch (error) {
+            console.error('Study guide error:', error);
+            content.innerHTML = `<p style="color: var(--accent-error); font-size: 0.85rem;">Failed to load study guide. Please check your connection.</p>`;
+        }
+    }
+
+    toggleParallelMode() {
+        this.parallelMode = !this.parallelMode;
+        const btn = document.getElementById('parallelModeBtn');
+        const controls = document.getElementById('parallelControls');
+        if (!btn || !controls) return;
+
+        if (this.parallelMode) {
+            btn.classList.add('active');
+            btn.style.background = 'var(--accent-emerald)';
+            btn.style.color = 'white';
+            controls.style.display = 'flex';
+            
+            // Populate parallel version select if empty
+            const pSelect = document.getElementById('parallelVersionSelect');
+            if (pSelect && pSelect.options.length <= 1) {
+                pSelect.innerHTML = this.availableVersions.map(v => `<option value="${v.code}">${v.code} — ${v.name}</option>`).join('');
+                pSelect.value = 'WEB';
+            }
+        } else {
+            btn.classList.remove('active');
+            btn.style.background = 'none';
+            btn.style.color = 'var(--accent-emerald)';
+            controls.style.display = 'none';
+        }
+        
+        this.loadReaderChapter();
+    }
+
+    toggleSyncScrolling() {
+        this.syncScrolling = document.getElementById('syncScrolling').checked;
+    }
+
+    async loadReaderChapter() {
+        const versionSelect = document.getElementById('readerVersionSelect');
+        const parallelVersionSelect = document.getElementById('parallelVersionSelect');
+        const bookSelect = document.getElementById('readerBookSelect');
+        const chapterSelect = document.getElementById('readerChapterSelect');
+        
+        let version = versionSelect ? versionSelect.value : 'KJV';
+        let parallelVersion = parallelVersionSelect ? parallelVersionSelect.value : 'WEB';
+        let book = bookSelect ? bookSelect.value : 'genesis';
+        let chapter = chapterSelect ? chapterSelect.value : '1';
+
+        await this.ensureVersionBooks(version);
+        const verseSelectEarly = document.getElementById('readerVerseSelect');
+        const preservedVerse = verseSelectEarly?.value || '1';
+        await this.updateReaderSelects(version, book, chapter, preservedVerse);
+        book = bookSelect ? bookSelect.value : book;
+        chapter = chapterSelect ? chapterSelect.value : chapter;
+
+        const navigatorPanel = document.getElementById('readerNavigatorPanel');
+        if (navigatorPanel && navigatorPanel.style.display !== 'none') {
+            await this.renderReaderBookGrid();
+        }
+
+        const contentArea = document.getElementById('readerContent');
+        if (!contentArea) return;
+
+        // Update headers
+        const versionInfo = this.availableVersions.find(v => v.code === version);
+        const langCode = versionInfo ? (versionInfo.languageCode || versionInfo.language.toLowerCase().substring(0,3)) : 'eng';
+        const readerReference = document.getElementById('readerReference');
+        if (readerReference) readerReference.textContent = `${this.getNativeName(book, langCode)} ${chapter}`;
+
+        contentArea.innerHTML = `
+            <div style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
+                <div class="loading-spinner" style="margin: 0 auto 16px;"></div>
+                <p>Loading Scripture...</p>
+            </div>
+        `;
+
+        try {
+            const fetchPassage = async (v) => {
+                const response = await fetch(`/api/bibles/passage?book=${encodeURIComponent(book)}&chapter=${chapter}&version=${v}`);
+                if (!response.ok) throw new Error(`Failed to fetch ${v}`);
+                return await response.json();
+            };
+
+            const data = await fetchPassage(version);
+            let parallelData = null;
+            if (this.parallelMode) {
+                parallelData = await fetchPassage(parallelVersion);
+            }
+
+            if (this.parallelMode) {
+                const pvInfo = this.availableVersions.find(v => v.code === parallelVersion);
+                const pLang = pvInfo ? (pvInfo.languageCode || pvInfo.language.toLowerCase().substring(0, 3)) : 'eng';
+                const leftBookLabel = this.getNativeName(book, langCode);
+                const rightBookLabel = this.getNativeName(book, pLang);
+                contentArea.style.overflowY = 'hidden'; // Disable main scroll
+                contentArea.style.padding = '0';
+                contentArea.innerHTML = `
+                    <div style="display: flex; height: 70vh; overflow: hidden;">
+                        <div id="pane-left" style="flex: 1; padding: 40px; overflow-y: auto; border-right: 1px solid var(--border-subtle); scroll-behavior: smooth;">
+                            <div style="font-size: 0.75rem; color: var(--accent-gold); font-weight: 800; margin-bottom: 24px; text-transform: uppercase; letter-spacing: 1.5px; border-bottom: 1px solid rgba(245,197,66,0.1); padding-bottom: 8px;">${version} · ${leftBookLabel} ${chapter}</div>
+                            ${this.formatReaderVerses(data.verses)}
+                        </div>
+                        <div id="pane-right" style="flex: 1; padding: 40px; overflow-y: auto; background: rgba(0,0,0,0.02); scroll-behavior: smooth;">
+                            <div style="font-size: 0.75rem; color: var(--accent-emerald); font-weight: 800; margin-bottom: 24px; text-transform: uppercase; letter-spacing: 1.5px; border-bottom: 1px solid rgba(52,211,153,0.1); padding-bottom: 8px;">${parallelVersion} · ${rightBookLabel} ${chapter}</div>
+                            ${this.formatReaderVerses(parallelData && parallelData.verses ? parallelData.verses : [])}
+                        </div>
+                    </div>
+                `;
+
+                if (this.syncScrolling) {
+                    const left = document.getElementById('pane-left');
+                    const right = document.getElementById('pane-right');
+                    let isSyncingLeft = false;
+                    let isSyncingRight = false;
+
+                    left.onscroll = () => {
+                        if (!isSyncingLeft) {
+                            isSyncingRight = true;
+                            right.scrollTop = left.scrollTop;
+                        }
+                        isSyncingLeft = false;
+                    };
+
+                    right.onscroll = () => {
+                        if (!isSyncingRight) {
+                            isSyncingLeft = true;
+                            left.scrollTop = right.scrollTop;
+                        }
+                        isSyncingRight = false;
+                    };
+                }
+            } else {
+                contentArea.style.overflowY = 'auto'; // Restore main scroll
+                contentArea.style.padding = '12px 28px 32px';
+                contentArea.innerHTML = `
+                    <div style="padding: 40px 60px; font-size: 1.15rem; line-height: 1.9; font-family: 'Playfair Display', serif;">
+                        ${this.formatReaderVerses(data.verses)}
+                    </div>
+                `;
+            }
+
+            const verseSel = document.getElementById('readerVerseSelect');
+            const curVerse = verseSel ? verseSel.value : '1';
+            await this.updateReaderSelects(version, book, chapter, curVerse);
+        } catch (e) {
+            console.error('Reader error:', e);
+            contentArea.innerHTML = `<div style="text-align: center; padding: 60px;">Failed to load chapter.</div>`;
+        }
+    }
+
+    formatReaderVerses(verses) {
+        if (!verses || verses.length === 0) return '<p>No verses found.</p>';
+        return `
+            <p style="margin-bottom: 1.5em; text-indent: 1.5em;">
+                ${verses.map(v => `
+                    <sup style="color: var(--accent-emerald); font-weight: 700; font-size: 0.75em; margin: 0 4px 0 2px;">${v.number || v.verse}</sup>${v.text.trim()} 
+                `).join('')}
+            </p>
+        `;
+    }
+
+    async updateReaderSelects(version, book, chapter, verse = '1') {
+        const vSelect = document.getElementById('readerVersionSelect');
+        const bSelect = document.getElementById('readerBookSelect');
+        const cSelect = document.getElementById('readerChapterSelect');
+        const verSelect = document.getElementById('readerVerseSelect');
+        
+        const versionInfo = this.availableVersions.find(v => v.code === version);
+        const langCode = versionInfo ? (versionInfo.languageCode || versionInfo.language.toLowerCase().substring(0,3)) : 'eng';
+
+        if (vSelect && vSelect.options.length <= 1) {
+            vSelect.innerHTML = this.availableVersions.map(v => `<option value="${v.code}">${v.code} — ${v.name}</option>`).join('');
+        }
+        if (vSelect) vSelect.value = version;
+
+        const grouped = await this.ensureVersionBooks(version);
+        const allowed = [...grouped.ot, ...grouped.nt];
+        let bookSlug = (book || 'genesis').toLowerCase().trim();
+        if (!allowed.includes(bookSlug)) {
+            bookSlug = allowed[0] || 'genesis';
+        }
+
+        if (bSelect) {
+            const optLabel = (slug) => this.escapeHtml(this.getNativeName(slug, langCode) || this.bookSlugToNavTitle(slug));
+            const otHtml = grouped.ot.map((b) => `<option value="${b}">${optLabel(b)}</option>`).join('');
+            const ntHtml = grouped.nt.map((b) => `<option value="${b}">${optLabel(b)}</option>`).join('');
+            let inner = '';
+            if (grouped.ot.length) {
+                inner += `<optgroup label="Old Testament">${otHtml}</optgroup>`;
+            }
+            if (grouped.nt.length) {
+                inner += `<optgroup label="New Testament">${ntHtml}</optgroup>`;
+            }
+            bSelect.innerHTML = inner || '<option value="">No books</option>';
+            if ([...bSelect.options].some((o) => o.value === bookSlug)) {
+                bSelect.value = bookSlug;
+            }
+        }
+
+        if (cSelect) {
+            // Rough chapter count max 150 (Psalms)
+            let maxChap = 50; 
+            if (bookSlug === 'psalms' || bookSlug === 'psalm') maxChap = 150;
+            
+            let opts = '';
+            for(let i = 1; i <= maxChap; i++) {
+                opts += `<option value="${i}">${i}</option>`;
+            }
+            cSelect.innerHTML = opts;
+            cSelect.value = chapter;
+        }
+
+        if (verSelect) {
+            // Rough verse count max 176 (Psalm 119)
+            let maxVer = 50;
+            if (bookSlug === 'psalms' && chapter === '119') maxVer = 176;
+            
+            let opts = '';
+            for(let i = 1; i <= maxVer; i++) {
+                opts += `<option value="${i}">${i}</option>`;
+            }
+            verSelect.innerHTML = opts;
+            verSelect.value = verse;
+        }
+    }
+
+    async onReaderBookChange() {
+        // Reset chapter and verse to 1 when book changes
+        const cSelect = document.getElementById('readerChapterSelect');
+        const verSelect = document.getElementById('readerVerseSelect');
+        if (cSelect || verSelect) {
+            if (cSelect) cSelect.innerHTML = '';
+            if (verSelect) verSelect.innerHTML = '';
+            await this.updateReaderSelects(
+                document.getElementById('readerVersionSelect').value,
+                document.getElementById('readerBookSelect').value,
+                '1',
+                '1'
+            );
+        }
+        await this.loadReaderChapter();
+    }
+
+    onReaderVerseChange() {
+        // Scroll to selected verse
+        const contentArea = document.getElementById('readerContent');
+        const verseNum = document.getElementById('readerVerseSelect')?.value;
+        if (contentArea && verseNum) {
+            // Wait a bit for content to be loaded
+            setTimeout(() => {
+                const verseElements = contentArea.querySelectorAll('sup');
+                verseElements.forEach((el) => {
+                    if (el.textContent.trim() === verseNum) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                });
+            }, 300);
+        }
+    }
+
+    async onReaderChapterChange() {
+        // Reset verse to 1 when chapter changes
+        const verSelect = document.getElementById('readerVerseSelect');
+        const vSelect = document.getElementById('readerVersionSelect');
+        const bSelect = document.getElementById('readerBookSelect');
+        const cSelect = document.getElementById('readerChapterSelect');
+        
+        if (verSelect) {
+            await this.updateReaderSelects(
+                vSelect?.value,
+                bSelect?.value,
+                cSelect?.value,
+                '1'
+            );
+        }
+        await this.loadReaderChapter();
+    }
+
+    readerPrevChapter() {
+        const cSelect = document.getElementById('readerChapterSelect');
+        const verSelect = document.getElementById('readerVerseSelect');
+        if (cSelect) {
+            let current = parseInt(cSelect.value);
+            if (current > 1) {
+                cSelect.value = current - 1;
+                if (verSelect) verSelect.value = '1';
+                this.onReaderChapterChange();
+            } else {
+                // To do properly: jump to prev book last chapter
+                this.showNotification("Already at Chapter 1", "info");
+            }
+        }
+    }
+
+    readerNextChapter() {
+        const cSelect = document.getElementById('readerChapterSelect');
+        const verSelect = document.getElementById('readerVerseSelect');
+        if (cSelect) {
+            let current = parseInt(cSelect.value);
+            cSelect.value = current + 1;
+            if (verSelect) verSelect.value = '1';
+            this.onReaderChapterChange();
+        }
+    }
+    
+    toggleReaderNavigator() {
+        const panel = document.getElementById('readerNavigatorPanel');
+        if (panel) {
+            if (panel.style.display === 'none') {
+                panel.style.display = 'block';
+                this.renderReaderBookGrid();
+            } else {
+                panel.style.display = 'none';
+            }
+        }
+    }
+
+    async renderReaderBookGrid() {
+        const booksContainer = document.getElementById('readerBookGrid');
+        if (!booksContainer) return;
+
+        const version = document.getElementById('readerVersionSelect')?.value || 'KJV';
+        const versionInfo = this.availableVersions.find(v => v.code === version);
+        const langCode = versionInfo ? (versionInfo.languageCode || versionInfo.language.toLowerCase().substring(0, 3)) : 'eng';
+
+        const grouped = await this.ensureVersionBooks(version);
+
+        const bookButton = (slug) => {
+            const title = this.bookSlugToNavTitle(slug);
+            const safeTitle = this.escapeJS(title);
+            const label = this.getNativeName(slug, langCode) || title;
+            return `
+                <button type="button" class="nav-btn" style="padding: 6px 10px; font-size: 0.75rem; justify-content: flex-start; text-align: left;" onclick="app.navigateToBook('${safeTitle}')">
+                    ${this.escapeHtml(label)}
+                </button>
+            `;
+        };
+
+        const col = (heading, iconClass, accentVar, slugs) => {
+            if (!slugs.length) {
+                return `
+                    <div>
+                        <h4 style="margin: 0 0 12px 0; color: ${accentVar}; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">
+                            <i class="fas ${iconClass}" style="margin-right: 8px;"></i> ${heading}
+                        </h4>
+                        <p style="color: var(--text-muted); font-size: 0.75rem; margin: 0;">No books in this section for this version.</p>
+                    </div>
+                `;
+            }
+            return `
+                <div>
+                    <h4 style="margin: 0 0 12px 0; color: ${accentVar}; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">
+                        <i class="fas ${iconClass}" style="margin-right: 8px;"></i> ${heading}
+                    </h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px;">
+                        ${slugs.map(bookButton).join('')}
+                    </div>
+                </div>
+            `;
+        };
+
+        booksContainer.innerHTML = `
+            <div class="bible-book-split">
+                ${col('Old Testament', 'fa-book', 'var(--accent-gold)', grouped.ot)}
+                ${col('New Testament', 'fa-book-open', 'var(--accent-emerald)', grouped.nt)}
+            </div>
+        `;
+    }
+
+    async navigateToBook(book) {
+        const hubRead = document.getElementById('hub-read');
+        const inReader = hubRead && hubRead.style.display !== 'none';
+        const version = inReader
+            ? (document.getElementById('readerVersionSelect')?.value || 'KJV')
+            : (document.getElementById('bibleNavVersion')?.value || 'KJV');
+        
+        // Check if we are in the reader view, if so jump to reader
+        if (inReader) {
+            const bSelect = document.getElementById('readerBookSelect');
+            if (bSelect) {
+                await this.updateReaderSelects(version, book, '1');
+                await this.loadReaderChapter();
+                const rnp = document.getElementById('readerNavigatorPanel');
+                if (rnp) rnp.style.display = 'none';
+                return;
+            }
+        }
+
+        // Fallback for search
+        const emptySlot = this.selectedVersions.findIndex(v => v === null);
+        const slot = emptySlot !== -1 ? emptySlot : 0;
+        const versionObj = this.availableVersions.find(v => v.code === version);
+        if (versionObj) this.setVersion(slot + 1, versionObj.code, versionObj.name);
+        
         this.setSearch(`${book} 1`);
         this.showView('search');
         this.performSearch();
@@ -3752,7 +5571,7 @@ class GreenBibleApp {
                 `;
             }).join('');
         } catch (e) {
-            list.innerHTML = '<p style="color: #ef4444; font-size: 0.82rem;">Failed to load materials.</p>';
+            list.innerHTML = '<p style="color: var(--accent-error); font-size: 0.82rem;">Failed to load materials.</p>';
         }
     }
 
@@ -3782,6 +5601,15 @@ class GreenBibleApp {
             .replace(/'/g, "&#39;")
             .replace(/"/g, "&quot;")
             .replace(/`/g, "&#96;");
+    }
+
+    escapeJS(text) {
+        if (!text) return '';
+        return text.toString()
+            .replace(/\\/g, '\\\\')
+            .replace(/'/g, "\\'")
+            .replace(/"/g, '\\"')
+            .replace(/`/g, '\\`');
     }
 
     /**
@@ -3817,7 +5645,11 @@ class GreenBibleApp {
         });
 
         const regex = new RegExp(`(${patterns.join('|')})`, 'gi');
-        return safeText.replace(regex, (match) => {
+        
+        // Use a smarter replacement to avoid highlighting inside bracketed timestamps
+        return safeText.replace(/\[((?:\d+:)?\d{1,2}:\d{2})\]|(${patterns.join('|')})/gi, (match, p1, p2) => {
+            if (p1) return `[${p1}]`; // Return timestamp untouched
+            
             const lowMatch = match.toLowerCase().trim();
             // If the match is a stop word, only highlight it if it's part of the full phrase match
             if (STOP_WORDS.has(lowMatch) && match.length < query.length) {
@@ -4055,7 +5887,10 @@ class GreenBibleApp {
     closeGlobalAudio() {
         this.stopGlobalAudio();
         const tray = document.getElementById('audioPlayerTray');
-        if (tray) tray.style.display = 'none';
+        if (tray) {
+            tray.classList.remove('active');
+            tray.style.display = 'none';
+        }
     }
 
     seekAudio(secondsOrEvent) {
@@ -4108,6 +5943,25 @@ class GreenBibleApp {
         }
     }
 
+    /** HTML5 audio timeupdate + shared transcript sync */
+    updateAudioProgress() {
+        this.updateAudioUI();
+        this.syncTranscriptHighlight();
+    }
+
+    getTranscriptSyncTime() {
+        if (this.ytPlayer && typeof this.ytPlayer.getCurrentTime === 'function') {
+            try {
+                const t = this.ytPlayer.getCurrentTime();
+                if (typeof t === 'number' && !isNaN(t)) return t;
+            } catch (e) { /* player may be tearing down */ }
+        }
+        if (this.audioElement && typeof this.audioElement.currentTime === 'number' && !isNaN(this.audioElement.currentTime)) {
+            return this.audioElement.currentTime;
+        }
+        return null;
+    }
+
     updateAudioUI() {
         const icon = this.isPlaying ? '⏸' : '▶';
         const label = this.isPlaying ? 'PAUSE' : 'PLAY';
@@ -4115,6 +5969,7 @@ class GreenBibleApp {
         // Update Global Tray
         const tray = document.getElementById('audioPlayerTray');
         if (tray && this.currentSermon) {
+            tray.classList.add('active');
             tray.style.display = 'flex';
             tray.style.bottom = '0';
             const titleEl = document.getElementById('audioTitle');
@@ -4135,13 +5990,25 @@ class GreenBibleApp {
         // Update Modal Controls
         const modalToggleBtn = document.getElementById('modalAudioToggleBtn');
         if (modalToggleBtn) {
-            const i = modalToggleBtn.querySelector('i');
-            if (i) i.className = this.isPlaying ? 'fas fa-pause' : 'fas fa-play';
+            const iconEl = document.getElementById('modalAudioToggleIcon');
+            if (iconEl) iconEl.textContent = this.isPlaying ? '⏸' : '▶';
         }
 
-        if (this.ytPlayer && this.ytPlayer.getCurrentTime) {
-            const current = this.ytPlayer.getCurrentTime();
-            const duration = this.ytPlayer.getDuration();
+        const syncT = this.getTranscriptSyncTime();
+        let current = syncT != null ? syncT : 0;
+        let duration = 0;
+
+        if (this.ytPlayer && typeof this.ytPlayer.getDuration === 'function') {
+            try {
+                const d = this.ytPlayer.getDuration();
+                if (typeof d === 'number' && !isNaN(d) && d > 0) duration = d;
+            } catch (e) {}
+        }
+        if (duration <= 0 && this.audioElement && typeof this.audioElement.duration === 'number' && !isNaN(this.audioElement.duration)) {
+            duration = this.audioElement.duration;
+        }
+
+        if (duration > 0 || syncT != null) {
             const pct = duration > 0 ? (current / duration) * 100 : 0;
 
             const globalBar = document.getElementById('audioProgressBar');
@@ -4168,12 +6035,17 @@ class GreenBibleApp {
     }
 
     syncTranscriptHighlight() {
-        if (!this.ytPlayer || !this.ytPlayer.getCurrentTime) return;
-        const currentTime = this.ytPlayer.getCurrentTime();
+        const currentTime = this.getTranscriptSyncTime();
+        if (currentTime === null || isNaN(currentTime)) return;
         
         // Update Progress Tracking
         if (this.currentAudioId) {
-            this.updateSermonProgress(this.currentAudioId, currentTime, this.ytPlayer.getDuration ? this.ytPlayer.getDuration() : 0);
+            let dur = 0;
+            if (this.ytPlayer && this.ytPlayer.getDuration) {
+                try { dur = this.ytPlayer.getDuration() || 0; } catch (e) {}
+            }
+            if (!dur && this.audioElement && this.audioElement.duration) dur = this.audioElement.duration;
+            this.updateSermonProgress(this.currentAudioId, currentTime, dur);
         }
 
         // 1. Sync Lines (Vertical Scrolling)
@@ -4283,16 +6155,57 @@ class GreenBibleApp {
                 
                 if (insightPanel) {
                     insightPanel.innerHTML = `
-                        <div style="margin-bottom: 20px;">
-                            <h5 style="color: var(--accent-gold); font-size: 0.8rem; margin-bottom: 8px;">SUMMARY</h5>
-                            <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5;">${this.escapeHtml(s.summary)}</p>
+                        <div style="margin-bottom: 24px;">
+                            <h5 style="color: var(--accent-gold); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-quote-left"></i> Summary
+                            </h5>
+                            <p style="font-size: 0.95rem; color: var(--text-primary); line-height: 1.6; font-family: 'Playfair Display', serif; font-style: italic;">
+                                "${this.escapeHtml(s.summary || s.interpretation?.summary || 'Prophetic insights from Pastor John Anosike.')}"
+                            </p>
                         </div>
-                        <div>
-                            <h5 style="color: var(--accent-gold); font-size: 0.8rem; margin-bottom: 8px;">KEY POINTS</h5>
-                            <ul style="padding-left: 16px; font-size: 0.85rem; color: var(--text-secondary);">
-                                ${(s.interpretation?.key_points || []).map(kp => `<li style="margin-bottom: 8px;">${this.escapeHtml(kp)}</li>`).join('')}
+
+                        ${s.interpretation?.devotional_takeaway ? `
+                            <div style="margin-bottom: 24px; padding: 16px; background: var(--accent-emerald-glow); border-left: 3px solid var(--accent-emerald); border-radius: 4px;">
+                                <h5 style="color: var(--accent-emerald); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">🔥 Devotional Takeaway</h5>
+                                <p style="font-size: 0.9rem; color: var(--text-primary); line-height: 1.5; margin: 0;">${this.escapeHtml(s.interpretation.devotional_takeaway)}</p>
+                            </div>
+                        ` : ''}
+
+                        <div style="margin-bottom: 24px;">
+                            <h5 style="color: var(--accent-gold); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">🗝️ Key Theological Points</h5>
+                            <ul style="padding-left: 0; list-style: none; font-size: 0.9rem; color: var(--text-secondary);">
+                                ${(s.interpretation?.key_points || []).map(kp => `
+                                    <li style="margin-bottom: 12px; display: flex; gap: 10px; align-items: flex-start;">
+                                        <i class="fas fa-check-circle" style="color: var(--accent-gold); font-size: 0.8rem; margin-top: 4px; opacity: 0.6;"></i>
+                                        <span>${this.escapeHtml(kp)}</span>
+                                    </li>
+                                `).join('')}
                             </ul>
                         </div>
+
+                        ${(s.interpretation?.biblical_themes || []).length > 0 ? `
+                            <div style="margin-bottom: 24px;">
+                                <h5 style="color: var(--accent-gold); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">🌟 Biblical Themes</h5>
+                                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                    ${s.interpretation.biblical_themes.map(theme => `
+                                        <span class="title-badge" style="background: rgba(255,255,255,0.05); color: var(--text-secondary); border-color: var(--border-subtle); padding: 4px 12px;">${this.escapeHtml(theme)}</span>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${(s.interpretation?.scriptures || []).length > 0 ? `
+                            <div style="margin-bottom: 24px;">
+                                <h5 style="color: var(--accent-gold); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">📖 Referenced Scriptures</h5>
+                                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                    ${s.interpretation.scriptures.map(ref => `
+                                        <button class="search-hint" onclick="setSearch('${this.escapeJS(ref)}'); performSearch(); app.closeTranscriptModal();" style="background: rgba(52,211,153,0.1); border-color: rgba(52,211,153,0.2); color: var(--accent-emerald); font-size: 0.75rem;">
+                                            <i class="fas fa-book-open" style="margin-right: 6px;"></i> ${this.escapeHtml(ref)}
+                                        </button>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
                         
                         <!-- Sermon Notes Integration -->
                         <div id="modalSermonNotes">
@@ -4301,7 +6214,13 @@ class GreenBibleApp {
                     `;
                 }
 
-                content.innerHTML = this.renderTranscriptWithTimestamps(s.transcript);
+                const transcriptHtml = this.renderTranscriptWithTimestamps(s.transcript || '');
+                content.innerHTML = transcriptHtml || '<div style="text-align: center; padding: 40px; color: var(--text-muted);">No transcript available for this message.</div>';
+                
+                // Ensure synchronization starts if audio is already playing
+                if (this.isPlaying && this.currentAudioId === id) {
+                    this.startAudioProgressSync();
+                }
 
                 // Start playing audio
                 this.playSermon(id);
@@ -4388,10 +6307,88 @@ class GreenBibleApp {
             titleEl.textContent = this.currentSermon.title;
         }
         this.updateAudioUI();
+        setTimeout(() => {
+            if (this.isPlaying) this.startAudioProgressSync();
+        }, 500);
     }
 
     seekSermon(seconds) {
         this.seekAudio(seconds);
+    }
+
+    async runDiagnosticTest() {
+        console.log('🚀 Starting Diagnostic Test...');
+        
+        // Test 1: Reference Parsing
+        const testRefs = ['Genesis 10:8', 'John 3.16', '1 John 5:7', 'Gen 1:1'];
+        for (const r of testRefs) {
+            const parsed = this.parseVerseReference(r);
+            console.log(`[Test] Parsing "${r}":`, parsed ? `✅ ${parsed.book} ${parsed.chapter}:${parsed.verse || 1}` : '❌ Failed');
+        }
+
+        // Test 2: Global State Sync
+        this.syncGlobalState('Genesis 10:8');
+        if (this.currentBook === 'Genesis' && this.currentChapter === 10 && this.currentVerseNum === 8) {
+            console.log('✅ Global State Sync: PASSED');
+        } else {
+            console.log('❌ Global State Sync: FAILED', { book: this.currentBook, ch: this.currentChapter, v: this.currentVerseNum });
+        }
+
+        // Test 3: Navigation Logic
+        const navTest = this.parseVerseReference('Genesis 10:8');
+        let nextV = (navTest.verse || 1) + 1;
+        const nextQuery = `${navTest.book} ${navTest.chapter}:${nextV}`;
+        if (nextQuery === 'Genesis 10:9') {
+            console.log('✅ Navigation Logic: PASSED');
+        } else {
+            console.log('❌ Navigation Logic: FAILED', nextQuery);
+        }
+
+        this.showNotification('Diagnostic Test Complete. Check console for details.', 'success');
+    }
+
+    // ==========================================
+    // UTILITIES & SOCIAL
+    // ==========================================
+    copyToClipboard(text) {
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(() => {
+            this.showNotification('Successfully copied to clipboard!', 'success');
+        }).catch(err => {
+            console.error('Copy failed:', err);
+            // Fallback for older browsers
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                this.showNotification('Successfully copied to clipboard!', 'success');
+            } catch (err) {
+                this.showNotification('Failed to copy. Please select and copy manually.', 'error');
+            }
+            document.body.removeChild(textArea);
+        });
+    }
+
+    async shareContent(title, text, url = window.location.href) {
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: title,
+                    text: text,
+                    url: url
+                });
+                this.showNotification('Shared successfully!', 'success');
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    console.error('Share failed:', err);
+                    this.copyToClipboard(`${title}\n${text}\n${url}`);
+                }
+            }
+        } else {
+            this.copyToClipboard(`${title}\n${text}\n${url}`);
+        }
     }
 }
 
@@ -4435,6 +6432,9 @@ function clearSearchHistory() { app.clearSearchHistory(); }
 function compareSearch() { app.compareSearch(); }
 function showInterlinear(ref, ver) { app.showInterlinear(ref, ver); }
 function showCrossReferences(ref) { app.showCrossReferences(ref); }
+function loadAlternativeVersesInline(refId, book, chapter, verse, versionCode, btn) {
+    app.loadAlternativeVersesInline(refId, book, chapter, verse, versionCode, btn);
+}
 
 // Close modals on outside click
 document.addEventListener('click', (e) => {
@@ -4458,6 +6458,65 @@ style.textContent = `
     @keyframes fadeOut {
         from { opacity: 1; transform: translateY(0); }
         to { opacity: 0; transform: translateY(-10px); }
+    }
+    .action-btn-icon {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: var(--bg-elevated) !important;
+        border: 1px solid var(--border-subtle) !important;
+        color: var(--text-muted) !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+    .action-btn-icon:hover {
+        background: var(--bg-card-hover) !important;
+        transform: translateY(-2px) scale(1.1);
+        color: var(--text-primary) !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .action-btn-icon i {
+        font-size: 1rem;
+    }
+    .compare-action-btn {
+        padding: 8px 16px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        font-size: 0.75rem;
+        font-weight: 600;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: 'Inter', sans-serif;
+    }
+    .compare-action-btn:hover {
+        background: var(--accent-emerald-glow);
+        border-color: var(--accent-emerald);
+        color: var(--accent-emerald);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .compare-action-btn i {
+        font-size: 0.9rem;
+    }
+    @media (max-width: 900px) {
+        .compare-action-btn span { display: none; }
+        .compare-action-btn { padding: 10px; border-radius: 50%; }
+    }
+    .alt-verses-container {
+        border-radius: 12px;
+        margin-top: 10px;
+        animation: slideInUp 0.4s ease-out;
+    }
+    @keyframes slideInUp {
+        from { transform: translateY(10px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
     }
 `;
 document.head.appendChild(style);

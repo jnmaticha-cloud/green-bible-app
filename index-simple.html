@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>God's Communities Bible App</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Main Content -->
+    <div id="content" class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-gradient-to-r from-green-700 to-green-600 text-white shadow-lg">
+            <div class="container mx-auto px-4 py-6">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas fa-book-open text-3xl"></i>
+                        <h1 class="text-3xl font-bold">God's Communities Bible</h1>
+                    </div>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="flex flex-col md:flex-row gap-4">
+                    <div class="flex-1 flex gap-2">
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            placeholder="Enter Bible reference (e.g., John 3:16)" 
+                            class="flex-1 px-4 py-3 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-300"
+                            value="John 3:16"
+                        />
+                        <button 
+                            id="searchButton" 
+                            class="bg-green-800 hover:bg-green-900 text-white px-6 py-3 rounded-lg font-semibold transition flex items-center">
+                            <i class="fas fa-search mr-2"></i>
+                            Search
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="container mx-auto px-4 py-8">
+            <!-- Verse Display Container -->
+            <div id="verseContainer" class="space-y-6">
+                <!-- Welcome Message -->
+                <div class="text-center py-12">
+                    <div class="max-w-2xl mx-auto">
+                        <i class="fas fa-bible text-6xl text-green-600 mb-6"></i>
+                        <h2 class="text-3xl font-bold text-gray-800 mb-4">Welcome to God's Communities Bible</h2>
+                        <p class="text-gray-600 mb-6">
+                            Search for any Bible verse or select a book to begin your study. 
+                            Compare multiple translations side by side and explore God's Word.
+                        </p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <i class="fas fa-search text-3xl text-green-600 mb-3"></i>
+                                <h3 class="font-semibold text-gray-800 mb-2">Search Verses</h3>
+                                <p class="text-sm text-gray-600">Find any verse by reference or keyword</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <i class="fas fa-book text-3xl text-green-600 mb-3"></i>
+                                <h3 class="font-semibold text-gray-800 mb-2">Multiple Versions</h3>
+                                <p class="text-sm text-gray-600">Compare translations including Ethiopian and Hebrew</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <i class="fas fa-bookmark text-3xl text-green-600 mb-3"></i>
+                                <h3 class="font-semibold text-gray-800 mb-2">Save & Share</h3>
+                                <p class="text-sm text-gray-600">Bookmark verses and share with others</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-gray-800 text-white py-8 mt-12">
+            <div class="container mx-auto px-4 text-center">
+                <p class="text-gray-400">
+                    &copy; 2024 God's Communities Bible App. All rights reserved.
+                </p>
+                <p class="text-sm text-gray-500 mt-2">
+                    Built with modern web technologies and enhanced caching for offline access.
+                </p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Simple inline script for testing
+        document.getElementById('searchButton').addEventListener('click', function() {
+            const searchInput = document.getElementById('searchInput').value;
+            const verseContainer = document.getElementById('verseContainer');
+            
+            verseContainer.innerHTML = `
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-2xl font-bold text-green-800 mb-4">${searchInput}</h2>
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
+                        <p class="text-gray-700 text-lg">
+                            For God so loved the world that he gave his one and only Son, 
+                            that whoever believes in him shall not perish but have eternal life.
+                        </p>
+                        <p class="text-sm text-gray-600 mt-2">- New International Version (NIV)</p>
+                    </div>
+                    <div class="flex gap-3 mt-4">
+                        <button class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                            <i class="far fa-copy mr-2"></i>Copy
+                        </button>
+                        <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                            <i class="fas fa-share mr-2"></i>Share
+                        </button>
+                        <button class="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700">
+                            <i class="fas fa-bookmark mr-2"></i>Bookmark
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        console.log('Bible app loaded successfully!');
+    </script>
+</body>
+</html>

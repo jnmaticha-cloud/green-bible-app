@@ -1,0 +1,15 @@
+[
+  { "word": "Οὕτως", "transliteration": "Houtōs", "translation": "So", "strongs": "G3779", "parsing": "Adv" },
+  { "word": "γὰρ", "transliteration": "gar", "translation": "for", "strongs": "G1063", "parsing": "Conj" },
+  { "word": "ἠγάπησεν", "transliteration": "ēgapēsen", "translation": "loved", "strongs": "G25", "parsing": "Verb, Aorist" },
+  { "word": "ὁ", "transliteration": "ho", "translation": "the", "strongs": "G3588", "parsing": "Article" },
+  { "word": "Θεὸς", "transliteration": "Theos", "translation": "God", "strongs": "G2316", "parsing": "Noun, Masc Sing Nom" },
+  { "word": "τὸν", "transliteration": "ton", "translation": "the", "strongs": "G3588", "parsing": "Article" },
+  { "word": "κόσμον", "transliteration": "kosmon", "translation": "world", "strongs": "G2889", "parsing": "Noun, Masc Sing Acc" },
+  { "word": "ὥστε", "transliteration": "hōste", "translation": "that", "strongs": "G5620", "parsing": "Conj" },
+  { "word": "τὸν", "transliteration": "ton", "translation": "the", "strongs": "G3588", "parsing": "Article" },
+  { "word": "Υἱὸν", "transliteration": "Huion", "translation": "Son", "strongs": "G5207", "parsing": "Noun, Masc Sing Acc" },
+  { "word": "τὸν", "transliteration": "ton", "translation": "the", "strongs": "G3588", "parsing": "Article" },
+  { "word": "μονογενῆ", "transliteration": "monogenē", "translation": "only begotten", "strongs": "G3439", "parsing": "Adj, Masc Sing Acc" },
+  { "word": "ἔδωκεν", "transliteration": "edōken", "translation": "he gave", "strongs": "G1325", "parsing": "Verb, Aorist" }
+]

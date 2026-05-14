@@ -50,3 +50,34 @@ Untitled-1.txt
 Untitled-2.txt
 *.diff
 *.patch
+
+# Internal working documents (not for public repo)
+ALL_FIXES_APPLIED.md
+BUG_FIXES_APPLIED.md
+BUGS_SUMMARY_FINAL.md
+CODEBASE_BUGS_AND_ERRORS_REPORT.md
+COMPREHENSIVE_BUG_REPORT.md
+CRITICAL_BUGS_FOUND.md
+FINAL_BUG_ANALYSIS_SUMMARY.md
+FIXES_APPLIED_SUMMARY.md
+SERMON_IMPROVEMENTS_APPLIED.md
+SERMON_IMPROVEMENTS.md
+SERMON_QUICK_IMPROVEMENTS.md
+CRITICAL_FIXES.patch
+fixes_to_apply.js
+verification-test.js
+test-interlinear.js
+app.diff
+app.diff.txt
+app_old.js
+app-basic.js
+language_list.txt
+temp_versions.json
+clear-cache.html
+server.legacy.js
+
+# Private Bible data (licensed content)
+data_private/
+
+# Large Bible PDFs (too big for GitHub)
+*.pdf

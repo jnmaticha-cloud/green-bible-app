@@ -1,0 +1,14 @@
+[
+  { "word": "Ἐν", "transliteration": "En", "translation": "In", "strongs": "G1722", "parsing": "Prep" },
+  { "word": "ἀρχῇ", "transliteration": "archē", "translation": "beginning", "strongs": "G746", "parsing": "Noun, Fem Sing Dat" },
+  { "word": "ἦν", "transliteration": "ēn", "translation": "was", "strongs": "G2258", "parsing": "Verb, Imperf" },
+  { "word": "ὁ", "transliteration": "ho", "translation": "the", "strongs": "G3588", "parsing": "Article" },
+  { "word": "Λόγος", "transliteration": "Logos", "translation": "Word", "strongs": "G3056", "parsing": "Noun, Masc Sing Nom" },
+  { "word": "καὶ", "transliteration": "kai", "translation": "and", "strongs": "G2532", "parsing": "Conj" },
+  { "word": "ὁ", "transliteration": "ho", "translation": "the", "strongs": "G3588", "parsing": "Article" },
+  { "word": "Λόγος", "transliteration": "Logos", "translation": "Word", "strongs": "G3056", "parsing": "Noun, Masc Sing Nom" },
+  { "word": "ἦν", "transliteration": "ēn", "translation": "was", "strongs": "G2258", "parsing": "Verb, Imperf" },
+  { "word": "πρὸς", "transliteration": "pros", "translation": "with", "strongs": "G4314", "parsing": "Prep" },
+  { "word": "τὸν", "transliteration": "ton", "translation": "the", "strongs": "G3588", "parsing": "Article" },
+  { "word": "Θεόν", "transliteration": "Theon", "translation": "God", "strongs": "G2316", "parsing": "Noun, Masc Sing Acc" }
+]

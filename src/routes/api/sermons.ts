@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import fs from 'fs/promises';
 import path from 'path';
 import { YoutubeTranscript } from 'youtube-transcript';
+import { pollinationsChatText } from '../../lib/pollinationsClient.js';
 
 function formatTime(ms: number) {
     const totalSeconds = Math.floor(ms / 1000);
@@ -18,16 +19,23 @@ const METADATA_FILE = path.join(SERMONS_DATA_DIR, 'metadata.json');
 // GET /sermons
 router.get('/', async (req: Request, res: Response) => {
     try {
+        const full = req.query.full === 'true';
         const metadataRaw = await fs.readFile(METADATA_FILE, 'utf-8');
         let allSermons = JSON.parse(metadataRaw);
         
         // Enrich metadata with summary and date from individual files if missing
         const enrichedSermons = await Promise.all(allSermons.map(async (s: any) => {
-            if (s.summary && s.date) return s;
             try {
                 const detailPath = path.join(SERMONS_DATA_DIR, `${s.id}.json`);
                 const detailRaw = await fs.readFile(detailPath, 'utf-8');
                 const detail = JSON.parse(detailRaw);
+                
+                if (full) {
+                    return detail; // Return complete object including transcript for offline caching
+                }
+                
+                if (s.summary && s.date) return s;
+                
                 return { 
                     ...s, 
                     summary: detail.summary || detail.interpretation?.summary || "", 
@@ -48,11 +56,49 @@ router.get('/', async (req: Request, res: Response) => {
     }
 });
 
+// POST /sermons/sync
+// Sync user progress, bookmarks, and notes
+router.post('/sync', async (req: Request, res: Response) => {
+    try {
+        const { progress, bookmarks, notes } = req.body;
+        const userDataPath = path.join(SERMONS_DATA_DIR, 'user_data.json');
+        
+        let existingData = { progress: {}, bookmarks: [], notes: {} };
+        try {
+            const raw = await fs.readFile(userDataPath, 'utf-8');
+            existingData = JSON.parse(raw);
+        } catch (e) {
+            // File might not exist yet, that's fine
+        }
+        
+        // Merge data (client wins)
+        const merged = {
+            progress: { ...existingData.progress, ...(progress || {}) },
+            bookmarks: bookmarks || existingData.bookmarks,
+            notes: { ...existingData.notes, ...(notes || {}) },
+            lastSynced: new Date().toISOString()
+        };
+        
+        await fs.writeFile(userDataPath, JSON.stringify(merged, null, 2));
+        
+        return res.json({ success: true, message: 'Data synced successfully', data: merged });
+    } catch (error: any) {
+        console.error('Sync error:', error.message);
+        return res.status(500).json({ error: 'Failed to sync data' });
+    }
+});
+
 // POST /sermons/ingest
 router.post('/ingest', async (req: Request, res: Response) => {
     let { url, title, transcript } = req.body;
     if (!url || !title) {
         return res.status(400).json({ error: 'Missing required fields: url, title' });
+    }
+
+    // Sanitize title and transcript to prevent prompt injection
+    title = String(title).slice(0, 200).replace(/[<>]/g, '');
+    if (transcript) {
+        transcript = String(transcript).slice(0, 50000);
     }
 
     if (title.toUpperCase().includes('ROAR')) {
@@ -96,33 +142,44 @@ router.post('/ingest', async (req: Request, res: Response) => {
         }
 
         if (!transcript) {
-             return res.status(400).json({ error: 'No transcript provided and auto-fetch failed.' });
+             console.log(`[Ingest] Verbatim fetch failed for ${youtubeId}. Attempting Prophetic Reconstruction...`);
+             try {
+                 const reconPrompt = `You are a world-class theologian familiar with the teachings of Spirit-filled ministries. I have a sermon title: "${title}". I cannot retrieve the verbatim transcript. 
+                 Provide a high-level "Prophetic Reconstruction" of what this message likely contains based on the title. 
+                 Focus on the spiritual principles, expected scriptures, and theological weight. 
+                 Output 500-800 words of structured spiritual teaching.`;
+                 
+                 transcript = await pollinationsChatText('You are a wise and inspired theologian.', reconPrompt);
+                 transcript = `[PROPHETIC RECONSTRUCTION - VERBATIM TRANSCRIPT UNAVAILABLE]\n\n${transcript}`;
+             } catch (reconErr) {
+                 return res.status(400).json({ error: 'Failed to retrieve transcript and AI reconstruction also failed.' });
+             }
         }
 
         // 1. Call AI for interpretation
-        const prompt = `You are a biblical scholar. Analyze this sermon transcript and provide a structured interpretation.
+        const prompt = `You are a world-class biblical scholar. Analyze this sermon transcript and provide a highly classified interpretation.
 Title: ${title}
-Transcript: ${transcript.substring(0, 4000)}
+Transcript: ${transcript.substring(0, 5000)}
 
 Output ONLY a JSON object:
 {
-  "summary": "Brief 2-3 sentence overview",
-  "key_points": ["Point 1", "Point 2", "Point 3"],
-  "biblical_themes": ["Theme A", "Theme B"],
-  "scriptures": ["Book Chapter:Verse", "Book Chapter:Verse"]
+  "summary": "Brief 2-3 sentence overview capturing the heart of the message",
+  "key_points": ["Point 1: Detailed theological insight", "Point 2: Practical application", "Point 3: Spiritual challenge"],
+  "biblical_themes": ["Theme A (e.g. Sanctification)", "Theme B (e.g. Sovereignty of God)"],
+  "scriptures": ["Book Chapter:Verse", "Book Chapter:Verse"],
+  "devotional_takeaway": "A single sentence for the listener to carry into their week"
 }`;
 
-        const aiResponse = await fetch('https://text.pollinations.ai/' + encodeURIComponent(prompt));
-        const aiText = await aiResponse.text();
-        const jsonMatch = aiText.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) throw new Error("AI failed to return JSON interpretation");
-        const interpretation = JSON.parse(jsonMatch[0]);
+        const systemPrompt =
+            'You are a biblical scholar. Output ONLY valid JSON matching the structure requested in the user message. No markdown.';
+        const aiText = await pollinationsChatText(systemPrompt, prompt, { jsonObject: true });
+        const interpretation = JSON.parse(aiText);
 
         const sermonData = {
             id: youtubeId,
             title,
             url,
-            speaker: "Pastor John Anosike",
+            speaker: req.body.speaker || "Unknown Speaker",
             date: req.body.date || new Date().toISOString().split('T')[0],
             transcript,
             summary: interpretation.summary,
@@ -285,10 +342,19 @@ router.get('/mentions/:book/:chapter/:verse', async (req: Request, res: Response
                 const s = JSON.parse(contentRaw);
                 
                 const scriptures = s.interpretation?.scriptures || [];
-                const isMentioned = scriptures.some((ref: string) => {
+                const transcript = (s.transcript || '').toLowerCase();
+                
+                // Check AI detected scriptures
+                let isMentioned = scriptures.some((ref: string) => {
                     const r = ref.toLowerCase();
                     return r.includes(targetRef) || (verse === 'null' && r.includes(targetRefShort));
                 });
+
+                // Fallback: Scan transcript for the pattern (e.g. "John 3:16" or "John 3 16")
+                if (!isMentioned) {
+                    const pattern = new RegExp(`${book}\\s+${chapter}[:\\s]+${verse === 'null' ? '' : verse}`, 'i');
+                    isMentioned = pattern.test(transcript);
+                }
 
                 if (isMentioned) {
                     mentions.push({

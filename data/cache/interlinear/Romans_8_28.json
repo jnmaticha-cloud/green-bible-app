@@ -1,0 +1,13 @@
+[
+  { "word": "οἴδαμεν", "transliteration": "oidamen", "translation": "we know", "strongs": "G1492", "parsing": "Verb, Perf" },
+  { "word": "δὲ", "transliteration": "de", "translation": "and", "strongs": "G1161", "parsing": "Conj" },
+  { "word": "ὅτι", "transliteration": "hoti", "translation": "that", "strongs": "G3754", "parsing": "Conj" },
+  { "word": "τοῖς", "transliteration": "tois", "translation": "to those", "strongs": "G3588", "parsing": "Article" },
+  { "word": "ἀγαπῶσιν", "transliteration": "agapōsin", "translation": "loving", "strongs": "G25", "parsing": "Verb, Pres Part" },
+  { "word": "τὸν", "transliteration": "ton", "translation": "the", "strongs": "G3588", "parsing": "Article" },
+  { "word": "Θεὸν", "transliteration": "Theon", "translation": "God", "strongs": "G2316", "parsing": "Noun, Masc Sing Acc" },
+  { "word": "πάντα", "transliteration": "panta", "translation": "all things", "strongs": "G3956", "parsing": "Adj, Neut Plur Nom" },
+  { "word": "συνεργεῖ", "transliteration": "synergei", "translation": "work together", "strongs": "G4903", "parsing": "Verb, Pres" },
+  { "word": "εἰς", "transliteration": "eis", "translation": "for", "strongs": "G1519", "parsing": "Prep" },
+  { "word": "ἀγαθόν", "transliteration": "agathon", "translation": "good", "strongs": "G18", "parsing": "Adj, Neut Sing Acc" }
+]

@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Green Bible Gateway</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles */
+        body {
+            font-family: 'Noto Sans', sans-serif;
+        }
+        .hebrew {
+            font-family: 'Noto Sans Hebrew', sans-serif;
+            direction: rtl;
+        }
+        /* Theme Colors */
+        :root {
+            --primary-green: #2E7D32;  /* Deep green from Ethiopian flag */
+            --accent-green: #43A047;   /* Brighter green for highlights */
+            --light-green: #E8F5E9;    /* Light green for backgrounds */
+            --dark-green: #1B5E20;     /* Dark green for text/contrast */
+            --gold: #FBC02D;           /* Gold for accents (Ethiopian cross color) */
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(46, 125, 50, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary-green);
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div id="app" class="max-w-7xl mx-auto px-4 py-8">
+        <header class="bg-gradient-to-r from-green-800 to-green-700 text-white p-6 rounded-lg shadow-lg mb-8 border-t-4 border-gold-500">
+            <div class="flex items-center justify-center space-x-4">
+                <i class="fas fa-bible text-3xl text-gold-300"></i>
+                <h1 class="text-3xl font-bold text-white">Green Bible Gateway</h1>
+                <i class="fas fa-cross text-3xl text-gold-300"></i>
+            </div>
+            <p class="mt-2">Read and study the Bible in multiple versions</p>
+        </header>
+
+        <div id="loading" class="text-center my-16">
+            <div class="loading-spinner"></div>
+            <p class="mt-4 text-gray-600">Loading Bible App...</p>
+        </div>
+
+        <div id="content" class="hidden">
+            <!-- Version Selection -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h2 class="text-xl font-semibold mb-4">Select Your Preferred Bible Versions</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Version 1</label>
+                        <select id="version1" class="version-select w-full p-2 border border-gray-300 rounded-md">
+                            <option value="">-- Select a version --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Version 2 (Optional)</label>
+                        <select id="version2" class="version-select w-full p-2 border border-gray-300 rounded-md">
+                            <option value="">-- Select a version --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Version 3 (Optional)</label>
+                        <select id="version3" class="version-select w-full p-2 border border-gray-300 rounded-md">
+                            <option value="">-- Select a version --</option>
+                        </select>
+                    </div>
+                </div>
+                <p id="versionError" class="text-red-500 text-sm hidden">Please select at least one version</p>
+            </div>
+
+            <!-- Search Box -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <div class="relative">
+                    <div class="relative flex">
+                        <input type="text" id="searchInput" placeholder="Enter verse reference (e.g., John 3:16)" 
+                               class="w-full px-4 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <button id="searchButton" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                    </div>
+                </div>
+                <div id="searchResults" class="mt-4 hidden">
+                    <!-- Search results will be displayed here -->
+                </div>
+            </div>
+
+            <!-- Bible Book List -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h2 class="text-xl font-semibold mb-4">Select a Bible Book</h2>
+                <div class="relative">
+                    <select id="bookSelect" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <option value="">-- Select a Book --</option>
+                        <optgroup label="Old Testament">
+                            <option value="Genesis">Genesis</option>
+                            <option value="Exodus">Exodus</option>
+                            <option value="Leviticus">Leviticus</option>
+                            <option value="Numbers">Numbers</option>
+                            <option value="Deuteronomy">Deuteronomy</option>
+                            <option value="Joshua">Joshua</option>
+                            <option value="Judges">Judges</option>
+                            <option value="Ruth">Ruth</option>
+                            <option value="1 Samuel">1 Samuel</option>
+                            <option value="2 Samuel">2 Samuel</option>
+                            <option value="1 Kings">1 Kings</option>
+                            <option value="2 Kings">2 Kings</option>
+                            <option value="1 Chronicles">1 Chronicles</option>
+                            <option value="2 Chronicles">2 Chronicles</option>
+                            <option value="Ezra">Ezra</option>
+                            <option value="Nehemiah">Nehemiah</option>
+                            <option value="Esther">Esther</option>
+                            <option value="Job">Job</option>
+                            <option value="Psalms">Psalms</option>
+                            <option value="Proverbs">Proverbs</option>
+                            <option value="Ecclesiastes">Ecclesiastes</option>
+                            <option value="Song of Solomon">Song of Solomon</option>
+                            <option value="Isaiah">Isaiah</option>
+                            <option value="Jeremiah">Jeremiah</option>
+                            <option value="Lamentations">Lamentations</option>
+                            <option value="Ezekiel">Ezekiel</option>
+                            <option value="Daniel">Daniel</option>
+                            <option value="Hosea">Hosea</option>
+                            <option value="Joel">Joel</option>
+                            <option value="Amos">Amos</option>
+                            <option value="Obadiah">Obadiah</option>
+                            <option value="Jonah">Jonah</option>
+                            <option value="Micah">Micah</option>
+                            <option value="Nahum">Nahum</option>
+                            <option value="Habakkuk">Habakkuk</option>
+                            <option value="Zephaniah">Zephaniah</option>
+                            <option value="Haggai">Haggai</option>
+                            <option value="Zechariah">Zechariah</option>
+                            <option value="Malachi">Malachi</option>
+                        </optgroup>
+                        <optgroup label="New Testament">
+                            <option value="Matthew">Matthew</option>
+                            <option value="Mark">Mark</option>
+                            <option value="Luke">Luke</option>
+                            <option value="John">John</option>
+                            <option value="Acts">Acts</option>
+                            <option value="Romans">Romans</option>
+                            <option value="1 Corinthians">1 Corinthians</option>
+                            <option value="2 Corinthians">2 Corinthians</option>
+                            <option value="Galatians">Galatians</option>
+                            <option value="Ephesians">Ephesians</option>
+                            <option value="Philippians">Philippians</option>
+                            <option value="Colossians">Colossians</option>
+                            <option value="1 Thessalonians">1 Thessalonians</option>
+                            <option value="2 Thessalonians">2 Thessalonians</option>
+                            <option value="1 Timothy">1 Timothy</option>
+                            <option value="2 Timothy">2 Timothy</option>
+                            <option value="Titus">Titus</option>
+                            <option value="Philemon">Philemon</option>
+                            <option value="Hebrews">Hebrews</option>
+                            <option value="James">James</option>
+                            <option value="1 Peter">1 Peter</option>
+                            <option value="2 Peter">2 Peter</option>
+                            <option value="1 John">1 John</option>
+                            <option value="2 John">2 John</option>
+                            <option value="3 John">3 John</option>
+                            <option value="Jude">Jude</option>
+                            <option value="Revelation">Revelation</option>
+                        </optgroup>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            <!-- Verse Display -->
+            <div id="verseContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        // Bible data structure
+        let BIBLE_DATA = {
+          "Genesis": {
+            "1": {
+              "1": {
+                "KJV": "In the beginning God created the heaven and the earth.",
+                "NIV": "In the beginning God created the heavens and the earth.",
+                "ESV": "In the beginning, God created the heavens and the earth."
+              }
+            }
+          },
+          "John": {
+            "3": {
+              "16": {
+                "KJV": "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.",
+                "NIV": "For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.",
+                "ESV": "For God so loved the world, that he gave his only Son, that whoever believes in him should not perish but have eternal life."
+              }
+            }
+          }
+        };
+        
+        // Bible versions data
+        const BIBLE_VERSIONS = [
+            { id: 'kjv', name: 'King James Version (KJV)', year: 1611, lang: 'en' },
+            { id: 'niv', name: 'New International Version (NIV)', year: 2011, lang: 'en' },
+            { id: 'esv', name: 'English Standard Version (ESV)', year: 2016, lang: 'en' },
+            { id: 'nlt', name: 'New Living Translation (NLT)', year: 2015, lang: 'en' },
+            { id: 'nkjv', name: 'New King James Version (NKJV)', year: 1982, lang: 'en' }
+        ];
+        
+        // Sample verse data
+        const SAMPLE_VERSES = {
+            'John 3:16': {
+                kjv: 'For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.',
+                niv: 'For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.',
+                esv: 'For God so loved the world, that he gave his only Son, that whoever believes in him should not perish but have eternal life.',
+                nlt: 'For this is how God loved the world: He gave his one and only Son, so that everyone who believes in him will not perish but have eternal life.',
+                nkjv: 'For God so loved the world that He gave His only begotten Son, that whoever believes in Him should not perish but have everlasting life.'
+            },
+            'Genesis 1:1': {
+                kjv: 'In the beginning God created the heaven and the earth.',
+                niv: 'In the beginning God created the heavens and the earth.',
+                esv: 'In the beginning, God created the heavens and the earth.',
+                nlt: 'In the beginning God created the heavens and the earth.',
+                nkjv: 'In the beginning God created the heavens and the earth.'
+            },
+            'Psalms 23:1': {
+                kjv: 'The LORD is my shepherd; I shall not want.',
+                niv: 'The LORD is my shepherd, I lack nothing.',
+                esv: 'The LORD is my shepherd; I shall not want.',
+                nlt: 'The LORD is my shepherd; I have all that I need.',
+                nkjv: 'The LORD is my shepherd; I shall not want.'
+            }
+        };
+
+        // DOM elements
+        const version1Select = document.getElementById('version1');
+        const version2Select = document.getElementById('version2');
+        const version3Select = document.getElementById('version3');
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const versionError = document.getElementById('versionError');
+        
+        // Initialize the app when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                // Initialize the app
+                populateVersionSelects();
+                setupEventListeners();
+                
+                // Show the app content
+                const loadingElement = document.querySelector('.loading');
+                const contentElement = document.getElementById('content');
+                
+                if (loadingElement) loadingElement.style.display = 'none';
+                if (contentElement) contentElement.classList.remove('hidden');
+                
+                // Display a default verse
+                setTimeout(() => {
+                    displayVerse('John 3:16', getSelectedVersions());
+                }, 100);
+                
+            } catch (error) {
+                console.error('Error initializing app:', error);
+                const loadingElement = document.querySelector('.loading');
+                if (loadingElement) {
+                    loadingElement.innerHTML = `
+                        <div class="bg-red-50 border-l-4 border-red-400 p-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-red-700">
+                                        Error initializing app. Please check the console for details.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        });
+
+        // Populate version select dropdowns
+        function populateVersionSelects() {
+            // Add versions to each select element
+            BIBLE_VERSIONS.forEach(version => {
+                const option1 = createOptionElement(version);
+                const option2 = createOptionElement(version);
+                const option3 = createOptionElement(version);
+                
+                version1Select.appendChild(option1);
+                version2Select.appendChild(option2);
+                version3Select.appendChild(option3);
+            });
+        }
+        
+        // Helper function to create option element
+        function createOptionElement(version) {
+            const option = document.createElement('option');
+            option.value = version.id;
+            option.textContent = `${version.name} (${version.year})`;
+            return option;
+        }
+        
+        // Setup event listeners
+        function setupEventListeners() {
+            // Initialize search elements
+            const searchInput = document.getElementById('searchInput');
+            const searchButton = document.getElementById('searchButton');
+            
+            // Search is always enabled
+            searchInput.disabled = false;
+            searchButton.disabled = false;
+            
+            // Version selection still available but doesn't affect search functionality
+            const versionSelects = document.querySelectorAll('.version-select');
+            versionSelects.forEach(select => {
+                select.addEventListener('change', () => {
+                    // Version change handler can be used for other purposes if needed
+                });
+            });
+
+            // Search button click handler
+            document.getElementById('searchButton').addEventListener('click', () => {
+                const reference = document.getElementById('searchInput').value.trim();
+                const versions = getSelectedVersions();
+                
+                if (reference === '') {
+                    showError('Please enter a Bible reference');
+                    return;
+                }
+                
+                // Show all versions if none are selected, otherwise show only selected ones
+                displayVerse(reference, versions);
+            });
+
+            // Handle Enter key in search input
+            document.getElementById('searchInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    document.getElementById('searchButton').click();
+                }
+            });
+
+            // Handle book selection from dropdown
+            document.getElementById('bookSelect').addEventListener('change', (e) => {
+                const selectedBook = e.target.value;
+                if (selectedBook) {
+                    const reference = selectedBook + ' 1:1';
+                    const versions = getSelectedVersions();
+                    document.getElementById('searchInput').value = reference;
+                    displayVerse(reference, versions);
+                    // Reset the dropdown
+                    e.target.value = '';
+                }
+            });
+        }
+
+        // Get currently selected versions in the order they appear in the dropdowns
+        function getSelectedVersions() {
+            const selected = [];
+            const selects = [version1Select, version2Select, version3Select];
+            const addedIds = new Set();
+            
+            // Add versions in the order they appear in the dropdowns
+            selects.forEach(select => {
+                if (select.value && !addedIds.has(select.value)) {
+                    const version = BIBLE_VERSIONS.find(v => v.id === select.value);
+                    if (version) {
+                        selected.push(version);
+                        addedIds.add(version.id);
+                    }
+                }
+            });
+            
+            return selected;
+        }
+
+        // Display a verse in the selected versions
+        function displayVerse(reference, versions) {
+            try {
+                // Clear previous results
+                const verseContainer = document.getElementById('verseContainer');
+                verseContainer.innerHTML = '';
+                
+                // Check if we have this reference in our sample data
+                if (!SAMPLE_VERSES[reference]) {
+                    showError('Verse not found. Try "John 3:16", "Genesis 1:1", or "Psalms 23:1"');
+                    return;
+                }
+                
+                // Create a container for the verse display
+                const container = document.createElement('div');
+                container.className = 'w-full';
+                
+                // Create the reference header
+                const referenceHeader = document.createElement('div');
+                referenceHeader.className = 'mb-6';
+                referenceHeader.innerHTML = `
+                    <h2 class="text-2xl font-bold text-green-800 mb-2">${reference}</h2>
+                    <div class="h-1 w-16 bg-green-600 mb-4"></div>
+                `;
+                container.appendChild(referenceHeader);
+                
+                // Create a grid for the versions
+                const versionsGrid = document.createElement('div');
+                versionsGrid.className = 'grid grid-cols-1 md:grid-cols-3 gap-6';
+                
+                // Determine which versions to show
+                const showAllVersions = !versions || versions.length === 0;
+                const versionsToShow = showAllVersions ? BIBLE_VERSIONS : versions;
+                
+                // Create a card for each version
+                versionsToShow.forEach(version => {
+                    const versionId = typeof version === 'object' ? version.id : version;
+                    const versionName = BIBLE_VERSIONS.find(v => v.id === versionId)?.name || versionId.toUpperCase();
+                    const versionYear = BIBLE_VERSIONS.find(v => v.id === versionId)?.year || '';
+                    
+                    const verseText = SAMPLE_VERSES[reference][versionId] || 'Verse not available in this version';
+                    
+                    const verseCard = document.createElement('div');
+                    verseCard.className = 'bg-white p-6 rounded-lg shadow-md';
+                    
+                    // Add a note if showing all versions
+                    const versionNote = showAllVersions ? 
+                        '<p class="text-xs text-gray-500 italic mb-2">All versions shown - select versions above to filter</p>' : '';
+                    
+                    verseCard.innerHTML = `
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-lg font-semibold text-green-800">${versionName}</h3>
+                            <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">${versionYear}</span>
+                        </div>
+                        ${versionNote}
+                        <p class="text-gray-700 mb-4">${verseText}</p>
+                        <div class="flex justify-between items-center pt-4 border-t border-gray-100">
+                            <button class="text-green-600 hover:text-green-800 text-sm font-medium flex items-center" 
+                                    onclick="navigator.clipboard.writeText('${reference} - ${versionName}\n\n${verseText}')">
+                                <i class="far fa-copy mr-1"></i> Copy
+                            </button>
+                            <div class="flex space-x-4">
+                                <button class="text-green-600 hover:text-green-800 text-sm font-medium">Share</button>
+                                <button class="text-green-600 hover:text-green-800 text-sm font-medium">Bookmark</button>
+                            </div>
+                        </div>
+                    `;
+                    versionsGrid.appendChild(verseCard);
+                });
+                
+                container.appendChild(versionsGrid);
+                verseContainer.appendChild(container);
+                
+                // Add interpretation if available
+                const interpretation = getInterpretation(reference);
+                if (interpretation) {
+                    const interpretationCard = document.createElement('div');
+                    interpretationCard.className = 'bg-blue-50 border-l-4 border-blue-500 p-6 rounded-lg mt-6';
+                    interpretationCard.innerHTML = `
+                        <h3 class="text-lg font-semibold text-blue-800 mb-2">Interpretation</h3>
+                        <p class="text-gray-700">${interpretation}</p>
+                    `;
+                    verseContainer.appendChild(interpretationCard);
+                }
+                
+                // Scroll to the results
+                verseContainer.scrollIntoView({ behavior: 'smooth' });
+                
+            } catch (error) {
+                console.error('Error displaying verse:', error);
+                const verseContainer = document.getElementById('verseContainer');
+                const errorElement = document.createElement('div');
+                errorElement.className = 'bg-red-50 border-l-4 border-red-400 p-4 mb-4';
+                errorElement.textContent = 'An error occurred while displaying the verse. Please try again.';
+                verseContainer.appendChild(errorElement);
+            }
+        }
+        
+        // Helper function to get sample verse text based on version
+        function getSampleVerseText(reference, versionId) {
+            // In a real implementation, this would fetch the actual verse text
+            // For now, we'll return sample text
+            const samples = {
+                'kjv': 'For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.',
+                'niv': 'For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.',
+                'esv': 'For God so loved the world, that he gave his only Son, that whoever believes in him should not perish but have eternal life.',
+                'nlt': 'For this is how God loved the world: He gave his one and only Son, so that everyone who believes in him will not perish but have eternal life.',
+                'nkjv': 'For God so loved the world that He gave His only begotten Son, that whoever believes in Him should not perish but have everlasting life.'
+            };
+            
+            return samples[versionId] || 'Sample verse text for ' + reference + ' in this version would appear here.';
+        }
+
+        // Get interpretation for a verse
+        function getInterpretation(reference) {
+            const interpretations = {
+                'John 3:16': 'This well-known verse from the Gospel of John summarizes the core message of Christianity, emphasizing God\'s love for humanity and the promise of eternal life through faith in Jesus Christ. This verse is often used to illustrate God\'s boundless love and the concept of divine sacrifice.',
+                'Genesis 1:1': 'The opening verse of the Bible establishes God as the creator of the universe. This verse is foundational for understanding God\'s sovereignty and the divine nature of creation.',
+                'Psalms 23:1': 'This beloved psalm speaks of God as a shepherd who provides and cares for His people. This verse is often used in prayers and is associated with God\'s guidance and protection throughout one\'s spiritual journey.'
+            };
+            return interpretations[reference] || ''; // Return empty string if no interpretation is available
+        }
+
+        // Show error message
+        function showError(message) {
+            const errorHtml = `
+                <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-red-700">${message}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            verseContainer.innerHTML = errorHtml;
+        }
+    </script>
+</body>
+</html>

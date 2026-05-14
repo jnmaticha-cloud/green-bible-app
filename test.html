@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Bible App Test Page</h1>
+    <div id="status">Testing...</div>
+    
+    <script type="module">
+        const statusDiv = document.getElementById('status');
+        
+        try {
+            statusDiv.innerHTML = '<p class="success">✓ HTML loaded successfully</p>';
+            
+            // Test if we can import the services
+            import('./dist/src/services/index.js')
+                .then(module => {
+                    statusDiv.innerHTML += '<p class="success">✓ Services module loaded</p>';
+                    statusDiv.innerHTML += '<p>Available exports: ' + Object.keys(module).join(', ') + '</p>';
+                })
+                .catch(error => {
+                    statusDiv.innerHTML += '<p class="error">✗ Failed to load services: ' + error.message + '</p>';
+                    console.error('Import error:', error);
+                });
+                
+        } catch (error) {
+            statusDiv.innerHTML += '<p class="error">✗ Error: ' + error.message + '</p>';
+            console.error('Error:', error);
+        }
+    </script>
+</body>
+</html>

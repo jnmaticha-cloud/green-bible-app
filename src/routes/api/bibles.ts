@@ -4,6 +4,7 @@ import { Router, Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { pollinationsChatText } from '../../lib/pollinationsClient.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -85,7 +86,7 @@ const BIBLE_VERSIONS: Record<string, BibleVersion> = {
 
     // ---- African Languages ----
     SWAHILI: {
-        id: 'SWAHILI', name: 'Swahili Contemporary', language: 'Swahili', languageCode: 'swa',
+        id: 'SWAHILI', name: 'Swahili Contemporary (Neno)', language: 'Swahili', languageCode: 'swa',
         source: 'helloao', apiId: 'swh_bib', helloaoBookMap: true, available: true, copyright: 'Free Use'
     },
     SWAHILI_STD: {
@@ -135,19 +136,22 @@ const BIBLE_VERSIONS: Record<string, BibleVersion> = {
     },
     MERU: {
         id: 'MERU', name: 'Iuku Ria Murungu (Meru)', language: 'Meru', languageCode: 'mer',
-        source: 'helloao', apiId: 'mer_bib', helloaoBookMap: true, available: true, copyright: 'Bible Society of Kenya'
+        source: 'pdf-only', apiId: 'mer_pdf', available: true, copyright: 'Bible Society of Kenya',
+        pdfPath: 'https://archive.org/details/merubible'
     },
     MAASAI: {
         id: 'MAASAI', name: 'Biblia Sinyati (Maasai)', language: 'Maasai', languageCode: 'mas',
-        source: 'helloao', apiId: 'mas_bib', helloaoBookMap: true, available: true, copyright: 'Bible Society of Kenya'
+        source: 'pdf-only', apiId: 'mas_pdf', available: true, copyright: 'Bible Society of Kenya',
+        pdfPath: 'https://archive.org/details/maasaibible'
     },
     KALENJIN: {
-        id: 'KALENJIN', name: 'Bukuit Ne Tilil (Kalenjin)', language: 'Kalenjin', languageCode: 'kln',
-        source: 'helloao', apiId: 'spy_wbt', helloaoBookMap: true, available: true, copyright: 'Free Use (Sabaot NT)'
+        id: 'KALENJIN', name: 'Kalenjin Bible (Sabaot)', language: 'Kalenjin', languageCode: 'kln',
+        source: 'helloao', apiId: 'spy_wbt', helloaoBookMap: true, available: true, copyright: 'Free Use'
     },
     EMBU: {
         id: 'EMBU', name: 'Ivuku Ria Uvoro (Embu)', language: 'Embu', languageCode: 'ebu',
-        source: 'helloao', apiId: 'ebu_bib', helloaoBookMap: true, available: true, copyright: 'Bible Society of Kenya'
+        source: 'pdf-only', apiId: 'ebu_pdf', available: true, copyright: 'Bible Society of Kenya',
+        pdfPath: 'https://archive.org/details/embubible'
     },
 };
 
@@ -189,8 +193,122 @@ const BOOK_CODE_MAP: Record<string, string> = {
     'eph': 'EPH', 'phil': 'PHP', 'col': 'COL', '1 thess': '1TH', '2 thess': '2TH',
     '1 tim': '1TI', '2 tim': '2TI', 'tit': 'TIT', 'philem': 'PHM', 'heb': 'HEB',
     'jas': 'JAS', '1 pet': '1PE', '2 pet': '2PE', '1 jn': '1JN', '2 jn': '2JN',
-    '3 jn': '3JN', 'rev': 'REV'
+    '3 jn': '3JN', 'rev': 'REV',
+
+    // Deuterocanonical / local-text (Ekegusii & similar)
+    'tobit': 'TOB', 'judith': 'JDT', 'wisdom': 'WIS', 'wisdom of solomon': 'WIS',
+    'sirach': 'SIR', 'ecclesiasticus': 'SIR',
+    '1 maccabees': '1MA', '2 maccabees': '2MA'
 };
+
+/** Protestant canon navigation order (lowercase slugs aligned with frontend selects). */
+const PROTESTANT_OT_ORDER = [
+    'genesis', 'exodus', 'leviticus', 'numbers', 'deuteronomy', 'joshua', 'judges', 'ruth',
+    '1 samuel', '2 samuel', '1 kings', '2 kings', '1 chronicles', '2 chronicles', 'ezra', 'nehemiah', 'esther',
+    'job', 'psalms', 'proverbs', 'ecclesiastes', 'song of solomon', 'isaiah', 'jeremiah', 'lamentations', 'ezekiel', 'daniel',
+    'hosea', 'joel', 'amos', 'obadiah', 'jonah', 'micah', 'nahum', 'habakkuk', 'zephaniah', 'haggai', 'zechariah', 'malachi'
+] as const;
+
+const PROTESTANT_NT_ORDER = [
+    'matthew', 'mark', 'luke', 'john', 'acts', 'romans', '1 corinthians', '2 corinthians', 'galatians', 'ephesians', 'philippians', 'colossians',
+    '1 thessalonians', '2 thessalonians', '1 timothy', '2 timothy', 'titus', 'philemon', 'hebrews', 'james', '1 peter', '2 peter',
+    '1 john', '2 john', '3 john', 'jude', 'revelation'
+] as const;
+
+const NT_USFM_CODES = new Set([
+    'MAT', 'MRK', 'LUK', 'JHN', 'ACT', 'ROM', '1CO', '2CO', 'GAL', 'EPH', 'PHP', 'COL', '1TH', '2TH', '1TI', '2TI', 'TIT', 'PHM',
+    'HEB', 'JAS', '1PE', '2PE', '1JN', '2JN', '3JN', 'JUD', 'REV'
+]);
+
+/** Maps USFM 3-letter codes to one canonical lowercase slug per book. */
+const CODE_TO_CANON_SLUG: Record<string, string> = {};
+for (const slug of PROTESTANT_OT_ORDER) {
+    const code = BOOK_CODE_MAP[slug];
+    if (code) CODE_TO_CANON_SLUG[code] = slug;
+}
+for (const slug of PROTESTANT_NT_ORDER) {
+    const code = BOOK_CODE_MAP[slug];
+    if (code) CODE_TO_CANON_SLUG[code] = slug;
+}
+Object.assign(CODE_TO_CANON_SLUG, {
+    TOB: 'tobit', JDT: 'judith', WIS: 'wisdom', SIR: 'sirach', '1MA': '1 maccabees', '2MA': '2 maccabees'
+});
+
+const VERSION_BOOK_STRATEGY: Record<string, 'nt-only' | 'local-files' | 'protestant66'> = {
+    CHEROKEE: 'nt-only',
+    KALENJIN: 'nt-only',
+    EKEGUSII: 'local-files'
+};
+
+function slugToUsfm(slug: string): string | null {
+    return BOOK_CODE_MAP[slug.toLowerCase().trim()] || null;
+}
+
+function sortSlugList(slugs: string[], order: readonly string[]): string[] {
+    const set = new Set(slugs);
+    const ordered = order.filter(s => set.has(s));
+    const rest = slugs.filter(s => !ordered.includes(s)).sort((a, b) => a.localeCompare(b));
+    return [...ordered, ...rest];
+}
+
+function partitionOtNt(slugs: string[]): { ot: string[]; nt: string[] } {
+    const ot: string[] = [];
+    const nt: string[] = [];
+    for (const slug of slugs) {
+        const code = slugToUsfm(slug);
+        if (code && NT_USFM_CODES.has(code)) nt.push(slug);
+        else ot.push(slug);
+    }
+    return {
+        ot: sortSlugList(ot, PROTESTANT_OT_ORDER),
+        nt: sortSlugList(nt, PROTESTANT_NT_ORDER)
+    };
+}
+
+function protestant66Grouped(): { ot: string[]; nt: string[] } {
+    return { ot: [...PROTESTANT_OT_ORDER], nt: [...PROTESTANT_NT_ORDER] };
+}
+
+function ntOnlyGrouped(): { ot: string[]; nt: string[] } {
+    return { ot: [], nt: [...PROTESTANT_NT_ORDER] };
+}
+
+function booksFromLocalVersionDir(config: BibleVersion): { ot: string[]; nt: string[] } | null {
+    if (!config.localDir) return null;
+    const rootDir = path.join(__dirname, '..', '..', '..');
+    const versionDir = path.join(rootDir, config.localDir);
+    if (!fs.existsSync(versionDir)) return null;
+
+    const codes = new Set<string>();
+    for (const f of fs.readdirSync(versionDir)) {
+        if (!f.endsWith('_read.txt')) continue;
+        const m = f.match(/_([A-Z0-9]{3})_(\d+)_read\.txt$/);
+        if (m) codes.add(m[1]);
+    }
+
+    const slugs: string[] = [];
+    for (const c of codes) {
+        const slug = CODE_TO_CANON_SLUG[c];
+        if (slug) slugs.push(slug);
+    }
+    return partitionOtNt(slugs);
+}
+
+function getBooksGroupedForVersion(versionId: string, config: BibleVersion): { ot: string[]; nt: string[] } {
+    const strategy = VERSION_BOOK_STRATEGY[versionId] || 'protestant66';
+
+    if (strategy === 'nt-only') {
+        return ntOnlyGrouped();
+    }
+    if (strategy === 'local-files') {
+        const scanned = booksFromLocalVersionDir(config);
+        if (scanned && (scanned.ot.length + scanned.nt.length > 0)) {
+            return scanned;
+        }
+        console.warn(`[books] Local scan empty or missing for ${versionId}; falling back to Protestant 66`);
+    }
+    return protestant66Grouped();
+}
 
 // ============================================================
 // Native Book Name Mappings (for non-English versions)
@@ -436,10 +554,21 @@ function translateNativeBookName(bookName: string): string {
     return bookName;
 }
 
+function titleCaseEnglishSlug(slug: string): string {
+    return slug.split(/\s+/).filter(Boolean).map(w => (/^\d+$/.test(w) ? w : w.charAt(0).toUpperCase() + w.slice(1))).join(' ');
+}
+
 function getNativeBookName(bookName: string, languageCode: string): string {
+    const slug = bookName.toLowerCase().trim();
     const map = NATIVE_BOOK_NAMES[languageCode];
-    if (!map) return bookName;
-    return map[bookName.toLowerCase().trim()] || bookName;
+    if (map && map[slug]) return map[slug];
+    if (map) return bookName;
+    return titleCaseEnglishSlug(slug);
+}
+
+/** Lowercase English slug for BOOK_CODE_MAP / APIs (native labels → English via reverse map). */
+function canonEnglishBookSlug(bookLabel: string): string {
+    return translateNativeBookName(bookLabel.trim()).toLowerCase().trim();
 }
 
 function getBookCode(bookName: string): string | null {
@@ -458,6 +587,8 @@ router.get('/versions', (_req: Request, res: Response) => {
             name: v.name,
             language: v.language,
             languageCode: v.languageCode,
+            source: v.source,
+            available: v.available,
             copyright: v.copyright,
         }));
 
@@ -468,7 +599,26 @@ router.get('/versions', (_req: Request, res: Response) => {
         byLanguage[v.language].push(v);
     });
 
-    res.json({ versions, byLanguage });
+    return res.json({ versions, byLanguage });
+});
+
+// ============================================================
+// API Route: GET /books/:versionId — Books available for a version (OT / NT)
+// ============================================================
+router.get('/books/:versionId', (req: Request, res: Response) => {
+    const raw = (req.params.versionId || '').trim();
+    const id = raw.toUpperCase();
+    const config = BIBLE_VERSIONS[id];
+    if (!config || !config.available) {
+        return res.status(404).json({ error: `Bible version "${raw}" not found` });
+    }
+    const grouped = getBooksGroupedForVersion(id, config);
+    return res.json({
+        version: id,
+        source: config.source,
+        ot: grouped.ot,
+        nt: grouped.nt
+    });
 });
 
 // ============================================================
@@ -485,23 +635,23 @@ router.get('/all-book-names', (_req: Request, res: Response) => {
         Object.values(langMap).forEach(name => allNames.add(name.toLowerCase()));
     });
 
-    res.json({ names: Array.from(allNames) });
+    return res.json({ names: Array.from(allNames) });
 });
 
 // ============================================================
 // API Route: GET /book-names/:languageCode — Get native book names
 // ============================================================
-router.get('/book-names/:languageCode', (req: Request, res: Response) => {
-    const { languageCode } = req.params;
-    const names = NATIVE_BOOK_NAMES[languageCode.toLowerCase()] || {};
-    res.json({ languageCode, names });
-});
+// Combined duplicate route into the one below
+// ============================================================
 
 // ============================================================
 // API Route: GET /passage — Fetch a Bible passage (real data)
 // ============================================================
 router.get('/passage', async (req: Request, res: Response) => {
-    const { version, book, chapter = '1', verse, verseEnd } = req.query as Record<string, string>;
+    const { version, book, chapter = '1', verse, verseEnd: rawVerseEnd } = req.query as Record<string, string>;
+
+    // Sanitize verseEnd — strip anything after a colon (e.g. "18:1" → "18")
+    const verseEnd = rawVerseEnd ? rawVerseEnd.split(':')[0].trim() : undefined;
 
     if (!version || !book) {
         return res.status(400).json({ error: 'Missing parameters: version and book required' });
@@ -517,26 +667,45 @@ router.get('/passage', async (req: Request, res: Response) => {
         const translatedBook = translateNativeBookName(book);
         console.log(`[passage] Request: ${version} ${book} ${chapter}:${verse || 'all'}${verseEnd ? '-' + verseEnd : ''} -> Translated: ${translatedBook}`);
 
-        if (versionConfig.source === 'bible-api') {
-            result = await fetchFromBibleApi(versionConfig, translatedBook, chapter, verse, verseEnd);
-        } else if (versionConfig.source === 'helloao') {
-            result = await fetchFromHelloAo(versionConfig, translatedBook, chapter, verse, verseEnd);
-        } else if (versionConfig.source === 'local-text') {
-            result = await fetchFromLocalText(versionConfig, translatedBook, chapter, verse, verseEnd);
-        } else if (versionConfig.source === 'pdf-only') {
-            result = {
+        if (versionConfig.source === 'pdf-only') {
+            return res.json({
                 version: versionConfig.id,
                 versionName: versionConfig.name,
+                book: translatedBook,
+                chapter: parseInt(chapter),
                 reference: `${book} ${chapter}${verse ? ':' + verse : ''}${verseEnd ? '-' + verseEnd : ''}`,
-                text: `This version is available as a high-fidelity PDF. Click "View Full PDF" below to read ${versionConfig.name}.`,
-                verses: [{ number: 1, text: `This version is available as a high-fidelity PDF document.` }]
-            };
+                text: `This version is available as a high-fidelity PDF document. Click the button below to view the full Bible in ${versionConfig.language}.`,
+                verses: [{ number: 1, text: `This version is available as a high-fidelity PDF document.` }],
+                pdfPath: versionConfig.pdfPath,
+                source: 'pdf-only'
+            });
         }
 
-        return res.json({ ...result, pdfPath: versionConfig.pdfPath });
+        const controller = new AbortController();
+
+        if (versionConfig.source === 'bible-api') {
+            result = await fetchFromBibleApi(versionConfig, translatedBook, chapter, verse, verseEnd, controller.signal);
+        } else if (versionConfig.source === 'helloao') {
+            result = await fetchFromHelloAo(versionConfig, translatedBook, chapter, verse, verseEnd, controller.signal);
+        } else if (versionConfig.source === 'local-text') {
+            result = await fetchFromLocalText(versionConfig, translatedBook, chapter, verse, verseEnd);
+        } else {
+            return res.status(400).json({ error: 'Passage fetch not supported for this version type' });
+        }
+
+        return res.json({ 
+            ...result, 
+            pdfPath: versionConfig.pdfPath,
+            timestamp: new Date().toISOString()
+        });
     } catch (error: any) {
         console.error(`Error fetching passage [${version} ${book} ${chapter}:${verse || 'all'}]:`, error.message);
-        return res.status(500).json({ error: 'Failed to fetch passage', details: error.message });
+        return res.status(500).json({ 
+            error: 'Failed to fetch passage', 
+            details: error.message,
+            version,
+            reference: `${book} ${chapter}:${verse || 'all'}`
+        });
     }
 });
 
@@ -549,7 +718,7 @@ const STOP_WORDS = new Set(['a', 'an', 'the', 'and', 'or', 'but', 'if', 'then', 
 // Broad Search: Keyword-based discovery for imperfect queries
 // Falls back here when exact search returns 0 results.
 // ============================================================
-async function performBroadSearch(query: string) {
+async function performBroadSearch(query: string, signal?: AbortSignal) {
     const cleanQuery = query.replace(/["']/g, ' ').replace(/[,./';"\\]/g, " ").replace(/\s{2,}/g," ").trim();
     const words = cleanQuery.split(' ').filter(w => w.length > 2 && !STOP_WORDS.has(w.toLowerCase()));
     
@@ -577,7 +746,7 @@ async function performBroadSearch(query: string) {
     const broadQuery = words.join(' ');
     console.log(`[Broad Search] Attempting all-keywords match: "${broadQuery}"`);
     
-    let groupedRefs = await fetchAndGroup(`https://api.biblesupersearch.com/api?bible=kjv&search=${encodeURIComponent(broadQuery)}&search_type=all_words`);
+    let groupedRefs = await fetchAndGroup(`https://api.biblesupersearch.com/api?bible=kjv&search=${encodeURIComponent(broadQuery)}&search_type=all_words`, signal);
     if (groupedRefs.length > 0) return groupedRefs;
 
     // Phase 2: Combination Search for misquotes (e.g. "people perish" + "people lack")
@@ -593,7 +762,7 @@ async function performBroadSearch(query: string) {
         }
 
         const resultsPromises = combos.map(combo => 
-            fetch(`https://api.biblesupersearch.com/api?bible=kjv&search=${encodeURIComponent(combo)}&search_type=all_words&limit=5`)
+            fetch(`https://api.biblesupersearch.com/api?bible=kjv&search=${encodeURIComponent(combo)}&search_type=all_words&limit=5`, { signal })
                 .then(r => r.json())
                 .catch(() => ({ results: [] }))
         );
@@ -629,15 +798,18 @@ function groupRawResults(results: any[]) {
     return Object.values(groupedRefs);
 }
 
-async function fetchAndGroup(url: string) {
+async function fetchAndGroup(url: string, signal?: AbortSignal) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
     try {
-        const response = await fetch(url);
+        const response = await fetch(url, { signal: signal || controller.signal });
+        clearTimeout(timeout);
         if (!response.ok) return [];
         const data = await response.json();
         if (!data.results || !Array.isArray(data.results)) return [];
         
         const groupedRefs: Record<string, { book: string, chapter: string, verses: number[] }> = {};
-        data.results.slice(0, 5).forEach((result: any) => {
+        data.results.forEach((result: any) => {
             const bookName = result.book_name;
             const cv = result.chapter_verse.split(':');
             const chapter = cv[0];
@@ -652,10 +824,13 @@ async function fetchAndGroup(url: string) {
         });
         return Object.values(groupedRefs);
     } catch (e) {
+        clearTimeout(timeout);
         return [];
     }
 }
-async function performReferenceSearch(query: string) {
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+async function performReferenceSearch(query: string, signal?: AbortSignal) {
     const translatedQuery = translateNativeQueryToEnglish(query);
     const isPhraseSearch = /["']/.test(translatedQuery);
     
@@ -666,8 +841,6 @@ async function performReferenceSearch(query: string) {
         .replace(/\s{2,}/g, " ")
         .trim();
         
-    // Phase 1 Optimization: If not a literal phrase search, major on Keywords.
-    // We strip stop words even in the initial search to avoid "article noise".
     if (!isPhraseSearch) {
         const words = cleanQuery.split(' ');
         const keywords = words.filter(w => w.length > 2 && !STOP_WORDS.has(w.toLowerCase()));
@@ -679,18 +852,19 @@ async function performReferenceSearch(query: string) {
     const searchType = isPhraseSearch ? "phrase" : "all_words";
     const url = `https://api.biblesupersearch.com/api?bible=kjv&search=${encodeURIComponent(cleanQuery)}&search_type=${searchType}`;
     
+    console.log(`[Search] BibleSuperSearch: ${url}`);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
     try {
-        const response = await fetch(url);
+        const response = await fetch(url, { signal: signal || controller.signal });
+        clearTimeout(timeout);
         if (!response.ok) return [];
         const data = await response.json();
         
         if (!data.results || !Array.isArray(data.results)) return [];
         
-        // Extract references and group by book and chapter
-        const groupedRefs: Record<string, { book: string, chapter: string, verses: number[] }> = {};
-        
-        // Take up to 15 results to ensure fast API responses
-        const resultsToProcess = data.results.slice(0, 15);
+        const groupedRefs: Record<string, { book: string, chapter: string, verses: number[], kjvTexts: Record<number, string> }> = {};
+        const resultsToProcess = data.results;
         
         resultsToProcess.forEach((result: any) => {
             const bookName = result.book_name;
@@ -700,15 +874,22 @@ async function performReferenceSearch(query: string) {
             
             const groupKey = `${bookName}-${chapter}`;
             if (!groupedRefs[groupKey]) {
-                groupedRefs[groupKey] = { book: bookName, chapter, verses: [] };
+                groupedRefs[groupKey] = { book: bookName, chapter, verses: [], kjvTexts: {} };
             }
             if (!groupedRefs[groupKey].verses.includes(verse)) {
                 groupedRefs[groupKey].verses.push(verse);
+                
+                // Extract KJV text if available
+                try {
+                    const text = result.verses?.kjv?.[chapter]?.[verse]?.text;
+                    if (text) groupedRefs[groupKey].kjvTexts[verse] = text;
+                } catch (e) {}
             }
         });
         
         return Object.values(groupedRefs);
     } catch (e) {
+        clearTimeout(timeout);
         console.error("SuperSearch error:", e);
         return [];
     }
@@ -717,62 +898,72 @@ async function performReferenceSearch(query: string) {
 // ============================================================
 // Semantic Search: AI-powered meaning-based verse discovery
 // Falls back here when exact keyword search returns 0 results.
-// Uses free Pollinations AI (no API key needed).
+// Pollinations: keys from https://enter.pollinations.ai — see pollinationsClient.ts / .env.example
 // ============================================================
 async function performSemanticSearch(query: string): Promise<any[]> {
     const cleanQ = query.replace(/["']/g, ' ').trim();
-    const prompt = `Identify the Bible verses for: "${cleanQ}". Return JSON array of objects with {book, chapter, verse}. Return ONLY the JSON.`;
+    const userPrompt = `Identify the Bible verses for: "${cleanQ}". Return ONLY valid JSON with this exact shape: {"verses":[{"book":"...","chapter":1,"verse":1}]}. The "verse" field must always be a number. Use standard English book names.`;
 
     try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 20000);
 
-        const systemPrompt = "You are a JSON API. Output ONLY a raw JSON array. No reasoning. No markdown. No preamble. Ensure 'verse' is always a number.";
-        const url = `https://text.pollinations.ai/${encodeURIComponent(prompt)}?system=${encodeURIComponent(systemPrompt)}&model=openai`;
-        const response = await fetch(url, { signal: controller.signal });
-        clearTimeout(timeout);
+        const systemPrompt =
+            'You are a JSON API. Output ONLY a single JSON object with key "verses" (array). No markdown, no preamble, no reasoning text.';
+        let text: string;
+        try {
+            text = await pollinationsChatText(systemPrompt, userPrompt, {
+                jsonObject: true,
+                signal: controller.signal,
+            });
+        } finally {
+            clearTimeout(timeout);
+        }
 
-        let text = await response.text();
-        // Log to console instead of file to avoid triggering tsx --watch restarts
         console.log(`[Semantic Search] Response received for: ${query}`);
-        
+
+        let verses: any[] = [];
         try {
-            const outerJson = JSON.parse(text);
-            // Handle reasoning/content structure from some models
-            text = outerJson.choices?.[0]?.message?.content || outerJson.content || outerJson.reasoning_content || text;
-            if (typeof text !== 'string') text = JSON.stringify(text);
-        } catch (e) {}
-
-        // 1. Try to find JSON inside markdown blocks
-        const markdownMatch = text.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/);
-        let jsonStr = markdownMatch ? markdownMatch[1] : null;
-
-        // 2. Fallback to finding the first [ and last ]
-        if (!jsonStr) {
-            const start = text.indexOf('[');
-            const end = text.lastIndexOf(']');
-            if (start !== -1 && end !== -1 && end > start) {
-                jsonStr = text.substring(start, end + 1);
+            const outer = JSON.parse(text);
+            verses = outer.verses;
+        } catch {
+            const markdownMatch = text.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/);
+            let jsonStr = markdownMatch ? markdownMatch[1] : null;
+            if (!jsonStr) {
+                const start = text.indexOf('[');
+                const end = text.lastIndexOf(']');
+                if (start !== -1 && end !== -1 && end > start) {
+                    jsonStr = text.substring(start, end + 1);
+                }
             }
-        }
-        
-        if (!jsonStr) {
-            console.error('[Semantic Search] No JSON array found in AI response.');
-            return [];
-        }
-        
-        let verses = [];
-        try {
-            verses = JSON.parse(jsonStr);
-        } catch (err: any) {
-            const matches = jsonStr.match(/\{\s*"book"\s*:[\s\S]*?\}\s*/g);
-            if (matches) {
-                for (const m of matches) {
-                    try { verses.push(JSON.parse(m)); } catch(e) {}
+            if (!jsonStr) {
+                console.error('[Semantic Search] No JSON found in AI response.');
+                return [];
+            }
+            try {
+                verses = JSON.parse(jsonStr);
+            } catch {
+                const matches = jsonStr.match(/\{\s*"book"\s*:[\s\S]*?\}\s*/g);
+                if (matches) {
+                    for (const m of matches) {
+                        try {
+                            verses.push(JSON.parse(m));
+                        } catch {
+                            /* skip */
+                        }
+                    }
                 }
             }
         }
-        
+
+        if (!Array.isArray(verses)) {
+            if (typeof verses === 'object' && verses !== null) {
+                verses = [verses];
+            } else {
+                return [];
+            }
+        }
+
         console.log(`[Semantic Search] AI returned ${verses.length} verse references`);
 
         const groupedRefs: Record<string, { book: string; chapter: string; verses: number[] }> = {};
@@ -823,49 +1014,118 @@ async function performSemanticSearch(query: string): Promise<any[]> {
 
 async function fetchVersesFromVersion(versionConfig: BibleVersion, groupedRefs: any[]) {
     const results: any[] = [];
+    // Per-version timeout: if a version takes more than 8s total, return what we have
+    const VERSION_TIMEOUT = 8000;
     
-    for (const group of groupedRefs) {
-        try {
-            let chapterData;
-            if (versionConfig.source === 'bible-api') {
-                chapterData = await fetchFromBibleApi(versionConfig, group.book, group.chapter);
-            } else if (versionConfig.source === 'local-text') {
-                chapterData = await fetchFromLocalText(versionConfig, group.book, group.chapter);
-            } else if (versionConfig.source === 'helloao') {
-                chapterData = await fetchFromHelloAo(versionConfig, group.book, group.chapter);
-            } else {
-                // Skip pdf-only or other types that don't support text lookup
-                continue;
-            }
-            
-            if (!chapterData || !chapterData.verses) continue;
-
-            // Extract the specific verses
-            const foundVerses = chapterData.verses.filter((v: any) => group.verses.includes(parseInt(v.number || v.verse)));
-            
-            if (foundVerses.length > 0) {
-                foundVerses.forEach((fv: any) => {
-                    results.push({
-                        version: versionConfig.id,
-                        versionCode: versionConfig.id,
-                        versionName: versionConfig.name,
-                        language: versionConfig.language,
-                        reference: `${group.book} ${group.chapter}:${fv.number || fv.verse}`,
-                        text: fv.text,
+    // If KJV and we have texts from BibleSuperSearch, use them immediately
+    if (versionConfig.id === 'KJV') {
+        let allKjvFound = true;
+        const kjvResults: any[] = [];
+        
+        for (const group of groupedRefs) {
+            if (group.kjvTexts && Object.keys(group.kjvTexts).length === group.verses.length) {
+                const englishSlug = canonEnglishBookSlug(group.book);
+                const displayBook = getNativeBookName(englishSlug, versionConfig.languageCode);
+                group.verses.forEach((vNum: number) => {
+                    kjvResults.push({
+                        version: 'KJV',
+                        versionCode: 'KJV',
+                        versionName: 'King James Version',
+                        language: 'English',
+                        reference: `${displayBook} ${group.chapter}:${vNum}`,
+                        text: group.kjvTexts[vNum],
+                        book: englishSlug,
+                        nativeBookName: displayBook,
+                        chapter: parseInt(group.chapter),
+                        verse: vNum,
                         verses: [{
-                            book: group.book,
+                            book: englishSlug,
                             chapter: parseInt(group.chapter),
-                            verse: parseInt(fv.number || fv.verse),
-                            text: fv.text
+                            verse: vNum,
+                            text: group.kjvTexts[vNum]
                         }]
                     });
                 });
+            } else {
+                allKjvFound = false;
+                break;
             }
-        } catch (e: any) {
-            console.warn(`[Search] Skipping ${versionConfig.id} for ${group.book} ${group.chapter}: ${e.message}`);
+        }
+        
+        if (allKjvFound && kjvResults.length > 0) {
+            console.log(`[Search] Using cached KJV results for ${kjvResults.length} verses`);
+            return kjvResults;
         }
     }
-    return results;
+
+    // Parallelize fetches with no artificial delay — each fetch has its own timeout
+    const fetchPromises = groupedRefs.map(async (group, index) => {
+        try {
+            const englishSlug = canonEnglishBookSlug(group.book);
+            const displayBook = getNativeBookName(englishSlug, versionConfig.languageCode);
+
+            let chapterData;
+            let retryCount = 0;
+            const maxRetries = 1;
+
+            while (retryCount <= maxRetries) {
+                try {
+                    if (versionConfig.source === 'bible-api') {
+                        chapterData = await fetchFromBibleApi(versionConfig, englishSlug, group.chapter);
+                    } else if (versionConfig.source === 'local-text') {
+                        chapterData = await fetchFromLocalText(versionConfig, englishSlug, group.chapter);
+                    } else if (versionConfig.source === 'helloao') {
+                        chapterData = await fetchFromHelloAo(versionConfig, englishSlug, group.chapter);
+                    } else {
+                        break;
+                    }
+                    break;
+                } catch (e: any) {
+                    if (e.message.includes('429') && retryCount < maxRetries) {
+                        retryCount++;
+                        await sleep(retryCount * 1000);
+                        continue;
+                    }
+                    throw e;
+                }
+            }
+            
+            if (!chapterData || !chapterData.verses) return [];
+
+            return chapterData.verses
+                .filter((v: any) => group.verses.includes(parseInt(v.number || v.verse)))
+                .map((fv: any) => ({
+                    version: versionConfig.id,
+                    versionCode: versionConfig.id,
+                    versionName: versionConfig.name,
+                    language: versionConfig.language,
+                    reference: `${displayBook} ${group.chapter}:${fv.number || fv.verse}`,
+                    text: fv.text,
+                    book: englishSlug,
+                    nativeBookName: displayBook,
+                    chapter: parseInt(group.chapter),
+                    verse: parseInt(fv.number || fv.verse),
+                    verses: [{
+                        book: englishSlug,
+                        chapter: parseInt(group.chapter),
+                        verse: parseInt(fv.number || fv.verse),
+                        text: fv.text
+                    }]
+                }));
+        } catch (e: any) {
+            console.warn(`[Search] Skipping ${versionConfig.id} for ${group.book} ${group.chapter}: ${e.message}`);
+            return [];
+        }
+    });
+
+    const nestedResults = await Promise.race([
+        Promise.all(fetchPromises),
+        new Promise<any[][]>(resolve => setTimeout(() => {
+            console.warn(`[Search] Version ${versionConfig.id} timed out after ${VERSION_TIMEOUT}ms`);
+            resolve([]);
+        }, VERSION_TIMEOUT))
+    ]);
+    return (nestedResults as any[][]).flat();
 }
 
 /**
@@ -951,11 +1211,357 @@ async function fetchFromLocalText(config: BibleVersion, book: string, chapter: s
     };
 }
 
+/**
+ * Local Text Keyword Search
+ * Searches all local flat files for a keyword query
+ */
+async function searchLocalKeyword(config: BibleVersion, query: string) {
+    if (!config.localDir) return [];
+    
+    // Path to the version directory
+    const rootDir = path.join(__dirname, '..', '..', '..');
+    const versionDir = path.join(rootDir, config.localDir);
+    
+    if (!fs.existsSync(versionDir)) return [];
+
+    const files = fs.readdirSync(versionDir).filter(f => f.endsWith('_read.txt'));
+    const results: any[] = [];
+    const qLower = query.toLowerCase();
+    const queryWords = qLower.replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 2 && !['the','and','for','with','that','this','are'].includes(w));
+
+    for (const file of files) {
+        const filePath = path.join(versionDir, file);
+        const content = fs.readFileSync(filePath, 'utf-8');
+        const lines = content.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        if (lines.length < 3) continue;
+
+        const rawName = lines[0].replace(/\.$/, '');
+        const nativeBookName = rawName === rawName.toUpperCase() 
+            ? rawName.split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
+            : rawName;
+        const chapterNum = parseInt(lines[1]);
+        
+        // Match standard book code from filename like _GEN_01_read.txt
+        const bookCodeMatch = file.match(/_([A-Z0-9]{3})_/);
+        const bookCode = bookCodeMatch ? bookCodeMatch[1] : '';
+
+        for (let i = 2; i < lines.length; i++) {
+            const verseText = lines[i];
+            const vLower = verseText.toLowerCase();
+            
+            let isMatch = false;
+            if (vLower.includes(qLower)) {
+                isMatch = true;
+            } else if (queryWords.length > 1) {
+                let matchCount = 0;
+                for (const w of queryWords) {
+                    if (vLower.includes(w)) matchCount++;
+                }
+                // If it's a common misquote "perish" for "destroy", check it explicitly
+                if (!isMatch && queryWords.includes('perish') && vLower.includes('destroy')) matchCount++;
+                
+                if (matchCount >= Math.min(3, queryWords.length)) {
+                    isMatch = true;
+                } else if (matchCount === 2 && queryWords.length <= 3) {
+                    isMatch = true;
+                }
+            }
+
+            if (isMatch) {
+                const verseNum = i - 1; // line 2 is verse 1
+                const canonSlug = bookCode ? CODE_TO_CANON_SLUG[bookCode] : null;
+                const englishSlug = canonSlug || canonEnglishBookSlug(nativeBookName);
+                results.push({
+                    version: config.id,
+                    versionCode: config.id,
+                    versionName: config.name,
+                    language: config.language,
+                    reference: `${nativeBookName} ${chapterNum}:${verseNum}`,
+                    text: verseText,
+                    book: englishSlug,
+                    nativeBookName,
+                    chapter: chapterNum,
+                    verse: verseNum,
+                    verses: [{
+                        book: englishSlug,
+                        chapter: chapterNum,
+                        verse: verseNum,
+                        text: verseText
+                    }]
+                });
+                
+                // Show all results as requested by user
+                // if (results.length >= 30) return results;
+            }
+        }
+    }
+    return results;
+}
+
+// ============================================================
+// ============================================================
+// API Route: GET /book-names/:langCode — Get localized book names
+// ============================================================
+router.get('/book-names/:langCode', async (req: Request, res: Response) => {
+    const { langCode } = req.params;
+    const key = langCode.toLowerCase();
+
+    // Use the canonical NATIVE_BOOK_NAMES registry — no duplication needed
+    const names = NATIVE_BOOK_NAMES[key] || {};
+    return res.json({ langCode: key, names });
+});
+
+// API Route: GET /interlinear — Fetch interlinear breakdown for a verse
+router.get('/interlinear', async (req: Request, res: Response) => {
+    const { reference } = req.query;
+    if (!reference) return res.status(400).json({ error: 'Reference is required' });
+
+    try {
+        // Determine language based on book (Hebrew for OT, Greek for NT)
+        // Simplified check for common OT books
+        const otBooks = ['genesis','exodus','leviticus','numbers','deuteronomy','joshua','judges','ruth',
+            '1 samuel','2 samuel','1 kings','2 kings','1 chronicles','2 chronicles','ezra','nehemiah','esther',
+            'job','psalm','psalms','proverbs','ecclesiastes','song of solomon','song of songs','isaiah','jeremiah',
+            'lamentations','ezekiel','daniel','hosea','joel','amos','obadiah','jonah','micah','nahum','habakkuk',
+            'zephaniah','haggai','zechariah','malachi'];
+        
+        const refStr = String(reference).trim();
+        const bookFromRef = refStr.match(/^(.+?)\s+\d+:\d+/i);
+        const bookName = (bookFromRef ? bookFromRef[1] : refStr.split(/\s+/)[0] || '').trim().toLowerCase();
+        const isOT = otBooks.includes(bookName);
+        const originalLang = isOT ? 'Hebrew' : 'Greek';
+
+        // --- Cache Check ---
+        const cacheDir = path.join(process.cwd(), 'data', 'cache', 'interlinear');
+        if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
+        
+        const cacheFileName = `${reference.toString().replace(/[:\s]/g, '_')}.json`;
+        const cachePath = path.join(cacheDir, cacheFileName);
+
+        if (fs.existsSync(cachePath)) {
+            try {
+                const cachedData = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
+                console.log(`[Interlinear] Serving from cache: ${reference}`);
+                return res.json({ reference, originalLang, data: cachedData, source: 'cache' });
+            } catch (err) {
+                console.error(`[Interlinear] Cache read error for ${reference}:`, err);
+            }
+        }
+
+        const groundingExample = isOT 
+            ? 'GROUNDING EXAMPLE (Gen 1:1 Hebrew): {"words":[{"word":"בְּרֵאשִׁית","transliteration":"Bereshit","translation":"In the beginning","strongs":"H7225","parsing":"Prep"}]}'
+            : 'GROUNDING EXAMPLE (John 1:1 Greek): {"words":[{"word":"Ἐν","transliteration":"En","translation":"In","strongs":"G1722","parsing":"Prep"}]}';
+
+        const userPrompt = `Break down the Bible verse ${reference} into a word-by-word ${originalLang} interlinear JSON. 
+For every word, provide: original ${originalLang} word, transliteration, Strong's number, English meaning, and brief grammatical parsing.
+
+${groundingExample}
+
+CRITICAL: You MUST provide the breakdown for ${reference}, NOT the example verse.
+Return ONLY the JSON object for ${reference}.`;
+
+        const systemPrompt =
+            `You are a scholarly ${originalLang} Bible API. Output ONLY a single JSON object with key "words" (array). No markdown, no conversational text.`;
+
+        let text = '';
+        let attempts = 0;
+        const maxAttempts = 2;
+
+        while (attempts < maxAttempts) {
+            try {
+                text = await pollinationsChatText(systemPrompt, userPrompt, { jsonObject: true });
+                console.log(`[Interlinear] AI Response received for: ${reference} (Attempt ${attempts + 1})`);
+                break; // Success!
+            } catch (aiError: any) {
+                attempts++;
+                if (aiError.name === 'AbortError' && attempts < maxAttempts) {
+                    console.warn(`[Interlinear] AI timeout on ${reference}, retrying...`);
+                    continue;
+                }
+                console.warn(`[Interlinear] AI fetch failed on ${reference}:`, aiError.message);
+                break;
+            }
+        }
+
+        let data: any[] = [];
+        if (text) {
+            try {
+                const outer = JSON.parse(text);
+                data = outer.words || (Array.isArray(outer) ? outer : []);
+            } catch {
+                // ... (Parsing recovery logic kept same for robustness)
+                const markdownMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+                let jsonStr = markdownMatch ? markdownMatch[1] : null;
+                if (!jsonStr) {
+                    const start = text.indexOf('{');
+                    const end = text.lastIndexOf('}');
+                    if (start !== -1 && end !== -1 && end > start) {
+                        jsonStr = text.substring(start, end + 1);
+                    }
+                }
+                if (jsonStr) {
+                    try {
+                        const parsed = JSON.parse(jsonStr);
+                        data = parsed.words || (Array.isArray(parsed) ? parsed : []);
+                    } catch {
+                        /* fallback to regex matching if JSON is mangled */
+                        const matches = jsonStr.match(/\{\s*"word"\s*:[\s\S]*?\}\s*/g);
+                        if (matches) {
+                            for (const m of matches) {
+                                try { data.push(JSON.parse(m)); } catch { }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (Array.isArray(data) && data.length > 0) {
+            // --- Save to Cache ---
+            try {
+                fs.writeFileSync(cachePath, JSON.stringify(data, null, 2));
+                console.log(`[Interlinear] Saved to cache: ${reference}`);
+            } catch (err) {
+                console.error(`[Interlinear] Cache write error:`, err);
+            }
+            return res.json({ reference, originalLang, data, source: 'ai-generated' });
+        }
+
+        return res.status(503).json({ 
+            error: 'AI Study Assistant is currently overwhelmed. Please try again in a few moments.',
+            reference, 
+            originalLang
+        });
+    } catch (error) {
+        console.error('Interlinear route critical error:', error);
+        return res.status(500).json({ error: 'Failed to fetch interlinear data' });
+    }
+});
+
+// API Route: GET /ai-commentary — AI scholarly commentary (server-side Pollinations)
+router.get('/ai-commentary', async (req: Request, res: Response) => {
+    const { reference } = req.query;
+    if (!reference) return res.status(400).json({ error: 'Reference is required' });
+
+    try {
+        const cacheDir = path.join(process.cwd(), 'data', 'cache', 'commentary');
+        if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
+        
+        const cacheFileName = `${reference.toString().replace(/[:\s]/g, '_')}.md`;
+        const cachePath = path.join(cacheDir, cacheFileName);
+
+        if (fs.existsSync(cachePath)) {
+            const cachedCommentary = fs.readFileSync(cachePath, 'utf8');
+            console.log(`[Commentary] Serving from cache: ${reference}`);
+            return res.json({ reference: String(reference), commentary: cachedCommentary, source: 'cache' });
+        }
+
+        const userPrompt = `Provide a scholarly and inspiring Bible commentary for ${reference}. 
+Include 3 sections: 
+1. Historical Context
+2. Theological Significance
+3. Devotional Reflection.
+
+Format with markdown. Keep it under 250 words.`;
+
+        const systemPrompt =
+            'You are a world-class Bible scholar and theologian. Provide balanced, accurate, and inspiring commentary.';
+        
+        const commentary = await pollinationsChatText(systemPrompt, userPrompt);
+        
+        if (commentary && !commentary.includes('error')) {
+            try {
+                fs.writeFileSync(cachePath, commentary);
+                console.log(`[Commentary] Saved to cache: ${reference}`);
+            } catch (err) {
+                console.error(`[Commentary] Cache write error:`, err);
+            }
+        }
+
+        return res.json({ reference: String(reference), commentary, source: 'ai-generated' });
+    } catch (error: any) {
+        console.error('AI commentary error:', error.message);
+        return res.status(500).json({ error: 'Failed to generate commentary' });
+    }
+});
+
+// API Route: GET /ai-cross-references — AI-suggested related verses (JSON)
+router.get('/ai-cross-references', async (req: Request, res: Response) => {
+    const { reference } = req.query;
+    if (!reference) return res.status(400).json({ error: 'Reference is required' });
+
+    try {
+        const cacheDir = path.join(process.cwd(), 'data', 'cache', 'cross_references');
+        if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
+        
+        const cacheFileName = `${reference.toString().replace(/[:\s]/g, '_')}.json`;
+        const cachePath = path.join(cacheDir, cacheFileName);
+
+        if (fs.existsSync(cachePath)) {
+            try {
+                const cachedData = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
+                console.log(`[Cross-Refs] Serving from cache: ${reference}`);
+                return res.json({ reference: String(reference), references: cachedData, source: 'cache' });
+            } catch (err) {
+                console.error(`[Cross-Refs] Cache read error:`, err);
+            }
+        }
+
+        const userPrompt = `For ${reference}, list the top 6 most relevant cross-reference Bible verses. 
+For each give: reference, a brief reason why it relates. 
+
+GROUNDING EXAMPLE:
+{"references":[{"reference":"John 3:16","reason":"Both verses speak of God's love for humanity."}]}
+
+Return ONLY valid JSON for ${reference}.`;
+
+        const systemPrompt =
+            'You are a JSON API for Bible cross-references. Output ONLY a single JSON object with key "references" (array). No markdown, no conversational text.';
+        
+        const raw = await pollinationsChatText(systemPrompt, userPrompt, { jsonObject: true });
+        let references: any[] = [];
+        try {
+            const parsed = JSON.parse(raw);
+            references = parsed.references || (Array.isArray(parsed) ? parsed : []);
+        } catch {
+            // Robust parsing recovery
+            const start = raw.indexOf('{');
+            const end = raw.lastIndexOf('}');
+            if (start !== -1 && end !== -1) {
+                try {
+                    const extracted = JSON.parse(raw.substring(start, end + 1));
+                    references = extracted.references || [];
+                } catch { }
+            }
+        }
+
+        if (Array.isArray(references) && references.length > 0) {
+            try {
+                fs.writeFileSync(cachePath, JSON.stringify(references, null, 2));
+                console.log(`[Cross-Refs] Saved to cache: ${reference}`);
+            } catch (err) {
+                console.error(`[Cross-Refs] Cache write error:`, err);
+            }
+        }
+
+        return res.json({ reference: String(reference), references, source: 'ai-generated' });
+    } catch (error: any) {
+        console.error('AI cross-references error:', error.message);
+        return res.status(500).json({ error: 'Failed to generate cross references' });
+    }
+});
+
+// API Route: GET /passage — Fetch a specific passage or chapter
+// ============================================================
+// Combined duplicate route into the one above
+// ============================================================
+
 // ============================================================
 // API Route: GET /search/all — Search across all available versions
 // ============================================================
-// Simple in-memory cache for search results (5 min TTL)
+// Simple in-memory cache for search results (30 min TTL)
 const searchCache = new Map<string, { timestamp: number; data: any }>();
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
 router.get('/search/all', async (req: Request, res: Response) => {
     const { q } = req.query as Record<string, string>;
@@ -967,7 +1573,7 @@ router.get('/search/all', async (req: Request, res: Response) => {
     // Check cache
     const cacheKey = q.toLowerCase().trim();
     const cached = searchCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < 5 * 60 * 1000) {
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
         return res.json(cached.data);
     }
 
@@ -999,7 +1605,7 @@ router.get('/search/all', async (req: Request, res: Response) => {
         const responseData = { query: q, results: allResults, semanticFallback };
         searchCache.set(cacheKey, { timestamp: Date.now(), data: responseData });
         
-        res.json(responseData);
+        return res.json(responseData);
     } catch (error: any) {
         console.error('Search all error:', error.message);
         return res.status(500).json({ error: 'Search failed' });
@@ -1040,6 +1646,7 @@ router.get('/verse/:book/:chapter/:verse/:direction(prev|next)', async (req: Req
 
         return res.json({ ...result, pdfPath: versionConfig.pdfPath });
     } catch (error: any) {
+        if (error.name === 'AbortError') return;
         console.error(`Verse nav error [${direction}]:`, error.message);
         return res.status(500).json({ error: 'Failed to fetch adjacent verse', details: error.message });
     }
@@ -1047,111 +1654,168 @@ router.get('/verse/:book/:chapter/:verse/:direction(prev|next)', async (req: Req
 
 // ============================================================
 // API Route: GET /search — Parallel Multi-Version Search
+// ============================================================
 router.get('/search', async (req: Request, res: Response) => {
-    const { q, versions } = req.query as Record<string, string>;
-
-    if (!q) {
-        return res.status(400).json({ error: 'Missing query parameter: q' });
+    const { q, versions } = req.query;
+    if (!q || typeof q !== 'string') {
+        return res.status(400).json({ error: 'Search query is required' });
     }
 
-    const versionList = versions ? versions.split(',').map(v => v.trim().toUpperCase()) : ['KJV'];
+    // Cap at 8 versions per search to prevent timeout — prioritise user-selected ones
+    const MAX_SEARCH_VERSIONS = 8;
+    const rawVersionList = versions
+        ? (versions as string).split(',').map(v => v.trim().toUpperCase()).filter(Boolean)
+        : ['KJV'];
+    const versionList = rawVersionList.slice(0, MAX_SEARCH_VERSIONS);
+
+    if (rawVersionList.length > MAX_SEARCH_VERSIONS) {
+        console.log(`[Search] Capped versions from ${rawVersionList.length} to ${MAX_SEARCH_VERSIONS}`);
+    }
+
+    const cacheKey = `${q.toLowerCase().trim()}_${versionList.join('_')}`;
+
+    // Check cache first
+    const cached = searchCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        console.log(`[Search] Returning cached results for: ${q}`);
+        return res.json(cached.data);
+    }
+
+    const clientController = new AbortController();
+    req.on('close', () => {
+        clientController.abort();
+    });
+
+    let allResults: any[] = [];
+    let semanticFallback = false;
 
     try {
-        let groupedRefs = await performReferenceSearch(q);
-        let semanticFallback = false;
-
-        // Phase 2: Broad keyword fallback when exact search fails
-        if (groupedRefs.length === 0) {
-            groupedRefs = await performBroadSearch(q);
-        }
-
-        // Phase 3: Semantic fallback when all keyword searches fail
-        if (groupedRefs.length === 0) {
-            console.log(`[Search] No exact or broad matches for "${q}", trying semantic search...`);
-            groupedRefs = await performSemanticSearch(q);
-            semanticFallback = groupedRefs.length > 0;
-        }
-
-        if (groupedRefs.length === 0) {
-            return res.json({ query: q, results: [], semanticFallback: false });
-        }
-
-        const searchPromises = versionList.map(async (vCode) => {
-            const versionConfig = BIBLE_VERSIONS[vCode];
-            if (!versionConfig) return [];
-            return await fetchVersesFromVersion(versionConfig, groupedRefs);
-        });
-
-        const allResultsArrays = await Promise.all(searchPromises);
-        
-        // Build an ordered list of unique references to preserve relevancy order
-        // and group the same verses across different translations together.
-        const refOrder: string[] = [];
-        allResultsArrays.forEach(versionArray => {
-            versionArray.forEach((res: any) => {
-                if (!refOrder.includes(res.reference)) {
-                    refOrder.push(res.reference);
+        // Phase 1: Reference/Keyword Search & Local Search in Parallel
+        const [groupedRefs, localResultsArrays] = await Promise.all([
+            performReferenceSearch(q, clientController.signal).catch(e => []),
+            Promise.all(versionList.map(async (vCode) => {
+                const versionConfig = Object.values(BIBLE_VERSIONS).find(v => v.id === vCode);
+                if (versionConfig && versionConfig.source === 'local-text') {
+                    return await searchLocalKeyword(versionConfig, q);
                 }
+                return [];
+            }))
+        ]);
+
+        // If no reference results, try broad search immediately
+        let finalRefs = groupedRefs;
+        if (finalRefs.length === 0 && !clientController.signal.aborted) {
+            finalRefs = await performBroadSearch(q, clientController.signal).catch(e => []);
+        }
+
+        // Last-resort: try any_words search (catches single keywords like "love", "faith", "grace")
+        if (finalRefs.length === 0 && !clientController.signal.aborted) {
+            const cleanQ = q.replace(/[,./';"\\]/g, ' ').replace(/\s{2,}/g, ' ').trim();
+            finalRefs = await fetchAndGroup(
+                `https://api.biblesupersearch.com/api?bible=kjv&search=${encodeURIComponent(cleanQ)}&search_type=any_word&limit=20`,
+                clientController.signal
+            ).catch(() => []);
+            if (finalRefs.length > 0) {
+                console.log(`[Search] any_word fallback found ${finalRefs.length} refs for: "${q}"`);
+            }
+        }
+
+        // Fetch verses for all versions in parallel (optimized batching)
+        if (finalRefs.length > 0 && !clientController.signal.aborted) {
+            const searchPromises = versionList.map(async (vCode) => {
+                const versionConfig = Object.values(BIBLE_VERSIONS).find(v => v.id === vCode);
+                if (!versionConfig || versionConfig.source === 'local-text') return [];
+                return await fetchVersesFromVersion(versionConfig, finalRefs);
             });
-        });
+            const resultsArrays = await Promise.all(searchPromises);
+            allResults = resultsArrays.flat();
+        }
 
-        const allResults = allResultsArrays.flat();
-        
-        // Calculate keyword match scores for each verse to prioritize "highest number of keywords found"
+        // Add local results
+        const existingRefs = new Set(allResults.map(r => `${r.version}-${r.reference}`));
+        const uniqueLocalResults = localResultsArrays.flat().filter(r => !existingRefs.has(`${r.version}-${r.reference}`));
+        allResults.push(...uniqueLocalResults);
+
+        // Phase 2: Semantic Search (Run if results are sparse — covers queries that BibleSuperSearch misses)
+        if (!clientController.signal.aborted && allResults.length < 5) {
+            const semanticGroups = await performSemanticSearch(q);
+            if (semanticGroups.length > 0) {
+                const semanticPromises = versionList.map(async (vCode) => {
+                    const versionConfig = Object.values(BIBLE_VERSIONS).find(v => v.id === vCode);
+                    if (!versionConfig) return [];
+                    return await fetchVersesFromVersion(versionConfig, semanticGroups);
+                });
+                const semanticResultsArrays = await Promise.all(semanticPromises);
+                const semanticResults = semanticResultsArrays.flat();
+                
+                semanticResults.forEach(r => r.isSemantic = true);
+                const updatedRefs = new Set(allResults.map(r => `${r.version}-${r.reference}`));
+                const uniqueSemanticResults = semanticResults.filter(r => !updatedRefs.has(`${r.version}-${r.reference}`));
+                allResults.push(...uniqueSemanticResults);
+                semanticFallback = true;
+            }
+        }
+
+        if (clientController.signal.aborted) return;
+
+        // Phase 3: Scoring & Prioritization
         const keywords = q.toLowerCase().split(/\s+/).filter(w => w.length > 2 && !STOP_WORDS.has(w));
-        const scores: Record<string, number> = {};
-
         allResults.forEach((res: any) => {
             const text = (res.text || "").toLowerCase();
+            const ref = (res.reference || "").toLowerCase();
+            const cleanQ = q.toLowerCase().trim();
             let score = 0;
             
-            // Base: Keyword density (each unique keyword found)
+            if (text.includes(cleanQ)) score += 1000;
+            if (res.isSemantic) score += 300;
+            
             keywords.forEach(kw => {
-                if (text.includes(kw)) score += 10;
+                if (text.includes(kw)) score += 50;
+                if (ref.includes(kw)) score += 80; 
             });
 
-            // Boost 1: Exact phrase match (regardless of stop words)
-            const cleanQ = q.toLowerCase().replace(/[()]/g, "").trim();
-            if (text.includes(cleanQ)) {
-                score += 50;
-            }
-
-            // Boost 2: Keyword order match (prioritize the sequence in which words were searched)
-            let lastIdx = -1;
-            let inOrderCount = 0;
-            keywords.forEach(kw => {
-                const idx = text.indexOf(kw, lastIdx + 1);
-                if (idx !== -1) {
-                    inOrderCount++;
-                    lastIdx = idx;
-                }
-            });
-            
-            if (inOrderCount === keywords.length) {
-                score += 25; // Perfect order match
-            } else if (inOrderCount > 1) {
-                score += inOrderCount * 2; // Partial order bonus
-            }
-
-            scores[res.reference] = Math.max(scores[res.reference] || 0, score);
-            res.matchScore = scores[res.reference];
+            if (ref.includes(cleanQ)) score += 200;
+            res.matchScore = score;
         });
+
+        allResults.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+
+        const responseData = { query: q, results: allResults, semanticFallback };
         
-        // Sort first by keyword score (DESC), then by original refOrder, then by version list order
-        allResults.sort((a: any, b: any) => {
-            const scoreDiff = (scores[b.reference] || 0) - (scores[a.reference] || 0);
-            if (scoreDiff !== 0) return scoreDiff;
-            
-            const refDiff = refOrder.indexOf(a.reference) - refOrder.indexOf(b.reference);
-            if (refDiff !== 0) return refDiff;
-            
-            return versionList.indexOf(a.version) - versionList.indexOf(b.version);
-        });
-        
-        res.json({ query: q, results: allResults, semanticFallback });
+        // Cache successful results
+        if (allResults.length > 0) {
+            searchCache.set(cacheKey, { timestamp: Date.now(), data: responseData });
+        }
+
+        return res.json(responseData);
+
     } catch (error: any) {
-        console.error('[Search] Fatal error:', error);
+        if (error.name === 'AbortError') return;
+        console.error('Search route error:', error);
         return res.status(500).json({ error: 'Search failed', details: error.message });
+    }
+});
+
+// ============================================================
+// API Route: GET /study-guide/:passage — AI Study Guide
+// ============================================================
+router.get('/study-guide/:passage', async (req: Request, res: Response) => {
+    const { passage } = req.params;
+    
+    try {
+        const userPrompt = `For the Bible passage ${passage}, provide a concise study guide in 3 parts: 
+1. Key Themes (3 bullet points)
+2. Life Application (1-2 sentences)
+3. Prayer Focus (1 sentence)
+Use markdown for formatting. Keep the total response under 200 words.`;
+
+        const systemPrompt = 'You are a biblical scholar and pastor. Provide inspiring and accurate study insights.';
+        const text = await pollinationsChatText(systemPrompt, userPrompt);
+
+        return res.json({ passage, guide: text });
+    } catch (error: any) {
+        console.error('Study guide error:', error.message);
+        return res.status(500).json({ error: 'Failed to generate study guide' });
     }
 });
 
@@ -1228,13 +1892,13 @@ router.get('/cross-references/:passage', async (req: Request, res: Response) => 
             }
         }));
 
-        res.json({
+        return res.json({
             passage,
             crossReferences: detailedRefs.filter(r => r.text)
         });
     } catch (error: any) {
         console.error('Cross-reference error:', error.message);
-        res.status(500).json({ error: 'Failed to fetch cross-references' });
+        return res.status(500).json({ error: 'Failed to fetch cross-references' });
     }
 });
 
@@ -1245,21 +1909,33 @@ router.get('/cross-references/:passage', async (req: Request, res: Response) => 
 // ============================================================
 async function fetchFromBibleApi(
     versionConfig: BibleVersion,
-    book: string, chapter: string, verse?: string, verseEnd?: string
+    book: string, chapter: string, verse?: string, verseEnd?: string,
+    signal?: AbortSignal
 ): Promise<any> {
-    const ref = verse ? `${book}+${chapter}:${verse}${verseEnd ? '-' + verseEnd : ''}` : `${book}+${chapter}`;
+    // Use spaces as separators, encodeURIComponent will handle them as %20
+    // bible-api.com handles %20 correctly for both book names and separators
+    const ref = verse ? `${book} ${chapter}:${verse}${verseEnd ? '-' + verseEnd : ''}` : `${book} ${chapter}`;
     const url = `https://bible-api.com/${encodeURIComponent(ref)}?translation=${versionConfig.apiId}`;
 
     console.log(`[bible-api.com] Fetching: ${url}`);
-    const response = await fetch(url);
+    
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    try {
+        const response = await fetch(url, { signal: signal || controller.signal });
+        clearTimeout(timeout);
 
-    if (!response.ok) {
-        throw new Error(`bible-api.com returned ${response.status}`);
-    }
+        if (!response.ok) {
+            throw new Error(`bible-api.com returned ${response.status}`);
+        }
 
-    const data = await response.json();
+        const data = await response.json();
 
     const nativeBook = getNativeBookName(book, versionConfig.languageCode);
+    const bookEsc = book.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const refFromApi = data.reference && typeof data.reference === 'string'
+        ? data.reference.replace(new RegExp(`^${bookEsc}\\b`, 'i'), nativeBook)
+        : null;
 
     return {
         version: versionConfig.id,
@@ -1267,7 +1943,7 @@ async function fetchFromBibleApi(
         language: versionConfig.language,
         book: nativeBook,
         chapter: parseInt(chapter),
-        reference: data.reference ? data.reference.replace(book, nativeBook) : `${nativeBook} ${chapter}${verse ? ':' + verse : ''}`,
+        reference: refFromApi || `${nativeBook} ${chapter}${verse ? ':' + verse : ''}`,
         nativeBookName: nativeBook,
         text: data.text?.trim(),
         verses: (data.verses || []).map((v: any) => ({
@@ -1279,6 +1955,10 @@ async function fetchFromBibleApi(
         copyright: versionConfig.copyright,
         source: 'bible-api.com',
     };
+    } catch (e) {
+        clearTimeout(timeout);
+        throw e;
+    }
 }
 
 // ============================================================
@@ -1288,7 +1968,8 @@ async function fetchFromBibleApi(
 // ============================================================
 async function fetchFromHelloAo(
     versionConfig: BibleVersion,
-    book: string, chapter: string, verse?: string, verseEnd?: string
+    book: string, chapter: string, verse?: string, verseEnd?: string,
+    signal?: AbortSignal
 ): Promise<any> {
     const bookCode = getBookCode(book);
     if (!bookCode) {
@@ -1302,7 +1983,7 @@ async function fetchFromHelloAo(
     const timeout = setTimeout(() => controller.abort(), 10000);
 
     try {
-        const response = await fetch(url, { signal: controller.signal });
+        const response = await fetch(url, { signal: signal || controller.signal });
         clearTimeout(timeout);
     if (!response.ok) {
         throw new Error(`helloao.org returned ${response.status} for ${url}`);
@@ -1366,9 +2047,18 @@ async function fetchFromHelloAo(
         const verseNum = parseInt(verse);
         const verseEndNum = verseEnd ? parseInt(verseEnd) : verseNum;
         finalVerses = versesOnly.filter(v => v.number >= verseNum && v.number <= verseEndNum);
-        finalContent = structuredContent.filter(item => 
-            item.type === 'heading' || (item.type === 'verse' && item.number >= verseNum && item.number <= verseEndNum)
-        );
+        
+        // Lenient Fallback: If specific verse not found but chapter has content, return chapter
+        if (finalVerses.length === 0 && versesOnly.length > 0) {
+            console.log(`[helloao.org] Verse ${verse} not found in ${book} ${chapter} for ${versionConfig.id}, falling back to chapter.`);
+            finalVerses = versesOnly;
+            finalContent = structuredContent;
+        } else {
+            finalContent = structuredContent.filter(item => 
+                item.type === 'heading' || (item.type === 'verse' && item.number >= verseNum && item.number <= verseEndNum)
+            );
+        }
+
         if (finalVerses.length === 0) {
             throw new Error(`Verse ${verse}${verseEnd ? '-' + verseEnd : ''} not found in ${book} ${chapter}`);
         }

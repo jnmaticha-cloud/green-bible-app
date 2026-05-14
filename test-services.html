@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Bible Services</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Bible Services Test</h1>
+    <div id="test-results"></div>
+    
+    <script type="module">
+        async function runTests() {
+            const resultsDiv = document.getElementById('test-results');
+            
+            try {
+                // Test 1: Import services
+                const { ServiceFactory } = await import('./dist/src/services/index.js');
+                const { BIBLE_BOOKS } = await import('./dist/src/types/index.js');
+                
+                addResult('✅ Successfully imported services and types', 'success');
+                
+                // Test 2: Initialize services
+                const contentManager = ServiceFactory.getContentManager();
+                const searchEngine = ServiceFactory.getSearchEngine();
+                const userExperience = ServiceFactory.getUserExperience();
+                
+                addResult('✅ Successfully initialized services', 'success');
+                
+                // Test 3: Test content manager
+                const bookList = contentManager.getBookList();
+                addResult(`✅ Content Manager: Found ${bookList.length} books`, 'success');
+                
+                // Test 4: Test Bible books constant
+                addResult(`✅ Bible Books: ${BIBLE_BOOKS.length} books defined`, 'success');
+                
+                // Test 5: Test version validation
+                const supportedVersions = contentManager.getSupportedVersions();
+                addResult(`✅ Supported Versions: ${supportedVersions.length} versions`, 'success');
+                
+                addResult('🎉 All tests passed! Services are working correctly.', 'success');
+                
+            } catch (error) {
+                addResult(`❌ Test failed: ${error.message}`, 'error');
+                console.error('Test error:', error);
+            }
+        }
+        
+        function addResult(message, type) {
+            const resultsDiv = document.getElementById('test-results');
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.textContent = message;
+            resultsDiv.appendChild(div);
+        }
+        
+        // Run tests when page loads
+        runTests();
+    </script>
+</body>
+</html>

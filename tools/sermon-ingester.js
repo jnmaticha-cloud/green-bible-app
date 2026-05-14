@@ -1,6 +1,33 @@
 const fs = require('fs');
 const path = require('path');
 
+/** Pollinations chat (keys: https://enter.pollinations.ai; API host: gen.pollinations.ai) */
+async function pollinationsChatText(systemPrompt, userContent, options = {}) {
+    const base = (process.env.POLLINATIONS_API_BASE || 'https://gen.pollinations.ai').replace(/\/$/, '');
+    const key = process.env.POLLINATIONS_API_KEY || '';
+    const model = process.env.POLLINATIONS_MODEL || 'openai';
+    const headers = { 'Content-Type': 'application/json' };
+    if (key) headers.Authorization = `Bearer ${key}`;
+    const messages = [];
+    if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
+    messages.push({ role: 'user', content: userContent });
+    const body = { model, messages };
+    if (options.jsonObject) body.response_format = { type: 'json_object' };
+    const res = await fetch(`${base}/v1/chat/completions`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+        const t = await res.text().catch(() => '');
+        throw new Error(`Pollinations ${res.status}: ${t.slice(0, 200)}`);
+    }
+    const data = await res.json();
+    const c = data.choices?.[0]?.message?.content;
+    if (typeof c !== 'string') throw new Error('Invalid Pollinations response');
+    return c;
+}
+
 const SERMONS_DATA_DIR = path.join(__dirname, '..', 'data', 'sermons');
 const METADATA_FILE = path.join(SERMONS_DATA_DIR, 'metadata.json');
 
@@ -27,14 +54,10 @@ Output ONLY a JSON object with this structure:
 
     try {
         console.log("[Ingester] Calling AI for interpretation...");
-        const response = await fetch('https://text.pollinations.ai/' + encodeURIComponent(prompt));
-        const text = await response.text();
-        
-        // Extract JSON
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) throw new Error("No JSON found in AI response");
-        
-        const interpretation = JSON.parse(jsonMatch[0]);
+        const systemPrompt =
+            'You are a biblical scholar. Output ONLY valid JSON matching the structure requested. No markdown.';
+        const text = await pollinationsChatText(systemPrompt, prompt, { jsonObject: true });
+        const interpretation = JSON.parse(text);
 
         let publishDate = new Date().toISOString().split('T')[0];
         try {

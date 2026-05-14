@@ -1,0 +1,9 @@
+[
+  { "word": "בְּרֵאשִׁית", "transliteration": "Bereshit", "translation": "In the beginning", "strongs": "H7225", "parsing": "Noun, Fem Sing" },
+  { "word": "בָּרָא", "transliteration": "bara", "translation": "created", "strongs": "H1254", "parsing": "Verb, Qal Perf" },
+  { "word": "אֱלֹהִים", "transliteration": "Elohim", "translation": "God", "strongs": "H430", "parsing": "Noun, Masc Plur" },
+  { "word": "אֵת", "transliteration": "et", "translation": "[object marker]", "strongs": "H853", "parsing": "Part" },
+  { "word": "הַשָּׁמַיִם", "transliteration": "hashamayim", "translation": "the heavens", "strongs": "H8064", "parsing": "Noun, Masc Plur" },
+  { "word": "וְאֵת", "transliteration": "ve'et", "translation": "and [object marker]", "strongs": "H853", "parsing": "Conj + Part" },
+  { "word": "הָאָרֶץ", "transliteration": "ha'aretz", "translation": "the earth", "strongs": "H776", "parsing": "Noun, Fem Sing" }
+]

@@ -89,7 +89,7 @@ router.get('/:passage', async (req: Request, res: Response) => {
         }).filter(Boolean);
 
 
-        res.json({
+        return res.json({
             source: 'Matthew Henry Bible Commentary',
             reference: `${bookName} ${chapter}`,
             commentary: flattenedContent,
@@ -97,7 +97,7 @@ router.get('/:passage', async (req: Request, res: Response) => {
         });
     } catch (error: any) {
         console.error('Commentary error:', error.message);
-        res.status(500).json({ error: 'Failed to fetch commentary' });
+        return res.status(500).json({ error: 'Failed to fetch commentary' });
     }
 });
 
