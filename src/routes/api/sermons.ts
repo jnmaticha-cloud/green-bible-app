@@ -101,11 +101,9 @@ router.post('/ingest', async (req: Request, res: Response) => {
         transcript = String(transcript).slice(0, 50000);
     }
 
-    if (title.toUpperCase().includes('ROAR')) {
-        return res.status(400).json({ error: 'Sermons containing "ROAR" are restricted and cannot be captured.' });
-    }
 
-    const youtubeIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v\/|.*u\/\w\/|embed\/|watch\?v=))([^#\&\?]*)/);
+
+    const youtubeIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v\/|.*u\/\w\/|embed\/|live\/|watch\?v=))([^#\&\?]*)/);
     const youtubeId = youtubeIdMatch ? youtubeIdMatch[1] : null;
 
     if (!youtubeId || youtubeId.length !== 11) {
