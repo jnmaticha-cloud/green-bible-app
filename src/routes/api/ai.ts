@@ -53,15 +53,30 @@ router.get('/interpret', async (req: Request, res: Response) => {
     }
 });
 
-// API Route: GET /art — Generate sacred art prompt/meta (placeholder for future expansion)
+// API Route: GET /art — Generate sacred art prompt/meta (enhanced)
 router.get('/art', async (req: Request, res: Response) => {
     const { reference } = req.query;
-    if (!reference) return res.status(400).json({ error: 'Reference is required' });
+    if (!reference) {
+        return res.status(400).json({ error: 'Reference is required' });
+    }
 
     try {
-        const prompt = `A beautiful, symbolic sacred artwork representing ${reference}. Artistic and meaningful interpretation, ethereal and divine atmosphere.`;
-        return res.json({ reference: String(reference), artPrompt: prompt });
+        // First, ask the AI for a concise summary of the verse's core message.
+        const summaryPrompt = `Provide a one‑sentence, theologically accurate summary of the biblical passage ${reference}. Do not include any extra commentary.`;
+        const systemPrompt = 'You are a concise biblical scholar. Output only the summary text, no markdown.';
+        let verseSummary: string;
+        try {
+            verseSummary = await pollinationsChatText(systemPrompt, summaryPrompt);
+        } catch (summaryErr) {
+            console.warn('[AI Art] Failed to get verse summary:', summaryErr);
+            // Fallback: use the reference itself as a vague descriptor.
+            verseSummary = `${reference}`;
+        }
+
+        const artPrompt = `Create a reverent, sacred artwork that visually captures the core message of this verse: "${verseSummary}". Emphasize symbolic elements (e.g., a cross for salvation, a heart for love) and use a divine, ethereal atmosphere.`;
+        return res.json({ reference: String(reference), artPrompt });
     } catch (error: any) {
+        console.error('[AI Art] Unexpected error:', error);
         return res.status(500).json({ error: 'Failed to generate art meta' });
     }
 });

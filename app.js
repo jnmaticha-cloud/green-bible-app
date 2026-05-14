@@ -2862,15 +2862,22 @@ class GreenBibleApp {
         iconEl.innerHTML = iconHtml;
         iconEl.style.color = color;
         
-        // Dynamic styling for the modal theme
+        // Unified Theme Alignment
         const panel = modal.querySelector('.glass-panel');
         const header = modal.querySelector('div[style*="border-bottom"]');
         
-        if (panel) panel.style.borderColor = color;
-        if (header) header.style.background = `linear-gradient(90deg, ${color.replace(')', ', 0.1)')}, transparent)`;
+        if (panel) {
+            panel.style.borderColor = 'var(--border-accent)';
+            panel.style.background = 'var(--bg-card)';
+        }
+        if (header) {
+            header.style.background = 'var(--bg-elevated)';
+            header.style.borderBottom = '1px solid var(--border-subtle)';
+        }
         
-        iconEl.style.borderColor = color.replace(')', ', 0.3)');
-        iconEl.style.background = color.replace(')', ', 0.1)');
+        // Use the passed color ONLY for the icon highlight to distinguish the tools
+        iconEl.style.borderColor = color.includes('var') ? color.replace(')', ', 0.3)') : color;
+        iconEl.style.background = color.includes('var') ? color.replace(')', ', 0.1)') : `${color}20`;
 
         contentEl.innerHTML = `
             <div style="text-align: center; padding: 60px;">
@@ -2929,11 +2936,17 @@ class GreenBibleApp {
         title.textContent = `${targetBook} ${targetChapter}`;
         versionLabel.textContent = version;
 
-        // Theme alignment (Emerald)
+        // Theme alignment
         const panel = modal.querySelector('.glass-panel');
         const header = modal.querySelector('div[style*="border-bottom"]');
-        if (panel) panel.style.borderColor = 'var(--accent-emerald)';
-        if (header) header.style.background = 'linear-gradient(90deg, rgba(52,211,153,0.1), transparent)';
+        if (panel) {
+            panel.style.borderColor = 'var(--border-accent)';
+            panel.style.background = 'var(--bg-card)';
+        }
+        if (header) {
+            header.style.background = 'var(--bg-elevated)';
+            header.style.borderBottom = '1px solid var(--border-subtle)';
+        }
 
         content.innerHTML = `
             <div style="text-align: center; padding: 60px;">
@@ -3120,9 +3133,9 @@ class GreenBibleApp {
                         <p style="margin-top: 16px; color: var(--accent-purple); font-weight: 600; letter-spacing: 1px;">PAINTING VISION...</p>
                     </div>
                 </div>
-                <div style="margin-top: 24px; padding: 20px; background: rgba(168,85,247,0.05); border-radius: 12px; border: 1px solid rgba(168,85,247,0.2);">
+                <div style="margin-top: 24px; padding: 20px; background: var(--bg-elevated); border-radius: 12px; border: 1px solid var(--border-accent);">
                     <p style="font-size: 1.05rem; color: var(--text-primary); font-style: italic; line-height: 1.7; font-family: 'Playfair Display', serif;">
-                        <i class="fas fa-quote-left" style="color: var(--accent-purple); margin-right: 8px; opacity: 0.5;"></i>
+                        <i class="fas fa-quote-left" style="color: var(--accent-gold); margin-right: 8px; opacity: 0.5;"></i>
                         ${text}
                     </p>
                 </div>
@@ -3175,9 +3188,9 @@ class GreenBibleApp {
                 <div class="commentary-scroll-container" style="font-size: 1.15rem; line-height: 1.9; color: var(--text-primary); font-family: 'Inter', sans-serif; max-width: 800px; margin: 0 auto;">
                     ${html}
                 </div>
-                <div style="margin-top: 48px; padding: 24px; background: rgba(245, 158, 11, 0.05); border-radius: 16px; border: 1px solid rgba(245, 158, 11, 0.2); display: flex; justify-content: space-between; align-items: center;">
+                <div style="margin-top: 48px; padding: 24px; background: var(--bg-elevated); border-radius: 16px; border: 1px solid var(--border-accent); display: flex; justify-content: space-between; align-items: center;">
                     <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="width: 40px; height: 40px; background: var(--accent-gold-glow); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent-gold);">
+                        <div style="width: 40px; height: 40px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent-gold);">
                             <i class="fas fa-feather-pointed"></i>
                         </div>
                         <div>
@@ -3229,15 +3242,15 @@ class GreenBibleApp {
             content.innerHTML = `
                 <div style="display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; ${isOT ? 'flex-direction: row-reverse;' : ''}">
                     ${words.map(w => `
-                        <div class="interlinear-word" style="background: rgba(10, 15, 13, 0.4); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 16px; text-align: center; min-width: 120px; transition: all 0.3s ease; cursor: default;">
+                        <div class="interlinear-word" style="background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 16px; text-align: center; min-width: 120px; transition: all 0.3s ease; cursor: default;">
                             <div style="font-size: 1.6rem; color: var(--accent-gold); font-weight: 600; margin-bottom: 8px; font-family: 'Playfair Display', serif; direction: ${isOT ? 'rtl' : 'ltr'};">${this.escapeHtml(w.word || w.original || '')}</div>
                             <div style="font-size: 0.85rem; color: var(--accent-emerald); font-style: italic; margin-bottom: 6px; font-family: 'Inter', sans-serif; letter-spacing: 0.5px;">${this.escapeHtml(w.transliteration || '')}</div>
                             <div style="font-size: 1.05rem; color: var(--text-primary); font-weight: 600; margin-bottom: 8px;">${this.escapeHtml(w.translation || w.english || '')}</div>
-                            ${w.parsing ? `<div style="font-size: 0.7rem; color: var(--text-muted); font-style: normal; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; opacity: 0.8;">${this.escapeHtml(w.parsing)}</div>` : ''}
+                            ${w.parsing ? `<div style="font-size: 0.7rem; color: var(--text-muted); font-style: normal; margin-bottom: 8px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px; opacity: 0.8;">${this.escapeHtml(w.parsing)}</div>` : ''}
                             ${w.strongs ? `
                                 <div onclick="document.getElementById('searchInput').value='${w.strongs}'; app.performSearch(); app.closeStudyModal();" 
-                                     style="font-size: 0.65rem; color: var(--accent-gold); font-family: 'JetBrains Mono', monospace; background: rgba(245, 197, 66, 0.08); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(245, 197, 66, 0.2); cursor: pointer; display: inline-block; transition: 0.2s;"
-                                     onmouseover="this.style.background='rgba(245, 197, 66, 0.15)'" onmouseout="this.style.background='rgba(245, 197, 66, 0.08)'">
+                                     style="font-size: 0.65rem; color: var(--accent-gold); font-family: 'JetBrains Mono', monospace; background: var(--bg-card); padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border-accent); cursor: pointer; display: inline-block; transition: 0.2s;"
+                                     onmouseover="this.style.background='var(--bg-elevated)'" onmouseout="this.style.background='var(--bg-card)'">
                                     <i class="fas fa-search" style="font-size: 0.6rem; margin-right: 4px;"></i> ${this.escapeHtml(w.strongs)}
                                 </div>` : ''}
                         </div>
