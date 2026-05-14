@@ -173,7 +173,22 @@ Output ONLY a JSON object:
         const systemPrompt =
             'You are a biblical scholar. Output ONLY valid JSON matching the structure requested in the user message. No markdown.';
         const aiText = await pollinationsChatText(systemPrompt, prompt, { jsonObject: true });
-        const interpretation = JSON.parse(aiText);
+        
+        let interpretation: any = { summary: "Sermon successfully captured.", key_points: [], biblical_themes: [], scriptures: [] };
+        try {
+            interpretation = JSON.parse(aiText);
+        } catch (e) {
+            console.warn('[Ingest] Direct JSON parse failed, attempting robust extraction...', e.message);
+            const start = aiText.indexOf('{');
+            const end = aiText.lastIndexOf('}');
+            if (start !== -1 && end !== -1 && end > start) {
+                try {
+                    interpretation = JSON.parse(aiText.substring(start, end + 1));
+                } catch (err) {
+                    console.error('[Ingest] Robust JSON extraction failed:', err.message);
+                }
+            }
+        }
 
         const sermonData = {
             id: youtubeId,
