@@ -3127,10 +3127,16 @@ class GreenBibleApp {
         if (!content) return;
 
         try {
-            // Refined Prompt: Scripturally relevant masterpiece, strictly NO TEXT/WRITING
-            const basePrompt = `Professional biblical illustration of ${reference}: ${text.substring(0, 200)}. Cinematic digital art, divine atmosphere, ethereal lighting, holy and spiritually profound composition. Historically inspired scriptural setting, stunning visual narrative, masterpiece quality, high fidelity. CRITICAL: No text, no letters, no writing, no labels, no watermark.`;
+            // Fetch the curated, context-aware theological art prompt from our backend
+            const artRes = await fetch(`/api/ai/art?reference=${encodeURIComponent(reference)}`);
+            if (!artRes.ok) throw new Error('Failed to generate art meta');
+            const artData = await artRes.json();
+            
+            // Critical safeguard: strictly forbid text, letters, watermarks, etc.
+            const enhancedPrompt = `${artData.artPrompt} CRITICAL RULE: Absolutely NO text, NO writing, NO letters, NO words, NO labels, NO watermark.`;
+            
             const seed = Math.floor(Math.random() * 1000000);
-            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(basePrompt)}?width=1024&height=1024&nologo=true&seed=${seed}&model=flux`;
+            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(enhancedPrompt)}?width=1024&height=1024&nologo=true&seed=${seed}&model=flux`;
 
             content.innerHTML = `
                 <div style="width: 100%; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); background: #000; min-height: 400px; display: flex; align-items: center; justify-content: center; position: relative;">
