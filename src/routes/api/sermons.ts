@@ -75,6 +75,76 @@ router.get('/:id', async (req: Request, res: Response) => {
     }
 });
 
+// POST /sermons/:id/refresh - Re-fetch transcript and re-interpret
+router.post('/:id/refresh', async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const detailPath = path.join(SERMONS_DATA_DIR, `${id}.json`);
+        
+        const detailRaw = await fs.readFile(detailPath, 'utf-8');
+        const detail = JSON.parse(detailRaw);
+        
+        console.log(`[Refresh] Attempting to fetch verbatim transcript for ${id}...`);
+        let newTranscript = "";
+        try {
+            const transcriptData = await YoutubeTranscript.fetchTranscript(id);
+            newTranscript = transcriptData.map(t => t.text).join(' ');
+        } catch (e) {
+            return res.status(400).json({ error: 'Verbatim transcript not yet available from YouTube. Please try again after the live stream concludes.' });
+        }
+
+        if (!newTranscript || newTranscript.length < 100) {
+            return res.status(400).json({ error: 'Fetched transcript was too short or empty.' });
+        }
+
+        // Re-analyze with real transcript
+        console.log(`[Refresh] Verbatim transcript found (${newTranscript.length} chars). Re-interpreting...`);
+        
+        const prompt = `
+            Analyze this sermon transcript and provide a theological interpretation.
+            Title: ${detail.title}
+            Transcript: ${newTranscript.slice(0, 20000)}
+
+            Return ONLY a JSON object:
+            {
+              "summary": "...",
+              "key_points": ["...", "..."],
+              "biblical_themes": ["...", "..."],
+              "scriptures": ["Reference 1", "Reference 2"],
+              "devotional_takeaway": "..."
+            }
+        `;
+
+        const aiResponse = await pollinationsChatText(prompt);
+        let interpretation;
+        try {
+            interpretation = JSON.parse(aiResponse.replace(/```json|```/g, '').trim());
+        } catch (e) {
+             // Basic extraction logic if JSON fails
+             interpretation = {
+                summary: aiResponse.split('\n')[0].slice(0, 500),
+                key_points: ["Check transcript for details"],
+                biblical_themes: ["Theology"],
+                scriptures: [],
+                devotional_takeaway: "Continue studying this message."
+             };
+        }
+
+        detail.transcript = newTranscript;
+        detail.interpretation = interpretation;
+        detail.summary = interpretation.summary;
+        detail.status = "processed";
+
+        await fs.writeFile(detailPath, JSON.stringify(detail, null, 2));
+
+        return res.json({ success: true, message: 'Sermon finalized with verbatim transcript.', data: detail });
+
+    } catch (error: any) {
+        console.error(`Sermon refresh error for ${req.params.id}:`, error.message);
+        return res.status(500).json({ error: 'Failed to refresh sermon details' });
+    }
+});
+
 // POST /sermons/sync
 // Sync user progress, bookmarks, and notes
 router.post('/sync', async (req: Request, res: Response) => {

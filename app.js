@@ -6247,9 +6247,19 @@ class GreenBibleApp {
                         ` : ''}
                         
                         <!-- Sermon Notes Integration -->
-                        <div id="modalSermonNotes">
+                        <div id="modalSermonNotes" style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border-subtle);">
                             ${this.renderSermonNotes(s.id)}
                         </div>
+
+                        ${(s.transcript || "").includes("[PROPHETIC THEMATIC RECONSTRUCTION]") || (s.transcript || "").includes("TRANSCRIPT UNAVAILABLE") ? `
+                            <div style="margin-top: 32px; padding: 20px; background: rgba(245, 197, 66, 0.05); border: 1px dashed var(--accent-gold); border-radius: 12px; text-align: center;">
+                                <h6 style="color: var(--accent-gold); margin-bottom: 8px; font-size: 0.85rem;">Live Stream Reconstruction</h6>
+                                <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 16px;">This message was captured while LIVE. Verbatim transcripts become available after the stream ends.</p>
+                                <button onclick="app.finalizeSermon('${s.id}')" id="finalizeBtn-${s.id}" class="action-btn" style="width: 100%; justify-content: center; background: var(--accent-gold); color: #000;">
+                                    <i class="fas fa-magic"></i> ✨ Finalize Verbatim Transcript
+                                </button>
+                            </div>
+                        ` : ''}
                     `;
                 }
 
@@ -6276,6 +6286,36 @@ class GreenBibleApp {
         if (modal) modal.style.display = 'none';
         document.body.style.overflow = '';
         this.stopGlobalAudio();
+    }
+
+    async finalizeSermon(id) {
+        const btn = document.querySelector(`#finalizeBtn-${id}`);
+        if (!btn) return;
+
+        const originalText = btn.innerHTML;
+        try {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Finalizing...';
+            
+            const response = await fetch(`/api/sermons/${id}/refresh`, { method: 'POST' });
+            const data = await response.json();
+            
+            if (!response.ok) throw new Error(data.error || 'Finalization failed');
+            
+            this.showNotification('Sermon finalized with verbatim transcript!', 'success');
+            
+            // Reload the modal to show the new content
+            this.openTranscriptModal(id);
+            
+            // Refresh the library list too
+            this.fetchSermons(true);
+            
+        } catch (error) {
+            console.error('Finalization error:', error);
+            this.showNotification(error.message, 'warning');
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
     }
 
     shareSermonTimestamp(sermonId, timestamp, title) {
