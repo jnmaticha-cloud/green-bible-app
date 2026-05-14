@@ -61,19 +61,27 @@ router.get('/art', async (req: Request, res: Response) => {
     }
 
     try {
-        // First, ask the AI for a concise summary of the verse's core message.
-        const summaryPrompt = `Provide a one‑sentence, theologically accurate summary of the biblical passage ${reference}. Do not include any extra commentary.`;
-        const systemPrompt = 'You are a concise biblical scholar. Output only the summary text, no markdown.';
-        let verseSummary: string;
+        // Step 1: Use the AI as a "Theological Art Director" to design a specific scene
+        const artDirectorPrompt = `You are a world-class religious artist and theologian. Design a highly detailed, cinematic art prompt for a digital masterpiece that captures the deep spiritual meaning of the Bible verse: ${reference}.
+        
+        The scene should describe:
+        - A powerful central symbolic image (e.g., a cross, divine light, a scriptural scene).
+        - Atmosphere and lighting (e.g., ethereal, golden hour, divine radiance, dramatic shadows).
+        - Artistic style (e.g., hyper-realistic, oil painting, cinematic digital art).
+        - IMPORTANT: Explicitly state that there should be NO TEXT, letters, words, or watermarks in the image.
+        
+        Output ONLY the descriptive art prompt text. No introduction, no conversational filler.`;
+        
+        const systemPrompt = 'You are a theological art director. You design sacred, symbolic, and text-free art prompts.';
+        
+        let artPrompt: string;
         try {
-            verseSummary = await pollinationsChatText(systemPrompt, summaryPrompt);
-        } catch (summaryErr) {
-            console.warn('[AI Art] Failed to get verse summary:', summaryErr);
-            // Fallback: use the reference itself as a vague descriptor.
-            verseSummary = `${reference}`;
+            artPrompt = await pollinationsChatText(systemPrompt, artDirectorPrompt);
+        } catch (promptErr) {
+            console.warn('[AI Art] Failed to generate designer prompt:', promptErr);
+            artPrompt = `Reverent, sacred biblical illustration of ${reference}. Ethereal lighting, cinematic digital art, divine atmosphere, strictly no text.`;
         }
 
-        const artPrompt = `Create a reverent, sacred artwork that visually captures the core message of this verse: "${verseSummary}". Emphasize symbolic elements (e.g., a cross for salvation, a heart for love) and use a divine, ethereal atmosphere.`;
         return res.json({ reference: String(reference), artPrompt });
     } catch (error: any) {
         console.error('[AI Art] Unexpected error:', error);
