@@ -41,15 +41,39 @@ export async function pollinationsChatText(
         // Fallback to free text API if no key is present
         if (!apiKey) {
             console.log(`[Pollinations] Using free fallback API (text.pollinations.ai)`);
-            const prompt = systemPrompt ? `${systemPrompt}\n\n${userContent}` : userContent;
-            const fallbackUrl = `https://text.pollinations.ai/${encodeURIComponent(prompt)}`;
+            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
             
-            const res = await fetch(fallbackUrl, { signal });
+            const messages: Array<{ role: 'system' | 'user'; content: string }> = [];
+            if (systemPrompt) {
+                messages.push({ role: 'system', content: systemPrompt });
+            }
+            messages.push({ role: 'user', content: userContent });
+
+            const body: Record<string, unknown> = {
+                model: options?.model || 'openai',
+                messages,
+            };
+
+            const fallbackUrl = 'https://text.pollinations.ai/openai/v1/chat/completions';
+            const res = await fetch(fallbackUrl, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(body),
+                signal,
+            });
+
             if (!res.ok) {
                 const errText = await res.text().catch(() => '');
                 throw new Error(`Pollinations Free API ${res.status}: ${errText.slice(0, 400)}`);
             }
-            return await res.text();
+
+            const data = (await res.json()) as any;
+            console.log("[Pollinations-DEBUG] Raw response body:", JSON.stringify(data, null, 2));
+            const content = data.choices?.[0]?.message?.content || data.choices?.[0]?.message?.reasoning;
+            if (typeof content !== 'string' || !content.length) {
+                throw new Error('Pollinations Free API: empty or unexpected chat completion');
+            }
+            return content;
         }
 
         const headers: Record<string, string> = { 'Content-Type': 'application/json' };

@@ -102,6 +102,8 @@ app.use((req, res, next) => {
 
 app.use(express.static(__dirname));
 
+// Serve downloaded audio files
+app.use('/audio', express.static(path.join(__dirname, 'data', 'sermons')));
 // API Routes — apply tiered rate limits
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/bibles/search', searchLimiter);

@@ -1,7 +1,9 @@
 import { Router, Request, Response } from 'express';
 import fs from 'fs/promises';
+import { createWriteStream } from 'fs';
 import path from 'path';
 import { YoutubeTranscript } from 'youtube-transcript';
+import ytdl from 'ytdl-core';
 import { pollinationsChatText } from '../../lib/pollinationsClient.js';
 
 function formatTime(ms: number) {
@@ -42,6 +44,36 @@ function processVerbatimTranscript(transcriptData: any[]) {
     return finalLines.join('\n\n');
 }
 
+async function downloadAudioInBackground(youtubeId: string, audioPath: string, jsonFilePath: string) {
+    try {
+        console.log(`[Ingest-BG] Starting background audio download for ${youtubeId}...`);
+        const stream = ytdl(youtubeId, { filter: 'audioonly', quality: 'highestaudio' });
+        const writeStream = createWriteStream(audioPath);
+        stream.pipe(writeStream);
+        
+        await new Promise<void>((resolve, reject) => {
+            stream.on('error', async (err) => {
+                // Remove partial file on error
+                await fs.unlink(audioPath).catch(() => {});
+                reject(err);
+            });
+            writeStream.on('finish', resolve);
+            writeStream.on('error', reject);
+        });
+        
+        console.log(`[Ingest-BG] Audio downloaded successfully to ${audioPath}`);
+        
+        // Update sermon JSON metadata
+        const raw = await fs.readFile(jsonFilePath, 'utf-8');
+        const s = JSON.parse(raw);
+        s.localAudioPath = `/audio/${youtubeId}.mp3`;
+        await fs.writeFile(jsonFilePath, JSON.stringify(s, null, 2));
+        console.log(`[Ingest-BG] Sermon JSON updated with localAudioPath for ${youtubeId}`);
+    } catch (err: any) {
+        console.error(`[Ingest-BG] Background download failed for ${youtubeId}:`, err.message || err);
+    }
+}
+
 const router = Router();
 console.log('📂 Sermons Router Loaded');
 const SERMONS_DATA_DIR = path.join(process.cwd(), 'data', 'sermons');
@@ -54,25 +86,35 @@ router.get('/', async (req: Request, res: Response) => {
         const metadataRaw = await fs.readFile(METADATA_FILE, 'utf-8');
         let allSermons = JSON.parse(metadataRaw);
         
-        // Enrich metadata with summary and date from individual files if missing
+        // Enrich metadata with summary, date and speaker from individual files if missing
         const enrichedSermons = await Promise.all(allSermons.map(async (s: any) => {
             try {
                 const detailPath = path.join(SERMONS_DATA_DIR, `${s.id}.json`);
                 const detailRaw = await fs.readFile(detailPath, 'utf-8');
                 const detail = JSON.parse(detailRaw);
                 
+                const mp3Path = path.join(SERMONS_DATA_DIR, `${s.id}.mp3`);
+                let hasMp3 = false;
+                try {
+                    await fs.access(mp3Path);
+                    hasMp3 = true;
+                } catch {}
+
                 if (full) {
-                    return detail; // Return complete object including transcript for offline caching
+                    const enrichedDetail = { ...detail };
+                    if (hasMp3) enrichedDetail.localAudioPath = `/audio/${s.id}.mp3`;
+                    return enrichedDetail;
                 }
-                
-                if (s.summary && s.date) return s;
                 
                 return { 
                     ...s, 
                     summary: detail.summary || detail.interpretation?.summary || "", 
-                    date: detail.date 
+                    date: detail.date,
+                    speaker: detail.speaker || 'Pastor John Anosike',
+                    localAudioPath: hasMp3 ? `/audio/${s.id}.mp3` : (detail.localAudioPath || null)
                 };
             } catch {
+                if (!s.speaker) s.speaker = 'Pastor John Anosike';
                 return s;
             }
         }));
@@ -87,21 +129,190 @@ router.get('/', async (req: Request, res: Response) => {
     }
 });
 
+// GET /search?q=...
+router.get('/search', async (req: Request, res: Response) => {
+    console.log(`🔍 Sermon Search Query: ${req.query.q}`);
+    const { q } = req.query;
+    if (!q || typeof q !== 'string') {
+        return res.json({ sermons: [] });
+    }
+
+    try {
+        const query = q.toLowerCase().trim();
+        // Split into keywords, filtering common stop words
+        const stopWords = new Set(['the', 'a', 'an', 'of', 'in', 'to', 'and', 'or', 'by', 'for', 'is', 'it', 'on', 'at', 'be', 'as', 'with', 'that', 'this', 'from']);
+        const rawKeywords = query.split(/\s+/).filter(w => w.length > 1 && !stopWords.has(w));
+        
+        // Simple stemmer: strip common English suffixes to broaden matching
+        const stem = (word: string): string => {
+            return word
+                .replace(/(?:tion|sion|ment|ness|ence|ance)$/i, '')
+                .replace(/(?:ful|less|able|ible|ous|ive|ity)$/i, '')
+                .replace(/(?:ing|ings|ed|er|est|ly|al|es|s)$/i, '')
+                || word;
+        };
+        
+        // Build search terms: original keywords + their stems (deduplicated)
+        const keywords = [...new Set(rawKeywords.flatMap(kw => {
+            const stemmed = stem(kw);
+            return stemmed.length >= 3 ? [kw, stemmed] : [kw];
+        }))];
+        
+        const files = await fs.readdir(SERMONS_DATA_DIR);
+        const sermonFiles = files.filter(f => f.endsWith('.json') && f !== 'metadata.json');
+        
+        const results: any[] = [];
+        
+        for (const file of sermonFiles) {
+            try {
+                const contentRaw = await fs.readFile(path.join(SERMONS_DATA_DIR, file), 'utf-8');
+                const s = JSON.parse(contentRaw);
+                
+                const titleLower = (s.title || '').toLowerCase();
+                const summaryText = (s.summary || s.interpretation?.summary || '').toLowerCase();
+                const transcriptLower = (s.transcript || '').toLowerCase();
+                const themesLower = (s.interpretation?.biblical_themes || []).join(' ').toLowerCase();
+                const keyPointsLower = (s.interpretation?.key_points || []).join(' ').toLowerCase();
+                const allText = `${titleLower} ${summaryText} ${transcriptLower} ${themesLower} ${keyPointsLower}`;
+                
+                // Check exact phrase first (highest priority)
+                const exactMatch = allText.includes(query);
+                
+                // Then check individual keywords
+                let matchedKeywords = 0;
+                let titleMatches = 0;
+                for (const kw of keywords) {
+                    if (allText.includes(kw)) matchedKeywords++;
+                    if (titleLower.includes(kw)) titleMatches++;
+                }
+                
+                // Require at least 1 keyword (or its stem) to match
+                const threshold = Math.max(1, Math.ceil(rawKeywords.length * 0.3));
+                
+                if (exactMatch || matchedKeywords >= threshold) {
+                    // Score: exact match = 100, then keyword ratio + title bonus
+                    const score = exactMatch ? 100 : (matchedKeywords / keywords.length * 50) + (titleMatches * 10);
+                    
+                    let matchType = 'transcript';
+                    if (titleLower.includes(query) || titleMatches > 0) matchType = 'title';
+                    else if (summaryText.includes(query) || (summaryText && keywords.some(kw => summaryText.includes(kw)))) matchType = 'summary';
+                    
+                    results.push({
+                        id: s.id,
+                        title: s.title,
+                        summary: s.summary || s.interpretation?.summary || '',
+                        date: s.date,
+                        speaker: s.speaker,
+                        url: s.url,
+                        matchType,
+                        score,
+                        matchedKeywords
+                    });
+                }
+            } catch (err) {
+                console.error(`Error reading sermon file ${file}:`, err);
+            }
+        }
+        
+        // Sort by score descending, then by date
+        results.sort((a, b) => b.score - a.score || new Date(b.date).getTime() - new Date(a.date).getTime());
+        
+        return res.json({ 
+            totalItems: results.length,
+            query: q,
+            keywords,
+            sermons: results
+        });
+    } catch (error: any) {
+        console.error('Sermon search error:', error.message);
+        return res.status(500).json({ error: 'Failed to search sermons' });
+    }
+});
+
+// GET /mentions/:book/:chapter/:verse
+router.get('/mentions/:book/:chapter/:verse', async (req: Request, res: Response) => {
+    const { book, chapter, verse } = req.params;
+    const targetRef = `${book} ${chapter}:${verse}`.toLowerCase();
+    const targetRefShort = `${book} ${chapter}`.toLowerCase(); // To match chapter-level mentions
+
+    try {
+        const files = await fs.readdir(SERMONS_DATA_DIR);
+        const sermonFiles = files.filter(f => f.endsWith('.json') && f !== 'metadata.json');
+        
+        const mentions: any[] = [];
+        
+        for (const file of sermonFiles) {
+            try {
+                const contentRaw = await fs.readFile(path.join(SERMONS_DATA_DIR, file), 'utf-8');
+                const s = JSON.parse(contentRaw);
+                
+                const scriptures = s.interpretation?.scriptures || [];
+                const transcript = (s.transcript || '').toLowerCase();
+                
+                // Check AI detected scriptures
+                let isMentioned = scriptures.some((ref: string) => {
+                    const r = ref.toLowerCase();
+                    return r.includes(targetRef) || (verse === 'null' && r.includes(targetRefShort));
+                });
+
+                // Fallback: Scan transcript for the pattern (e.g. "John 3:16" or "John 3 16")
+                if (!isMentioned) {
+                    const pattern = new RegExp(`${book}\\s+${chapter}[:\\s]+${verse === 'null' ? '' : verse}`, 'i');
+                    isMentioned = pattern.test(transcript);
+                }
+
+                if (isMentioned) {
+                    mentions.push({
+                        id: s.id,
+                        title: s.title,
+                        summary: s.summary || s.interpretation?.summary || '',
+                        date: s.date,
+                        speaker: s.speaker,
+                        url: s.url,
+                        timestamp: scriptures.find((ref: string) => ref.toLowerCase().includes(targetRef)) || null
+                    });
+                }
+            } catch (err) {
+                // Skip corrupted files
+            }
+        }
+
+        return res.json({ 
+            reference: `${book} ${chapter}:${verse}`,
+            totalMentions: mentions.length,
+            sermons: mentions 
+        });
+    } catch (error: any) {
+        return res.status(500).json({ error: 'Failed to search sermon mentions' });
+    }
+});
+
 // GET /sermons/:id - Fetch individual sermon details
 router.get('/:id', async (req: Request, res: Response) => {
+    const { id } = req.params;
+
     try {
-        const { id } = req.params;
-        const detailPath = path.join(SERMONS_DATA_DIR, `${id}.json`);
-        
+        const filePath = path.join(SERMONS_DATA_DIR, `${id}.json`);
+        const sermonDataRaw = await fs.readFile(filePath, 'utf-8');
+        const sermonData = JSON.parse(sermonDataRaw);
+
+        const mp3Path = path.join(SERMONS_DATA_DIR, `${id}.mp3`);
+        let hasMp3 = false;
         try {
-            const detailRaw = await fs.readFile(detailPath, 'utf-8');
-            const detail = JSON.parse(detailRaw);
-            return res.json(detail);
-        } catch (e) {
-            return res.status(404).json({ error: 'Sermon not found' });
+            await fs.access(mp3Path);
+            hasMp3 = true;
+        } catch {}
+
+        if (hasMp3) {
+            sermonData.localAudioPath = `/audio/${id}.mp3`;
         }
+
+        return res.json(sermonData);
     } catch (error: any) {
-        console.error(`Sermon detail fetch error for ${req.params.id}:`, error.message);
+        console.error(`Sermon detail error [id=${id}]:`, error.message);
+        if (error.code === 'ENOENT') {
+            return res.status(404).json({ error: 'Sermon not found or not yet processed' });
+        }
         return res.status(500).json({ error: 'Failed to fetch sermon details' });
     }
 });
@@ -245,23 +456,57 @@ router.post('/ingest', async (req: Request, res: Response) => {
             }
         }
 
+        let interpretation: any = null;
+
         if (!transcript) {
-             console.log(`[Ingest] Verbatim fetch failed for ${youtubeId}. Attempting Prophetic Reconstruction...`);
+             console.log(`[Ingest] Verbatim fetch failed for ${youtubeId}. Performing Unified Reconstruction & Interpretation...`);
+             let aiText = '';
              try {
-                 const reconPrompt = `You are a world-class theologian familiar with the teachings of Spirit-filled ministries. I have a sermon title: "${title}". I cannot retrieve the verbatim transcript. 
-                 Provide a high-level "Prophetic Reconstruction" of what this message likely contains based on the title. 
-                 Focus on the spiritual principles, expected scriptures, and theological weight. 
-                 Output 500-800 words of structured spiritual teaching.`;
+                 const reconPrompt = `You are a world-class inspired theologian familiar with Spirit-filled ministries. I have a sermon title: "${title}". I cannot retrieve the verbatim transcript.
+                 First, provide a concise "Prophetic Reconstruction" of what this message likely contains based on the title (150-250 words of structured spiritual teaching).
+                 Second, provide a highly classified theological interpretation of this reconstruction.
                  
-                 transcript = await pollinationsChatText('You are a wise and inspired theologian.', reconPrompt);
-                 transcript = `[PROPHETIC RECONSTRUCTION - VERBATIM TRANSCRIPT UNAVAILABLE]\n\n${transcript}`;
-             } catch (reconErr) {
+                 Return ONLY a JSON object:
+                 {
+                   "reconstruction": "The concise 150-250 word Prophetic Reconstruction teaching with headings...",
+                   "summary": "Brief 2-3 sentence overview capturing the heart of the message",
+                   "key_points": ["Point 1: Detailed theological insight", "Point 2: Practical application", "Point 3: Spiritual challenge"],
+                   "biblical_themes": ["Theme A (e.g. Sanctification)", "Theme B (e.g. Sovereignty of God)"],
+                   "scriptures": ["Book Chapter:Verse", "Book Chapter:Verse"],
+                   "devotional_takeaway": "A single sentence for the listener to carry into their week"
+                 }
+                  
+                  CRITICAL: Do not write any thinking process, reasoning, step-by-step calculations, word-counting, or thoughts. Output ONLY the final JSON object. Start your output directly with '{'.`;
+                 
+                 const systemPrompt = 'You are a biblical scholar. Output ONLY valid JSON matching the structure requested in the user message. No markdown.';
+                 aiText = await pollinationsChatText(systemPrompt, reconPrompt, { jsonObject: true });
+                 
+                 let reconData: any;
+                 try {
+                     reconData = JSON.parse(aiText);
+                 } catch (e) {
+                     const start = aiText.indexOf('{');
+                     const end = aiText.lastIndexOf('}');
+                     reconData = JSON.parse(aiText.substring(start, end + 1));
+                 }
+                 
+                 transcript = `[PROPHETIC RECONSTRUCTION - VERBATIM TRANSCRIPT UNAVAILABLE]\n\n${reconData.reconstruction || ''}`;
+                 interpretation = {
+                     summary: reconData.summary || "Sermon captured via Prophetic Reconstruction.",
+                     key_points: reconData.key_points || [],
+                     biblical_themes: reconData.biblical_themes || [],
+                     scriptures: reconData.scriptures || [],
+                     devotional_takeaway: reconData.devotional_takeaway || "Continue studying this message."
+                 };
+             } catch (reconErr: any) {
+                 console.error('[Ingest] Unified reconstruction failed:', reconErr.message || reconErr);
+                 console.error('[Ingest] Raw AI response was:', aiText);
                  return res.status(400).json({ error: 'Failed to retrieve transcript and AI reconstruction also failed.' });
              }
-        }
-
-        // 1. Call AI for interpretation
-        const prompt = `You are a world-class biblical scholar. Analyze this sermon transcript and provide a highly classified interpretation.
+        } else {
+             // 1. Call AI for interpretation of existing transcript
+             console.log(`[Ingest] Transcript available. Calling AI for interpretation...`);
+             const prompt = `You are a world-class biblical scholar. Analyze this sermon transcript and provide a highly classified interpretation.
 Title: ${title}
 Transcript: ${transcript.substring(0, 5000)}
 
@@ -274,25 +519,32 @@ Output ONLY a JSON object:
   "devotional_takeaway": "A single sentence for the listener to carry into their week"
 }`;
 
-        const systemPrompt =
-            'You are a biblical scholar. Output ONLY valid JSON matching the structure requested in the user message. No markdown.';
-        const aiText = await pollinationsChatText(systemPrompt, prompt, { jsonObject: true });
-        
-        let interpretation: any = { summary: "Sermon successfully captured.", key_points: [], biblical_themes: [], scriptures: [] };
-        try {
-            interpretation = JSON.parse(aiText);
-        } catch (e) {
-            console.warn('[Ingest] Direct JSON parse failed, attempting robust extraction...', e.message);
-            const start = aiText.indexOf('{');
-            const end = aiText.lastIndexOf('}');
-            if (start !== -1 && end !== -1 && end > start) {
-                try {
-                    interpretation = JSON.parse(aiText.substring(start, end + 1));
-                } catch (err) {
-                    console.error('[Ingest] Robust JSON extraction failed:', err.message);
-                }
-            }
+             const systemPrompt = 'You are a biblical scholar. Output ONLY valid JSON matching the structure requested in the user message. No markdown.';
+             const aiText = await pollinationsChatText(systemPrompt, prompt, { jsonObject: true });
+             
+             try {
+                 interpretation = JSON.parse(aiText);
+             } catch (e) {
+                 console.warn('[Ingest] Direct JSON parse failed, attempting robust extraction...', e.message);
+                 const start = aiText.indexOf('{');
+                 const end = aiText.lastIndexOf('}');
+                 if (start !== -1 && end !== -1 && end > start) {
+                     try {
+                         interpretation = JSON.parse(aiText.substring(start, end + 1));
+                     } catch (err) {
+                         console.error('[Ingest] Robust JSON extraction failed:', err.message);
+                     }
+                 }
+             }
+             if (!interpretation) {
+                 interpretation = { summary: "Sermon successfully captured.", key_points: [], biblical_themes: [], scriptures: [] };
+             }
         }
+
+
+
+        const audioPath = path.join(process.cwd(), 'data', 'sermons', `${youtubeId}.mp3`);
+        const filePath = path.join(SERMONS_DATA_DIR, `${youtubeId}.json`);
 
         const sermonData = {
             id: youtubeId,
@@ -302,19 +554,30 @@ Output ONLY a JSON object:
             date: req.body.date || new Date().toISOString().split('T')[0],
             transcript,
             summary: interpretation.summary,
-            interpretation
+            interpretation,
+            localAudioPath: null // Stream via YouTube immediately, background job will update this
         };
 
         // 2. Save individual JSON
-        const filePath = path.join(SERMONS_DATA_DIR, `${youtubeId}.json`);
         await fs.writeFile(filePath, JSON.stringify(sermonData, null, 2));
 
         // 3. Update metadata.json
         const metadataRaw = await fs.readFile(METADATA_FILE, 'utf-8');
         let metadata = JSON.parse(metadataRaw);
         metadata = metadata.filter((m: any) => m.id !== youtubeId);
-        metadata.unshift({ id: youtubeId, title, url, summary: sermonData.summary, date: sermonData.date, status: "processed" });
+        metadata.unshift({ 
+            id: youtubeId, 
+            title, 
+            url, 
+            summary: sermonData.summary, 
+            date: sermonData.date, 
+            speaker: sermonData.speaker,
+            status: "processed" 
+        });
         await fs.writeFile(METADATA_FILE, JSON.stringify(metadata, null, 2));
+
+        // Start fire-and-forget background audio download
+        downloadAudioInBackground(youtubeId, audioPath, filePath);
 
         return res.json({ success: true, id: youtubeId });
     } catch (error: any) {
@@ -323,183 +586,6 @@ Output ONLY a JSON object:
     }
 });
 
-// GET /sermons/search?q=...
-router.get('/search', async (req: Request, res: Response) => {
-    console.log(`🔍 Sermon Search Query: ${req.query.q}`);
-    const { q } = req.query;
-    if (!q || typeof q !== 'string') {
-        return res.json({ sermons: [] });
-    }
-
-    try {
-        const query = q.toLowerCase().trim();
-        // Split into keywords, filtering common stop words
-        const stopWords = new Set(['the', 'a', 'an', 'of', 'in', 'to', 'and', 'or', 'by', 'for', 'is', 'it', 'on', 'at', 'be', 'as', 'with', 'that', 'this', 'from']);
-        const rawKeywords = query.split(/\s+/).filter(w => w.length > 1 && !stopWords.has(w));
-        
-        // Simple stemmer: strip common English suffixes to broaden matching
-        const stem = (word: string): string => {
-            return word
-                .replace(/(?:tion|sion|ment|ness|ence|ance)$/i, '')
-                .replace(/(?:ful|less|able|ible|ous|ive|ity)$/i, '')
-                .replace(/(?:ing|ings|ed|er|est|ly|al|es|s)$/i, '')
-                || word;
-        };
-        
-        // Build search terms: original keywords + their stems (deduplicated)
-        const keywords = [...new Set(rawKeywords.flatMap(kw => {
-            const stemmed = stem(kw);
-            return stemmed.length >= 3 ? [kw, stemmed] : [kw];
-        }))];
-        
-        const files = await fs.readdir(SERMONS_DATA_DIR);
-        const sermonFiles = files.filter(f => f.endsWith('.json') && f !== 'metadata.json');
-        
-        const results: any[] = [];
-        
-        for (const file of sermonFiles) {
-            try {
-                const contentRaw = await fs.readFile(path.join(SERMONS_DATA_DIR, file), 'utf-8');
-                const s = JSON.parse(contentRaw);
-                
-                const titleLower = (s.title || '').toLowerCase();
-                const summaryText = (s.summary || s.interpretation?.summary || '').toLowerCase();
-                const transcriptLower = (s.transcript || '').toLowerCase();
-                const themesLower = (s.interpretation?.biblical_themes || []).join(' ').toLowerCase();
-                const keyPointsLower = (s.interpretation?.key_points || []).join(' ').toLowerCase();
-                const allText = `${titleLower} ${summaryText} ${transcriptLower} ${themesLower} ${keyPointsLower}`;
-                
-                // Check exact phrase first (highest priority)
-                const exactMatch = allText.includes(query);
-                
-                // Then check individual keywords
-                let matchedKeywords = 0;
-                let titleMatches = 0;
-                for (const kw of keywords) {
-                    if (allText.includes(kw)) matchedKeywords++;
-                    if (titleLower.includes(kw)) titleMatches++;
-                }
-                
-                // Require at least 1 keyword (or its stem) to match
-                const threshold = Math.max(1, Math.ceil(rawKeywords.length * 0.3));
-                
-                if (exactMatch || matchedKeywords >= threshold) {
-                    // Score: exact match = 100, then keyword ratio + title bonus
-                    const score = exactMatch ? 100 : (matchedKeywords / keywords.length * 50) + (titleMatches * 10);
-                    
-                    let matchType = 'transcript';
-                    if (titleLower.includes(query) || titleMatches > 0) matchType = 'title';
-                    else if (summaryText.includes(query) || (summaryText && keywords.some(kw => summaryText.includes(kw)))) matchType = 'summary';
-                    
-                    results.push({
-                        id: s.id,
-                        title: s.title,
-                        summary: s.summary || s.interpretation?.summary || '',
-                        date: s.date,
-                        speaker: s.speaker,
-                        url: s.url,
-                        matchType,
-                        score,
-                        matchedKeywords
-                    });
-                }
-            } catch (err) {
-                console.error(`Error reading sermon file ${file}:`, err);
-            }
-        }
-        
-        // Sort by score descending, then by date
-        results.sort((a, b) => b.score - a.score || new Date(b.date).getTime() - new Date(a.date).getTime());
-        
-        return res.json({ 
-            totalItems: results.length,
-            query: q,
-            keywords,
-            sermons: results
-        });
-    } catch (error: any) {
-        console.error('Sermon search error:', error.message);
-        return res.status(500).json({ error: 'Failed to search sermons' });
-    }
-
-});
-
-// GET /sermons/:id
-router.get('/:id', async (req: Request, res: Response) => {
-    const { id } = req.params;
-
-    try {
-        const filePath = path.join(SERMONS_DATA_DIR, `${id}.json`);
-        const sermonDataRaw = await fs.readFile(filePath, 'utf-8');
-        const sermonData = JSON.parse(sermonDataRaw);
-
-        return res.json(sermonData);
-    } catch (error: any) {
-        console.error(`Sermon detail error [id=${id}]:`, error.message);
-        if (error.code === 'ENOENT') {
-            return res.status(404).json({ error: 'Sermon not found or not yet processed' });
-        }
-        return res.status(500).json({ error: 'Failed to fetch sermon details' });
-    }
-});
-
-// GET /sermons/mentions/:book/:chapter/:verse
-router.get('/mentions/:book/:chapter/:verse', async (req: Request, res: Response) => {
-    const { book, chapter, verse } = req.params;
-    const targetRef = `${book} ${chapter}:${verse}`.toLowerCase();
-    const targetRefShort = `${book} ${chapter}`.toLowerCase(); // To match chapter-level mentions
-
-    try {
-        const files = await fs.readdir(SERMONS_DATA_DIR);
-        const sermonFiles = files.filter(f => f.endsWith('.json') && f !== 'metadata.json');
-        
-        const mentions: any[] = [];
-        
-        for (const file of sermonFiles) {
-            try {
-                const contentRaw = await fs.readFile(path.join(SERMONS_DATA_DIR, file), 'utf-8');
-                const s = JSON.parse(contentRaw);
-                
-                const scriptures = s.interpretation?.scriptures || [];
-                const transcript = (s.transcript || '').toLowerCase();
-                
-                // Check AI detected scriptures
-                let isMentioned = scriptures.some((ref: string) => {
-                    const r = ref.toLowerCase();
-                    return r.includes(targetRef) || (verse === 'null' && r.includes(targetRefShort));
-                });
-
-                // Fallback: Scan transcript for the pattern (e.g. "John 3:16" or "John 3 16")
-                if (!isMentioned) {
-                    const pattern = new RegExp(`${book}\\s+${chapter}[:\\s]+${verse === 'null' ? '' : verse}`, 'i');
-                    isMentioned = pattern.test(transcript);
-                }
-
-                if (isMentioned) {
-                    mentions.push({
-                        id: s.id,
-                        title: s.title,
-                        summary: s.summary || s.interpretation?.summary || '',
-                        date: s.date,
-                        speaker: s.speaker,
-                        url: s.url,
-                        timestamp: scriptures.find((ref: string) => ref.toLowerCase().includes(targetRef)) || null
-                    });
-                }
-            } catch (err) {
-                // Skip corrupted files
-            }
-        }
-
-        return res.json({ 
-            reference: `${book} ${chapter}:${verse}`,
-            totalMentions: mentions.length,
-            sermons: mentions 
-        });
-    } catch (error: any) {
-        return res.status(500).json({ error: 'Failed to search sermon mentions' });
-    }
-});
 
 export default router;
 

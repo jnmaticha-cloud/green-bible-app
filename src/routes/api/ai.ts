@@ -55,17 +55,20 @@ router.get('/interpret', async (req: Request, res: Response) => {
 
 // API Route: GET /art — Generate sacred art prompt/meta (enhanced)
 router.get('/art', async (req: Request, res: Response) => {
-    const { reference } = req.query;
+    const { reference, text } = req.query;
     if (!reference) {
         return res.status(400).json({ error: 'Reference is required' });
     }
 
     try {
         // Step 1: Use the AI as a "Theological Art Director" to design a specific scene
-        const artDirectorPrompt = `You are a world-class religious artist and theologian. Design a highly detailed, cinematic art prompt for a digital masterpiece that captures the deep spiritual meaning of the Bible verse: ${reference}.
+        const verseContext = text ? `"${text}"` : `the scene described in ${reference}`;
+        const artDirectorPrompt = `You are a world-class religious artist and theologian. Design a highly detailed, cinematic art prompt for a digital masterpiece that perfectly illustrates the literal events and deep spiritual meaning of this Bible verse (${reference}):
+        ${verseContext}
         
         The scene should describe:
-        - A powerful central symbolic image (e.g., a cross, divine light, a scriptural scene).
+        - The actual narrative elements, people, and objects mentioned in the verse.
+        - A powerful central symbolic image if applicable.
         - Atmosphere and lighting (e.g., ethereal, golden hour, divine radiance, dramatic shadows).
         - Artistic style (e.g., hyper-realistic, oil painting, cinematic digital art).
         - IMPORTANT: Explicitly state that there should be NO TEXT, letters, words, or watermarks in the image.
@@ -74,13 +77,9 @@ router.get('/art', async (req: Request, res: Response) => {
         
         const systemPrompt = 'You are a theological art director. You design sacred, symbolic, and text-free art prompts.';
         
-        let artPrompt: string;
-        try {
-            artPrompt = await pollinationsChatText(systemPrompt, artDirectorPrompt);
-        } catch (promptErr) {
-            console.warn('[AI Art] Failed to generate designer prompt:', promptErr);
-            artPrompt = `Reverent, sacred biblical illustration of ${reference}. Ethereal lighting, cinematic digital art, divine atmosphere, strictly no text.`;
-        }
+        // OPTIMIZATION: Skip the AI Art Director text step to save 30+ seconds.
+        // The verse text is already descriptive enough for the 'flux' model.
+        let artPrompt: string = `A historical oil painting of the biblical scene ${reference}: "${text || ''}". Detailed narrative scene, classical style, dramatic lighting, no text.`;
 
         return res.json({ reference: String(reference), artPrompt });
     } catch (error: any) {

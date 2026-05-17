@@ -243,7 +243,24 @@ sup {
   color: var(--primary);
 }
 
-/* Responsive adjustments */
+
+/* -------------------------------------------------
+   God Theme – dynamic background based on location, weather, season
+   ------------------------------------------------- */
+[data-theme="god"] {
+  /* Default background (will be overwritten by JS) */
+  --god-bg: linear-gradient(135deg, #87cefa, #f0e68c);
+  background: var(--god-bg) fixed;
+  color: var(--text-primary);
+}
+
+/* Helper classes for specific weather/season palettes – JS will set appropriate variables */
+[data-theme="god"].sunny { --god-bg: linear-gradient(135deg, #ffef96, #f7d358); }
+[data-theme="god"].rain { --god-bg: linear-gradient(135deg, #6b9ac4, #3b6bb2); }
+[data-theme="god"].sunrise { --god-bg: linear-gradient(135deg, #ffb347, #ffcc33); }
+[data-theme="god"].sunset { --god-bg: linear-gradient(135deg, #ff5e62, #ff9966); }
+[data-theme="god"].night { --god-bg: linear-gradient(135deg, #2c3e50, #4ca1af); }
+
 @media (max-width: 768px) {
   .container {
     padding-left: 1rem;
